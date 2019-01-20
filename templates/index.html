@@ -1,1 +1,139 @@
-hello
+<html>
+  <head>
+    <title>MediaWEB</title>
+    <style>
+    .item {
+      width: 160px;
+      height: 190px;
+      margin-top: 5px;
+      margin-left: 10px;
+      margin-right: 10px;
+      margin-bottom: 10px;/*
+      border-style: solid;
+      border-color: #A30003;
+      border-width: 1px;
+      border-radius:3px 3px 0px 0px;*/
+      display:inline-block;
+      overflow: hidden;
+    }
+    .thumb {
+      padding-top: 5px;
+      padding-left: 5px;
+      padding-right: 5px;
+      padding-bottom: 5px;   
+    }
+    .thumb img {
+	  margin-left: auto;
+	  margin-right: auto;
+	  display: block;
+      width:128px; 
+      height:128px;
+    }
+    .thumb:hover img {
+      transform: scale(1.1);
+    }
+    .name {
+      text-align: center;
+    }
+    /* The Modal (background) */
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      padding-top: 100px; /* Location of the box */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0,0,0); /* Fallback color */
+      background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+    }
+
+    /* Modal Content (image) */
+    .modal-content {
+      margin: auto;
+      display: block;
+      width: 80%;
+      max-width: 700px;
+    }
+    </style>
+    <script>
+    window.onload = function() {
+        var thumbs = document.getElementsByClassName('thumb');
+        for (var i = 0 ; i < thumbs.length ; i++) {
+            var thumb = thumbs[i];
+            thumb.onclick = function() {
+                alert("Ho ho");
+            }
+        }
+    }
+    </script>
+  </head>
+  <body>
+  <div class="items">
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_folder.png" alt="Folder">
+        </div>
+        <div class="name">
+            A folder
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_folder.png" alt="Folder">
+        </div>
+        <div class="name">
+            Another folder but with a very long name and so on and further for this sentence
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_folder.png" alt="Folder">
+        </div>
+        <div class="name">
+            Third
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_folder.png" alt="Folder">
+        </div>
+        <div class="name">
+            Fourth but with a long name and so
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_photo.png" alt="Photo">
+        </div>
+        <div class="name">
+            This is a photo
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_photo.png" alt="Photo">
+        </div>
+        <div class="name">
+            This is another photo
+        </div>
+    </div>
+    <div class="item">
+        <div class="thumb">
+            <img src="static/icon_video2.png" alt="Video">
+        </div>
+        <div class="name">
+            This is a video
+        </div>
+    </div>
+  </div>
+  <!-- The Image Modal -->
+  <div id="imageModal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="imageModalImg">
+    <div id="caption"></div>
+  </div>
+  </body>
+</html>

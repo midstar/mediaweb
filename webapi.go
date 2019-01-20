@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"path"
@@ -59,41 +58,46 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if head == "shutdown" && r.Method == "POST" {
 		wa.Stop()
 	} else if head == "" && r.Method == "GET" {
-		wa.serveHTTPIndex(w)
+		wa.serveHTTPIndex(w, r)
+	} else if head == "folder" && r.Method == "GET" {
+		wa.serveHTTPFolder(w, r)
 	} else if head == "media" && r.Method == "GET" {
 		wa.serveHTTPMedia(w, r)
+	} else if head == "static" && r.Method == "GET" {
+		wa.serveHTTPStatic(w, r)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "This is not a valid path: %s or method %s!", r.URL.Path, r.Method)
 	}
 }
 
-func (wa *WebAPI) serveHTTPIndex(w http.ResponseWriter) {
-	lp := filepath.Join(wa.templatePath, "index.html")
-
-	tmpl, err := template.New("").ParseFiles(lp)
-	if err != nil {
-		http.Error(w, "Create template: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = tmpl.ExecuteTemplate(w, "index.html", nil)
-	if err != nil {
-		http.Error(w, "Execute template: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+func (wa *WebAPI) serveHTTPIndex(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, filepath.Join(wa.templatePath, "index.html"))
 }
 
-func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
-	filePath := ""
+func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, filepath.Join(wa.templatePath, r.URL.Path))
+}
+
+// serveHTTPFolder generates JSON will files in folder
+func (wa *WebAPI) serveHTTPFolder(w http.ResponseWriter, r *http.Request) {
+	// TBD secure that this is an allowed folder - SECURITY RISK
+	folder := ""
 	if len(r.URL.Path) > 0 {
-		filePath = r.URL.Path[1:] // Remove '/'
+		folder = r.URL.Path[1:] // Remove '/'
 	}
-	files, err := wa.media.getFiles(filePath)
+	files, err := wa.media.getFiles(folder)
 	if err != nil {
 		http.Error(w, "Get files: "+err.Error(), http.StatusNotFound)
 		return
 	}
 	toJSON(w, files)
+}
+
+// serveHTTPMedia opens the media
+func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
+	// TBD secure that this is an allowed file - SECURITY RISK
+	http.ServeFile(w, r, filepath.Join(wa.media.basePath, r.URL.Path))
 }
 
 // toJSON converts the v object to JSON and writes result to the response
