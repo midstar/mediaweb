@@ -7,7 +7,7 @@ import (
 )
 
 var imgExtensions = [...]string{".png", ".jpg", ".jpeg", ".tiff", ".gif"}
-var vidExtensions = [...]string{".avi", ".mov", ".vid"}
+var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
@@ -18,7 +18,7 @@ type Media struct {
 type File struct {
 	Type string // folder, image or video
 	Name string
-	Path string // Including Name
+	Path string // Including Name. Always using / (even on Windows)
 }
 
 func createMedia(basePath string) *Media {
@@ -62,10 +62,14 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 		}
 		// Only add directories, videos and images
 		if fileType != "" {
+			// Use path with / slash
+			pathOriginal := filepath.Join(relativePath, fileInfo.Name())
+			pathNew := filepath.ToSlash(pathOriginal)
+
 			file := File{
 				Type: fileType,
 				Name: fileInfo.Name(),
-				Path: filepath.Join(relativePath, fileInfo.Name())}
+				Path: pathNew}
 			files = append(files, file)
 		}
 	}

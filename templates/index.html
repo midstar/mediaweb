@@ -4,6 +4,17 @@
     <style>
 
     /***************************************/
+    /* Style for navigator                 */
+    #navigator {
+        margin-left: 20px;
+    }
+
+    #navigator a {
+        color: blue; 
+        text-decoration: none;
+    }
+
+    /***************************************/
     /* Style for items                     */
 
     .item {
@@ -139,7 +150,39 @@
             path = params.get("path");
         } 
 
+        updateNavigator(path);
+
         loadJSON("folder/" + path, onNewFiles, onError);
+
+    }
+
+    function updateNavigator(path) {
+        var partsTmp = path.split("/");
+        var parts = [];
+        // Copy all non empty parts (split might add empty elements)
+        for (var i = 0 ; i < partsTmp.length ; i++) {
+            if (partsTmp[i].trim().length > 0) {
+                parts.push(partsTmp[i]);
+            }
+        }
+
+        /* No navigator on top level */
+        if (parts.length > 0) {
+            var navigator = document.getElementById("navigator")
+            var links = "<a href='?path='>top</a>"
+            var url = "";
+            for (var i = 0 ; i < parts.length ; i++) {
+                part = parts[i];
+                url += "/" + part;
+                if (i == (parts.length - 1)) {
+                    // Last element is no link
+                    links += " / " + part
+                } else {
+                    links += " / <a href='?path=" + url + "'>" + part + "</a>"
+                }
+            }
+            navigator.insertAdjacentHTML("beforeend", links);
+        }
 
     }
 
@@ -172,14 +215,11 @@
         /* Add file items */
         for (var i=0; i < files.length; i++) {
             var file = files[i];
-            addFileItem(file);
+            addFileItem(file.Type, file.Name, file.Path);
         }
     }
 
-    function addFileItem(file) {
-        var type = file.Type
-        var name = file.Name
-        var path = file.Path
+    function addFileItem(type, name, path) {
         var itemTxt =
 "<div class='item'> \
     <div class='thumb'> \
@@ -230,8 +270,15 @@
     </script>
   </head>
   <body>
-  <div id="items">
+
+  <div id="navigator">
+  <!--<a href="?path=">top<a> / <a href="?path=pictures">pictures<a> / <a href="?path=pictures/vi">vi<a>-->
   </div>
+  
+  <div id="items">
+  <!-- File items goes here -->
+  </div>
+
   <!-- The Image Modal -->
   <div id="imageModal" class="modal">
     <span class="close" id="imageModalClose">&times;</span>
