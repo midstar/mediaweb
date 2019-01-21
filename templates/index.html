@@ -2,6 +2,10 @@
   <head>
     <title>MediaWEB</title>
     <style>
+
+    /***************************************/
+    /* Style for items                     */
+
     .item {
       width: 160px;
       height: 190px;
@@ -31,10 +35,16 @@
     }
     .thumb:hover img {
       transform: scale(1.1);
+      cursor: pointer;
     }
     .name {
       text-align: center;
     }
+
+
+    /***************************************/
+    /* Style for modal                     */
+
     /* The Modal (background) */
     .modal {
       display: none; /* Hidden by default */
@@ -57,81 +67,174 @@
       width: 80%;
       max-width: 700px;
     }
+
+    /* Caption of Modal Image */
+    #caption {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    text-align: center;
+    color: #ccc;
+    padding: 10px 0;
+    height: 150px;
+    }
+
+    /* Add Animation */
+    .modal-content, #caption {  
+    -webkit-animation-name: zoom;
+    -webkit-animation-duration: 0.6s;
+    animation-name: zoom;
+    animation-duration: 0.6s;
+    }
+
+    @-webkit-keyframes zoom {
+    from {-webkit-transform:scale(0)} 
+    to {-webkit-transform:scale(1)}
+    }
+
+    @keyframes zoom {
+    from {transform:scale(0)} 
+    to {transform:scale(1)}
+    }
+
+    /* The Close Button */
+    .close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    }
+
+    .close:hover,
+    .close:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+    }
+
+    /* 100% Image Width on Smaller Screens */
+    @media only screen and (max-width: 700px){
+    .modal-content {
+        width: 100%;
+    }
+    }    
     </style>
     <script>
     window.onload = function() {
-        var thumbs = document.getElementsByClassName('thumb');
-        for (var i = 0 ; i < thumbs.length ; i++) {
-            var thumb = thumbs[i];
-            thumb.onclick = function() {
-                alert("Ho ho");
+
+        /* Setup close of file dialog */
+        var span = document.getElementById("imageModalClose");
+        var modal = document.getElementById('imageModal');
+        span.onclick = function() { 
+            modal.style.display = "none";
+        }
+
+        var path = ""
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("path")) {
+            path = params.get("path");
+        } 
+
+        loadJSON("folder/" + path, onNewFiles, onError);
+
+    }
+
+    /* Set location. Will update URL and reload page. */
+    function setLocation(path) {
+        const params = new URLSearchParams(window.location.search);
+        params.set("path", path)
+        window.location.search = params.toString();   
+    }
+
+    function openFileDialog(imageUrl, caption) {
+        var modal = document.getElementById('imageModal');
+
+        // Get the image and insert it inside the modal - use its "alt" text as a caption
+        var modalImg = document.getElementById("imageModalImg");
+        var captionText = document.getElementById("caption");
+        modalImg.src = imageUrl;
+        captionText.innerHTML = caption;
+        modal.style.display = "block";
+    }
+
+    function onNewFiles(files) {
+
+        /* Remove old file items */
+        var items = document.getElementById('items');
+        while (items.firstChild) {
+            items.removeChild(items.firstChild);
+        }
+
+        /* Add file items */
+        for (var i=0; i < files.length; i++) {
+            var file = files[i];
+            addFileItem(file);
+        }
+    }
+
+    function addFileItem(file) {
+        var type = file.Type
+        var name = file.Name
+        var path = file.Path
+        var itemTxt =
+"<div class='item'> \
+    <div class='thumb'> \
+       <img src='static/icon_" + type + ".png' alt='" + type +"'> \
+   </div> \
+   <div class='name'> \
+       " + name + " \
+   </div> \
+<div>";
+        var items = document.getElementById("items")
+        items.insertAdjacentHTML( 'beforeend', itemTxt );
+
+        // Add click event to the thumb div
+        var itemDiv = items.lastChild; // The newly created item
+        var thumb = itemDiv.getElementsByClassName("thumb")[0];
+        thumb.onclick = function() {
+            if (type == "image") {
+                openFileDialog("media/" + path, name);
+            } else if (type == "folder") {
+                setLocation(path);
             }
         }
     }
+
+    function onError(error) {
+        alert(error);
+    }
+
+    function loadJSON(filePath, success, error)
+    {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function()
+        {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    if (success)
+                        success(JSON.parse(xhr.responseText));
+            } else {
+                if (error)
+                    error(xhr);
+                }
+            }
+        };
+        xhr.open("GET", filePath, true);
+        xhr.send();
+    }
+
     </script>
   </head>
   <body>
-  <div class="items">
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_folder.png" alt="Folder">
-        </div>
-        <div class="name">
-            A folder
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_folder.png" alt="Folder">
-        </div>
-        <div class="name">
-            Another folder but with a very long name and so on and further for this sentence
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_folder.png" alt="Folder">
-        </div>
-        <div class="name">
-            Third
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_folder.png" alt="Folder">
-        </div>
-        <div class="name">
-            Fourth but with a long name and so
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_photo.png" alt="Photo">
-        </div>
-        <div class="name">
-            This is a photo
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_photo.png" alt="Photo">
-        </div>
-        <div class="name">
-            This is another photo
-        </div>
-    </div>
-    <div class="item">
-        <div class="thumb">
-            <img src="static/icon_video2.png" alt="Video">
-        </div>
-        <div class="name">
-            This is a video
-        </div>
-    </div>
+  <div id="items">
   </div>
   <!-- The Image Modal -->
   <div id="imageModal" class="modal">
-    <span class="close">&times;</span>
+    <span class="close" id="imageModalClose">&times;</span>
     <img class="modal-content" id="imageModalImg">
     <div id="caption"></div>
   </div>
