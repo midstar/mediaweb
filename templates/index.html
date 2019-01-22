@@ -54,7 +54,7 @@
 
 
     /***************************************/
-    /* Style for modal                     */
+    /* Style for media viewer modal        */
 
     /* The Modal (background) */
     .modal {
@@ -76,7 +76,7 @@
       margin: auto;
       display: block;
       width: 80%;
-      max-width: 700px;
+      /*max-width: 700px;*/
     }
 
     /* Caption of Modal Image */
@@ -135,11 +135,16 @@
     }    
     </style>
     <script>
+
+    /* Globals */
+    var globalFiles = []; // All files are global
+
+
     window.onload = function() {
 
         /* Setup close of file dialog */
-        var span = document.getElementById("imageModalClose");
-        var modal = document.getElementById('imageModal');
+        var span = document.getElementById("mediaViewerClose");
+        var modal = document.getElementById('mediaViewer');
         span.onclick = function() { 
             modal.style.display = "none";
         }
@@ -193,14 +198,35 @@
         window.location.search = params.toString();   
     }
 
-    function openFileDialog(imageUrl, caption) {
-        var modal = document.getElementById('imageModal');
+    /* index refers to the file index in global globalFiles array */
+    function openFileDialog(index) {
+        var file = globalFiles[index];
+        var mediaUrl = "media/" + file.Path;
+        var caption = file.Name;
 
-        // Get the image and insert it inside the modal - use its "alt" text as a caption
-        var modalImg = document.getElementById("imageModalImg");
+        
+        var modalImg = document.getElementById("mediaViewerImg");
+        var modalVideo = document.getElementById("mediaViewerVideo");
+        if (file.Type == "image") {
+            // This is an image
+            modalImg.src = mediaUrl;
+            modalVideo.style.display = "none"; // Hide video
+            modalImg.style.display = "block"; // Show image
+        } else if (file.Type == "video") {
+            // This is a video
+            modalVideo.src = mediaUrl;
+            modalImg.style.display = "none"; // Hide image
+            modalVideo.style.display = "block"; // Show video
+        } else {
+            alert("Unsupported file: " + file.Type);
+        }
+
+        // Set the caption
         var captionText = document.getElementById("caption");
-        modalImg.src = imageUrl;
         captionText.innerHTML = caption;
+
+        // Display the modal
+        var modal = document.getElementById('mediaViewer');
         modal.style.display = "block";
     }
 
@@ -212,14 +238,17 @@
             items.removeChild(items.firstChild);
         }
 
+        /* Update the global files */
+        globalFiles = files;
+
         /* Add file items */
         for (var i=0; i < files.length; i++) {
             var file = files[i];
-            addFileItem(file.Type, file.Name, file.Path);
+            addFileItem(file.Type, file.Name, file.Path, i);
         }
     }
 
-    function addFileItem(type, name, path) {
+    function addFileItem(type, name, path, index) {
         var itemTxt =
 "<div class='item'> \
     <div class='thumb'> \
@@ -236,8 +265,8 @@
         var itemDiv = items.lastChild; // The newly created item
         var thumb = itemDiv.getElementsByClassName("thumb")[0];
         thumb.onclick = function() {
-            if (type == "image") {
-                openFileDialog("media/" + path, name);
+            if (type == "image" || type == "video") {
+                openFileDialog(index);
             } else if (type == "folder") {
                 setLocation(path);
             }
@@ -279,11 +308,15 @@
   <!-- File items goes here -->
   </div>
 
-  <!-- The Image Modal -->
-  <div id="imageModal" class="modal">
-    <span class="close" id="imageModalClose">&times;</span>
-    <img class="modal-content" id="imageModalImg">
+  <!-- The Media Viewer -->
+  <div id="mediaViewer" class="modal">
+    <span class="close" id="mediaViewerClose">&times;</span>
+    <!-- For images -->
+    <img class="modal-content" id="mediaViewerImg" style="display: none;">
+    <!-- For videos -->
+    <video controls class="modal-content" id="mediaViewerVideo" style="display: none;">
     <div id="caption"></div>
   </div>
+
   </body>
 </html>
