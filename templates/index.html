@@ -158,10 +158,7 @@
 
         /* Setup close of file dialog */
         var span = document.getElementById("mediaViewerClose");
-        var modal = document.getElementById('mediaViewer');
-        span.onclick = function() { 
-            modal.style.display = "none";
-        }
+        span.onclick = closeFileDialog
 
         var path = ""
         const params = new URLSearchParams(window.location.search);
@@ -212,6 +209,13 @@
         window.location.search = params.toString();   
     }
 
+    function closeFileDialog() {
+        var modal = document.getElementById('mediaViewer');
+        modal.style.display = "none";
+        // Disable arrow keys
+        document.onkeydown = null;
+    }
+
     /* index refers to the file index in global globalFiles array */
     function openFileDialog(index) {
         var file = globalFiles[index];
@@ -239,20 +243,6 @@
         var captionText = document.getElementById("caption");
         captionText.innerHTML = caption;
 
-        // Figure out which next media is
-        var next = index;
-        do {
-            next++;
-            if (next >= globalFiles.length) {
-                // Wrap
-                next = 0;
-            }
-        } while (globalFiles[next].Type == "folder")
-        var nextButton = document.getElementById("mediaViewerNext");
-        nextButton.onclick = function() { 
-            openFileDialog(next)
-        }
-
         // Figure out which previous media is
         var prev = index;
         do {
@@ -264,13 +254,47 @@
         } while (globalFiles[prev].Type == "folder")
         var prevButton = document.getElementById("mediaViewerPrev");
         prevButton.onclick = function() { 
-            openFileDialog(prev)
+            openFileDialog(prev);
         }
+
+        // Figure out which next media is
+        var next = index;
+        do {
+            next++;
+            if (next >= globalFiles.length) {
+                // Wrap
+                next = 0;
+            }
+        } while (globalFiles[next].Type == "folder")
+        var nextButton = document.getElementById("mediaViewerNext");
+        nextButton.onclick = function() { 
+            openFileDialog(next);
+        }
+
+        // Enable left and right arrow keys on keyboard
+        enableArrowKeys(prevButton.onclick, nextButton.onclick, closeFileDialog);
 
         // Display the modal
         var modal = document.getElementById('mediaViewer');
         modal.style.display = "block";
 
+    }
+
+    function enableArrowKeys(leftFunction, rightFunction, escFunction) {
+        document.onkeydown = function(e) {
+            e = e || window.event;
+            if (e.keyCode == '27') {
+                // escape
+                escFunction();
+            } else if (e.keyCode == '37') {
+                // left arrow
+                leftFunction();
+            }
+            else if (e.keyCode == '39') {
+                // right arrow
+                rightFunction();
+            }
+        }
     }
 
     function onNewFiles(files) {
