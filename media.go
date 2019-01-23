@@ -1,9 +1,12 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	"github.com/disintegration/imaging"
 )
 
 var imgExtensions = [...]string{".png", ".jpg", ".jpeg", ".tiff", ".gif"}
@@ -25,11 +28,23 @@ func createMedia(basePath string) *Media {
 	return &Media{basePath: basePath}
 }
 
+// getFullPath returns the full path of the provided path, i.e:
+// media path + relative path. Returns error on security hacks,
+// i.e. when someone tries to access ../../../ for example to
+// get files that are not within configured media folder.
+func (m *Media) getFullPath(relativePath string) (string, error) {
+	fullPath := filepath.Join(m.basePath, relativePath)
+	return fullPath, nil
+}
+
 // getFiles returns a slice of File's sorted on file name
 func (m *Media) getFiles(relativePath string) ([]File, error) {
 	//var files []File
 	files := make([]File, 0, 500)
-	fullPath := filepath.Join(m.basePath, relativePath)
+	fullPath, err := m.getFullPath(relativePath)
+	if err != nil {
+		return files, err
+	}
 	fileInfo, err := ioutil.ReadDir(fullPath)
 	if err != nil {
 		return files, err
@@ -40,25 +55,7 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 		if fileInfo.IsDir() {
 			fileType = "folder"
 		} else {
-			extension := filepath.Ext(fileInfo.Name())
-
-			// Check if this is an image
-			for _, imgExtension := range imgExtensions {
-				if strings.EqualFold(extension, imgExtension) {
-					fileType = "image"
-					break
-				}
-			}
-
-			// Check if this is a video
-			if fileType == "" {
-				for _, vidExtension := range vidExtensions {
-					if strings.EqualFold(extension, vidExtension) {
-						fileType = "video"
-						break
-					}
-				}
-			}
+			fileType = m.getFileType(fileInfo.Name())
 		}
 		// Only add directories, videos and images
 		if fileType != "" {
@@ -74,4 +71,46 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 		}
 	}
 	return files, nil
+}
+
+// getFileType returns "video" for video files and "image" for image files.
+// For all other files (including folders) "" is returned.
+// relativeFileName can also include an absolute or relative path.
+func (m *Media) getFileType(relativeFileName string) string {
+	extension := filepath.Ext(relativeFileName)
+
+	// Check if this is an image
+	for _, imgExtension := range imgExtensions {
+		if strings.EqualFold(extension, imgExtension) {
+			return "image"
+		}
+	}
+
+	// Check if this is a video
+	for _, vidExtension := range vidExtensions {
+		if strings.EqualFold(extension, vidExtension) {
+			return "video"
+		}
+	}
+
+	return "" // Not a video or an image
+}
+
+// rotateAndWriteJPEG opens and rotates a JPG/JPEG file according to
+// EXIF rotation information. Then it writes the rotated image
+// to the io.Writer.
+func (m *Media) rotateAndWriteJPEG(w io.Writer, relativeFilePath string) error {
+	fullPath, err := m.getFullPath(relativeFilePath)
+	if err != nil {
+		return err
+	}
+	img, err := imaging.Open(fullPath, imaging.AutoOrientation(true))
+	if err != nil {
+		return err
+	}
+	err = imaging.Encode(w, img, imaging.JPEG)
+	if err != nil {
+		return err
+	}
+	return nil
 }

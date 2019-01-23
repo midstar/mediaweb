@@ -96,8 +96,26 @@ func (wa *WebAPI) serveHTTPFolder(w http.ResponseWriter, r *http.Request) {
 
 // serveHTTPMedia opens the media
 func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
-	// TBD secure that this is an allowed file - SECURITY RISK
-	http.ServeFile(w, r, filepath.Join(wa.media.basePath, r.URL.Path))
+	relativePath := r.URL.Path
+	// Only accept media files of security reasons
+	if wa.media.getFileType(relativePath) == "" {
+		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
+		return
+	}
+	extension := filepath.Ext(relativePath)
+	if strings.EqualFold(extension, ".jpg") || strings.EqualFold(extension, ".jpeg") {
+		// This is a JPEG file. Rotate it (when needed)
+		w.Header().Set("Content-Type", "image/jpeg")
+		wa.media.rotateAndWriteJPEG(w, relativePath)
+	} else {
+		// This is any other media file
+		fullPath, err := wa.media.getFullPath(relativePath)
+		if err != nil {
+			http.Error(w, "Get files: "+err.Error(), http.StatusNotFound)
+			return
+		}
+		http.ServeFile(w, r, fullPath)
+	}
 }
 
 // toJSON converts the v object to JSON and writes result to the response
