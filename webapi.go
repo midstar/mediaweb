@@ -63,6 +63,8 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wa.serveHTTPFolder(w, r)
 	} else if head == "media" && r.Method == "GET" {
 		wa.serveHTTPMedia(w, r)
+	} else if head == "thumb" && r.Method == "GET" {
+		wa.serveHTTPThumbnail(w, r)
 	} else if head == "static" && r.Method == "GET" {
 		wa.serveHTTPStatic(w, r)
 	} else {
@@ -76,12 +78,12 @@ func (wa *WebAPI) serveHTTPIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
+	// TBD Check that this is an allowed folder - SECURITY RISK
 	http.ServeFile(w, r, filepath.Join(wa.templatePath, r.URL.Path))
 }
 
 // serveHTTPFolder generates JSON will files in folder
 func (wa *WebAPI) serveHTTPFolder(w http.ResponseWriter, r *http.Request) {
-	// TBD secure that this is an allowed folder - SECURITY RISK
 	folder := ""
 	if len(r.URL.Path) > 0 {
 		folder = r.URL.Path[1:] // Remove '/'
@@ -102,14 +104,50 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
 		return
 	}
+	if wa.media.isRotationNeeded(relativePath) {
+		log.Printf("Rotation needed for %s\n", relativePath)
+		// This is a JPEG file which requires rotation.
+		w.Header().Set("Content-Type", "image/jpeg")
+		err := wa.media.rotateAndWrite(w, relativePath)
+		if err != nil {
+			http.Error(w, "Rotate file: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		log.Printf("No rotation needed for %s\n", relativePath)
+		// This is any other media file
+		fullPath, err := wa.media.getFullMediaPath(relativePath)
+		if err != nil {
+			http.Error(w, "Get files: "+err.Error(), http.StatusNotFound)
+			return
+		}
+		http.ServeFile(w, r, fullPath)
+	}
+}
+
+// serveHTTPThumbnail opens the media thumbnail or the default thumbnail
+// if no thumbnail exist.
+func (wa *WebAPI) serveHTTPThumbnail(w http.ResponseWriter, r *http.Request) {
+	relativePath := r.URL.Path
+	// Only accept media files of security reasons
+	if wa.media.getFileType(relativePath) == "" {
+		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
+		return
+	}
 	extension := filepath.Ext(relativePath)
 	if strings.EqualFold(extension, ".jpg") || strings.EqualFold(extension, ".jpeg") {
+		log.Printf("Rotation needed for %s\n", relativePath)
 		// This is a JPEG file. Rotate it (when needed)
 		w.Header().Set("Content-Type", "image/jpeg")
-		wa.media.rotateAndWriteJPEG(w, relativePath)
+		err := wa.media.rotateAndWrite(w, relativePath)
+		if err != nil {
+			http.Error(w, "Rotate file: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	} else {
+		log.Printf("No rotation needed for %s\n", relativePath)
 		// This is any other media file
-		fullPath, err := wa.media.getFullPath(relativePath)
+		fullPath, err := wa.media.getFullMediaPath(relativePath)
 		if err != nil {
 			http.Error(w, "Get files: "+err.Error(), http.StatusNotFound)
 			return
