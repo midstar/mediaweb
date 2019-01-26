@@ -105,7 +105,6 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if wa.media.isRotationNeeded(relativePath) {
-		log.Printf("Rotation needed for %s\n", relativePath)
 		// This is a JPEG file which requires rotation.
 		w.Header().Set("Content-Type", "image/jpeg")
 		err := wa.media.rotateAndWrite(w, relativePath)
@@ -114,7 +113,6 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else {
-		log.Printf("No rotation needed for %s\n", relativePath)
 		// This is any other media file
 		fullPath, err := wa.media.getFullMediaPath(relativePath)
 		if err != nil {

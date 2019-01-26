@@ -18,8 +18,9 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath string // Top level path for media files
-	thumbPath string // Top level path for thumbnails
+	mediaPath  string // Top level path for media files
+	thumbPath  string // Top level path for thumbnails
+	autoRotate bool   // Rotate JPEG files when needed
 }
 
 // File represents a folder or any other file
@@ -29,8 +30,10 @@ type File struct {
 	Path string // Including Name. Always using / (even on Windows)
 }
 
-func createMedia(mediaPath string, thumbPath string) *Media {
-	return &Media{mediaPath: mediaPath, thumbPath: thumbPath}
+func createMedia(mediaPath string, thumbPath string, autoRotate bool) *Media {
+	return &Media{mediaPath: mediaPath,
+		thumbPath:  thumbPath,
+		autoRotate: autoRotate}
 }
 
 // getFullMediaPath returns the full path of the provided path, i.e:
@@ -101,10 +104,19 @@ func (m *Media) getFileType(relativeFileName string) string {
 	return "" // Not a video or an image
 }
 
+func (m *Media) extractEXIF(relativeFilePath string) *exif {
+	return nil
+}
+
 // isRotationNeeded returns true if the file needs to be rotated.
 // It finds this out by reading the EXIF rotation information
 // in the file.
+// If Media.autoRotate is false this function will always return
+// false.
 func (m *Media) isRotationNeeded(relativeFilePath string) bool {
+	if m.autoRotate == false {
+		return false
+	}
 	extension := filepath.Ext(relativeFilePath)
 	if strings.EqualFold(extension, ".jpg") == false &&
 		strings.EqualFold(extension, ".jpeg") == false {
@@ -170,7 +182,28 @@ func (m *Media) thumbnailPath(w io.Writer, relativeMediaPath string) (string, er
 
 // writeThumbnail writes thumbnail for media to w. If no thumbnail exist
 // and error will be returned.
+// It will first check if it is a JPEG with an embedded thumbnail. If not
+// it will check if a thumbnail is stored in the thumbnail folder.
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
-	// Thumbnails are always in JPEG format and starts with '_'
+
+	/*	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s", fullMediaPath)
+		efile, err := os.Open("20161201_084009.jpg")
+		if err != nil {
+			log.Printf("Could not open file for EXIF decoder: %s\n", fullPath)
+			return false
+		}
+		defer efile.Close()
+		ex, err := exif.Decode(efile)
+		if err != nil {
+			return false // No EXIF info exist
+		}
+		orientTag, _ := ex.Get(exif.Orientation)
+		if orientTag == nil {
+			return false // No Orientation
+		}	*/
 	return nil
 }
