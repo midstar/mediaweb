@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/midstar/llog"
 )
 
 // WebAPI represents the REST API server.
@@ -36,10 +37,10 @@ func (wa *WebAPI) Start() chan bool {
 	done := make(chan bool)
 
 	go func() {
-		log.Printf("Starting Web API on port %s\n", wa.server.Addr)
+		llog.Info("Starting Web API on port %s\n", wa.server.Addr)
 		if err := wa.server.ListenAndServe(); err != nil {
 			// cannot panic, because this probably is an intentional close
-			log.Printf("WebAPI: ListenAndServe() shutdown reason: %s", err)
+			llog.Info("WebAPI: ListenAndServe() shutdown reason: %s", err)
 		}
 		done <- true // Signal that http server has stopped
 	}()
@@ -127,30 +128,19 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 // if no thumbnail exist.
 func (wa *WebAPI) serveHTTPThumbnail(w http.ResponseWriter, r *http.Request) {
 	relativePath := r.URL.Path
-	// Only accept media files of security reasons
-	if wa.media.getFileType(relativePath) == "" {
-		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
-		return
-	}
-	extension := filepath.Ext(relativePath)
-	if strings.EqualFold(extension, ".jpg") || strings.EqualFold(extension, ".jpeg") {
-		log.Printf("Rotation needed for %s\n", relativePath)
-		// This is a JPEG file. Rotate it (when needed)
+	err := wa.media.writeThumbnail(w, relativePath)
+	if err == nil {
 		w.Header().Set("Content-Type", "image/jpeg")
-		err := wa.media.rotateAndWrite(w, relativePath)
-		if err != nil {
-			http.Error(w, "Rotate file: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
 	} else {
-		log.Printf("No rotation needed for %s\n", relativePath)
-		// This is any other media file
-		fullPath, err := wa.media.getFullMediaPath(relativePath)
-		if err != nil {
-			http.Error(w, "Get files: "+err.Error(), http.StatusNotFound)
-			return
+		// No thumbnail. Use the default
+		fileType := wa.media.getFileType(relativePath)
+		if fileType == "image" {
+			http.ServeFile(w, r, wa.templatePath+"/icon_image.png")
+		} else if fileType == "video" {
+			http.ServeFile(w, r, wa.templatePath+"/icon_video.png")
+		} else {
+			http.Error(w, "Cannot get thumbnail for "+relativePath, http.StatusBadRequest)
 		}
-		http.ServeFile(w, r, fullPath)
 	}
 }
 

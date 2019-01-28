@@ -1,15 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"image"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/disintegration/imaging"
+	"github.com/midstar/llog"
 	"github.com/rwcarlsen/goexif/exif"
 )
 
@@ -31,8 +33,8 @@ type File struct {
 }
 
 func createMedia(mediaPath string, thumbPath string, autoRotate bool) *Media {
-	return &Media{mediaPath: mediaPath,
-		thumbPath:  thumbPath,
+	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
+		thumbPath:  filepath.ToSlash(filepath.Clean(thumbPath)),
 		autoRotate: autoRotate}
 }
 
@@ -40,8 +42,15 @@ func createMedia(mediaPath string, thumbPath string, autoRotate bool) *Media {
 // media path + relative path. Returns error on security hacks,
 // i.e. when someone tries to access ../../../ for example to
 // get files that are not within configured media folder.
+//
+// Always returning front slashes / as path separator
 func (m *Media) getFullMediaPath(relativePath string) (string, error) {
-	fullPath := filepath.Join(m.mediaPath, relativePath)
+	fullPath := filepath.ToSlash(filepath.Join(m.mediaPath, relativePath))
+	diffPath, err := filepath.Rel(m.mediaPath, fullPath)
+	diffPath = filepath.ToSlash(diffPath)
+	if err != nil || strings.HasPrefix(diffPath, "../") {
+		return m.mediaPath, fmt.Errorf("Hacker attack. Someone tries to access: %s", fullPath)
+	}
 	return fullPath, nil
 }
 
@@ -76,6 +85,8 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 				Name: fileInfo.Name(),
 				Path: pathNew}
 			files = append(files, file)
+		} else {
+			llog.Debug("getFiles - omitting: %s", fileInfo.Name())
 		}
 	}
 	return files, nil
@@ -104,8 +115,31 @@ func (m *Media) getFileType(relativeFileName string) string {
 	return "" // Not a video or an image
 }
 
-func (m *Media) extractEXIF(relativeFilePath string) *exif {
-	return nil
+func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
+	if !m.isJPEG(fullFilePath) {
+		return nil // Only JPEG has EXIF
+	}
+	efile, err := os.Open(fullFilePath)
+	if err != nil {
+		llog.Warn("Could not open file for EXIF decoding. File: %s reason: %s\n", fullFilePath, err)
+		return nil
+	}
+	defer efile.Close()
+	ex, err := exif.Decode(efile)
+	if err != nil {
+		llog.Debug("No EXIF. file %s reason: %s\n", fullFilePath, err)
+		return nil
+	}
+	return ex
+}
+
+func (m *Media) isJPEG(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	if strings.EqualFold(extension, ".jpg") == false &&
+		strings.EqualFold(extension, ".jpeg") == false {
+		return false
+	}
+	return true
 }
 
 // isRotationNeeded returns true if the file needs to be rotated.
@@ -117,34 +151,20 @@ func (m *Media) isRotationNeeded(relativeFilePath string) bool {
 	if m.autoRotate == false {
 		return false
 	}
-	extension := filepath.Ext(relativeFilePath)
-	if strings.EqualFold(extension, ".jpg") == false &&
-		strings.EqualFold(extension, ".jpeg") == false {
-		return false // Only JPEG can be rotaded
-	}
 	fullPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
-		log.Printf("Unable to get full media path for %s\n", relativeFilePath)
+		llog.Info("Unable to get full media path for %s\n", relativeFilePath)
 		return false
 	}
-	efile, err := os.Open(fullPath)
-	if err != nil {
-		log.Printf("Could not open file for EXIF decoder: %s\n", fullPath)
-		return false
-	}
-	defer efile.Close()
-	ex, err := exif.Decode(efile)
-	if err != nil {
+	ex := m.extractEXIF(fullPath)
+	if ex == nil {
 		return false // No EXIF info exist
 	}
 	orientTag, _ := ex.Get(exif.Orientation)
 	if orientTag == nil {
 		return false // No Orientation
 	}
-	orientInt, err := strconv.Atoi(orientTag.String())
-	if err != nil {
-		return false // Orientation is not set correctly, assume no rotation
-	}
+	orientInt, _ := orientTag.Int(0)
 	if orientInt > 1 && orientInt < 9 {
 		return true // Rotation is needed
 	}
@@ -173,6 +193,63 @@ func (m *Media) rotateAndWrite(w io.Writer, relativeFilePath string) error {
 	return nil
 }
 
+// writeEXIFThumbnail extracts the EXIF thumbnail from a JPEG file
+// and rotates it when needed (based on the EXIF orientation tag).
+// Returns err if no thumbnail exist.
+func (m *Media) writeEXIFThumbnail(w io.Writer, relativeFilePath string) error {
+	fullPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		return err
+	}
+	ex := m.extractEXIF(fullPath)
+	if ex == nil {
+		return fmt.Errorf("No EXIF info for %s", fullPath)
+	}
+	thumbBytes, err := ex.JpegThumbnail()
+	if err != nil {
+		return fmt.Errorf("No EXIF thumbnail for %s", fullPath)
+	}
+	orientTag, _ := ex.Get(exif.Orientation)
+	if orientTag == nil {
+		// No Orientation assume no rotation needed
+		w.Write(thumbBytes)
+		return nil
+	}
+	orientInt, _ := orientTag.Int(0)
+	if orientInt > 1 && orientInt < 9 {
+		// Rotation is needed
+		img, err := imaging.Decode(bytes.NewReader(thumbBytes))
+		if err != nil {
+			llog.Warn("Unable to decode EXIF thumbnail for %s", fullPath)
+			w.Write(thumbBytes)
+			return nil
+		}
+		var outImg *image.NRGBA
+		switch orientInt {
+		case 2:
+			outImg = imaging.FlipV(img)
+		case 3:
+			outImg = imaging.Rotate180(img)
+		case 4:
+			outImg = imaging.Rotate180(imaging.FlipV(img))
+		case 5:
+			outImg = imaging.Rotate270(imaging.FlipV(img))
+		case 6:
+			outImg = imaging.Rotate270(img)
+		case 7:
+			outImg = imaging.Rotate90(imaging.FlipV(img))
+		case 8:
+			outImg = imaging.Rotate90(img)
+		}
+		err = imaging.Encode(w, outImg, imaging.JPEG)
+		//return err
+	} else {
+		// No rotation is needed
+		w.Write(thumbBytes)
+	}
+	return nil
+}
+
 // thumbnailPath returns the thumbnail file path. Thumbnails are always
 // stored in JPEG format (.jpg extension) and starts with '_'.
 // Returns error if the media path is invalid.
@@ -180,30 +257,11 @@ func (m *Media) thumbnailPath(w io.Writer, relativeMediaPath string) (string, er
 	return "", nil
 }
 
-// writeThumbnail writes thumbnail for media to w. If no thumbnail exist
-// and error will be returned.
+// writeThumbnail writes thumbnail for media to w.
+// If no thumbnail exist and error will be returned.
 // It will first check if it is a JPEG with an embedded thumbnail. If not
 // it will check if a thumbnail is stored in the thumbnail folder.
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
-
-	/*	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s", fullMediaPath)
-		efile, err := os.Open("20161201_084009.jpg")
-		if err != nil {
-			log.Printf("Could not open file for EXIF decoder: %s\n", fullPath)
-			return false
-		}
-		defer efile.Close()
-		ex, err := exif.Decode(efile)
-		if err != nil {
-			return false // No EXIF info exist
-		}
-		orientTag, _ := ex.Get(exif.Orientation)
-		if orientTag == nil {
-			return false // No Orientation
-		}	*/
-	return nil
+	return m.writeEXIFThumbnail(w, relativeFilePath)
+	// TBD
 }
