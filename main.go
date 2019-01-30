@@ -36,7 +36,7 @@ func test() {
 func main() {
 	//test()
 	llog.SetLevel(llog.LvlTrace)
-	media := /* createMedia(".", ".", false) */ createMedia("", "", false)
+	media := /* createMedia(".", ".", false) */ createMedia("Y:", "", true, true)
 	webAPI := CreateWebAPI(9834, "templates", media)
 	httpServerDone := webAPI.Start()
 	<-httpServerDone // Block until http server is done

@@ -27,7 +27,7 @@ func LogTime(t *testing.T, whatWasMeasured string) {
 }
 
 func TestIsRotationNeeded(t *testing.T) {
-	media := createMedia("testmedia", ".", true)
+	media := createMedia("testmedia", ".", true, true)
 
 	rotationNeeded := media.isRotationNeeded("exif_rotate/180deg.jpg")
 	assertTrue(t, "Rotation should be needed", rotationNeeded)
@@ -68,20 +68,20 @@ func TestIsRotationNeeded(t *testing.T) {
 	// Turn of rotation
 	media.autoRotate = false
 
-	rotationNeeded = media.isRotationNeeded("needs_rotate.png")
+	rotationNeeded = media.isRotationNeeded("exif_rotate/mirror_rotate_90deg_cw.jpg")
 	assertFalse(t, "Rotation should not be needed when turned off", rotationNeeded)
 }
 
 func TestRotateAndWrite(t *testing.T) {
-	outFileName := "testmedia/tmpout/needs_rotate_fixed.jpg"
+	outFileName := "testmedia/tmpout/jpeg_rotated_fixed.jpg"
 	os.Mkdir("testmedia/tmpout", os.ModeDir) // If already exist no problem
 	os.Remove(outFileName)
-	media := createMedia("testmedia", ".", true)
+	media := createMedia("testmedia", ".", true, true)
 	outFile, err := os.Create(outFileName)
 	assertExpectNoErr(t, "unable to create out", err)
 	defer outFile.Close()
 	RestartTimer()
-	err = media.rotateAndWrite(outFile, "needs_rotate.jpg")
+	err = media.rotateAndWrite(outFile, "jpeg_rotated.jpg")
 	LogTime(t, "rotate JPG")
 	assertExpectNoErr(t, "unable to rotate out", err)
 	t.Logf("Manually check that %s has been rotated correctly", outFileName)
@@ -103,7 +103,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 
 func TestWriteEXIFThumbnail(t *testing.T) {
 	os.Mkdir("testmedia/tmpout", os.ModeDir) // If already exist no problem
-	media := createMedia("testmedia", ".", true)
+	media := createMedia("testmedia", ".", true, true)
 
 	tEXIFThumbnail(t, media, "normal.jpg")
 	tEXIFThumbnail(t, media, "180deg.jpg")
@@ -127,7 +127,7 @@ func TestWriteEXIFThumbnail(t *testing.T) {
 
 func TestFullPath(t *testing.T) {
 	// Root path
-	media := createMedia(".", ".", true)
+	media := createMedia(".", ".", true, true)
 	p, err := media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "afile.jpg", p)
@@ -136,7 +136,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Relative path
-	media = createMedia("arelative/path", ".", true)
+	media = createMedia("arelative/path", ".", true, true)
 	p, err = media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "arelative/path/afile.jpg", p)
@@ -145,11 +145,65 @@ func TestFullPath(t *testing.T) {
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Absolute path
-	media = createMedia("/root/absolute/path", ".", true)
+	media = createMedia("/root/absolute/path", ".", true, true)
 	p, err = media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "/root/absolute/path/afile.jpg", p)
 
 	p, err = media.getFullMediaPath("../../secret_file")
 	assertExpectErr(t, "hackers shall not be allowed", err)
+}
+
+func TestThumbnailPath(t *testing.T) {
+	media := createMedia("/c/mediapath", "/d/thumbpath", true, true)
+
+	thumbPath, err := media.thumbnailPath("myimage.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/_myimage.jpg", thumbPath)
+
+	thumbPath, err = media.thumbnailPath("subdrive/myimage.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/subdrive/_myimage.jpg", thumbPath)
+
+	thumbPath, err = media.thumbnailPath("subdrive/myimage.png")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/subdrive/_myimage.jpg", thumbPath)
+
+	thumbPath, err = media.thumbnailPath("subdrive/myimage")
+	assertExpectErr(t, "", err)
+
+	thumbPath, err = media.thumbnailPath("subdrive/../../hacker")
+	assertExpectErr(t, "", err)
+}
+
+func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName string) {
+	os.Remove(outFileName)
+	RestartTimer()
+	err := media.generateImageThumbnail(inFileName, outFileName)
+	LogTime(t, inFileName+"thumbnail generation: ")
+	assertExpectNoErr(t, "", err)
+	t.Logf("Manually check that %s thumbnail is ok", outFileName)
+}
+
+func TestGenerateImageThumbnail(t *testing.T) {
+	os.Mkdir("testmedia/tmpout", os.ModeDir)                            // If already exist no problem
+	os.Mkdir("testmedia/tmpout/TestGenerateImageThumbnail", os.ModeDir) // If already exist no problem
+
+	media := createMedia("", "", true, true)
+
+	tGenerateImageThumbnail(t, media, "testmedia/jpeg.jpg", "testmedia/tmpout/TestGenerateImageThumbnail/jpeg_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/jpeg_rotated.jpg", "testmedia/tmpout/TestGenerateImageThumbnail/jpeg_rotated_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/png.png", "testmedia/tmpout/TestGenerateImageThumbnail/png_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/gif.gif", "testmedia/tmpout/TestGenerateImageThumbnail/gif_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/tiff.tiff", "testmedia/tmpout/TestGenerateImageThumbnail/tiff_thumbnail.jpg")
+
+	// Test some invalid
+	err := media.generateImageThumbnail("nonexisting.png", "dont_matter.png")
+	assertExpectErr(t, "", err)
+
+	err = media.generateImageThumbnail("testmedia/jpeg.jpg", "/invalid/path/out.jpg")
+	assertExpectErr(t, "", err)
+
+	err = media.generateImageThumbnail("testmedia/invalid.jpg", "/invalid/path/out.jpg")
+	assertExpectErr(t, "", err)
 }

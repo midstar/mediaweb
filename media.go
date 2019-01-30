@@ -15,14 +15,15 @@ import (
 	"github.com/rwcarlsen/goexif/exif"
 )
 
-var imgExtensions = [...]string{".png", ".jpg", ".jpeg", ".tif", ".gif"}
+var imgExtensions = [...]string{".png", ".jpg", ".jpeg", ".tif", ".tiff", ".gif"}
 var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath  string // Top level path for media files
-	thumbPath  string // Top level path for thumbnails
-	autoRotate bool   // Rotate JPEG files when needed
+	mediaPath        string // Top level path for media files
+	thumbPath        string // Top level path for thumbnails
+	enableThumbCache bool   // Generate thumbnails
+	autoRotate       bool   // Rotate JPEG files when needed
 }
 
 // File represents a folder or any other file
@@ -32,26 +33,39 @@ type File struct {
 	Path string // Including Name. Always using / (even on Windows)
 }
 
-func createMedia(mediaPath string, thumbPath string, autoRotate bool) *Media {
+func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
 	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
-		thumbPath:  filepath.ToSlash(filepath.Clean(thumbPath)),
-		autoRotate: autoRotate}
+		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
+		enableThumbCache: enableThumbCache,
+		autoRotate:       autoRotate}
 }
 
-// getFullMediaPath returns the full path of the provided path, i.e:
-// media path + relative path. Returns error on security hacks,
+// getFullPath returns the full path from an absolute base
+// path and a relative path. Returns error on security hacks,
 // i.e. when someone tries to access ../../../ for example to
-// get files that are not within configured media folder.
+// get files that are not within configured base path.
 //
 // Always returning front slashes / as path separator
-func (m *Media) getFullMediaPath(relativePath string) (string, error) {
-	fullPath := filepath.ToSlash(filepath.Join(m.mediaPath, relativePath))
-	diffPath, err := filepath.Rel(m.mediaPath, fullPath)
+func (m *Media) getFullPath(basePath string, relativePath string) (string, error) {
+	fullPath := filepath.ToSlash(filepath.Join(basePath, relativePath))
+	diffPath, err := filepath.Rel(basePath, fullPath)
 	diffPath = filepath.ToSlash(diffPath)
 	if err != nil || strings.HasPrefix(diffPath, "../") {
 		return m.mediaPath, fmt.Errorf("Hacker attack. Someone tries to access: %s", fullPath)
 	}
 	return fullPath, nil
+}
+
+// getFullMediaPath returns the full path of the provided path, i.e:
+// media path + relative path.
+func (m *Media) getFullMediaPath(relativePath string) (string, error) {
+	return m.getFullPath(m.mediaPath, relativePath)
+}
+
+// getFullThumbPath returns the full path of the provided path, i.e:
+// thumb path + relative path.
+func (m *Media) getFullThumbPath(relativePath string) (string, error) {
+	return m.getFullPath(m.thumbPath, relativePath)
 }
 
 // getFiles returns a slice of File's sorted on file name
@@ -250,18 +264,68 @@ func (m *Media) writeEXIFThumbnail(w io.Writer, relativeFilePath string) error {
 	return nil
 }
 
-// thumbnailPath returns the thumbnail file path. Thumbnails are always
-// stored in JPEG format (.jpg extension) and starts with '_'.
+// thumbnailPath returns the absolute thumbnail file path from a
+// media path. Thumbnails are always stored in JPEG format (.jpg
+// extension) and starts with '_'.
 // Returns error if the media path is invalid.
-func (m *Media) thumbnailPath(w io.Writer, relativeMediaPath string) (string, error) {
-	return "", nil
+func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
+	path, file := filepath.Split(relativeMediaPath)
+	if !m.isJPEG(file) {
+		// Replace extension with .jpg
+		ext := filepath.Ext(file)
+		if ext == "" {
+			return "", fmt.Errorf("File has no extension: %s", file)
+		}
+		file = strings.Replace(file, ext, ".jpg", -1)
+	}
+	file = "_" + file
+	relativeThumbnailPath := filepath.Join(path, file)
+	return m.getFullThumbPath(relativeThumbnailPath)
+}
+
+// generateThumbnail generates a thumbnail from any of the supported
+// images.
+func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
+	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
+	if err != nil {
+		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
+	}
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	outFile, err := os.Create(fullThumbPath)
+	if err != nil {
+		return fmt.Errorf("Unable open %s for creating thumbnail. Reason %s", fullThumbPath, err)
+	}
+	defer outFile.Close()
+	err = imaging.Encode(outFile, thumbImg, imaging.JPEG)
+
+	return err
 }
 
 // writeThumbnail writes thumbnail for media to w.
-// If no thumbnail exist and error will be returned.
-// It will first check if it is a JPEG with an embedded thumbnail. If not
-// it will check if a thumbnail is stored in the thumbnail folder.
+//
+// It has following sequence/priority:
+//  1. Write embedded EXIF thumbnail if it exist (only JPEG)
+//  2. Write a cached thumbnail file exist in thumbPath
+//  3. Generate a thumbnail to cache and write
+//  4. If all above fails return error
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
-	return m.writeEXIFThumbnail(w, relativeFilePath)
-	// TBD
+	err := m.writeEXIFThumbnail(w, relativeFilePath)
+	if err != nil && m.enableThumbCache {
+		// No EXIF, check thumb cache
+		thumbFileName, err := m.thumbnailPath(relativeFilePath)
+		if err != nil {
+			llog.Warn("Unable to get thumb file name. Reason: %s", err)
+			return err
+		}
+		thumbFile, err := os.Open(thumbFileName)
+		if err != nil {
+			// No thumb exist. Create it
+			// TBD
+		} else {
+			defer thumbFile.Close()
+			// Thumbnail found
+			_, err = io.Copy(w, thumbFile)
+		}
+	}
+	return err
 }

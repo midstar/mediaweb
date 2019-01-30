@@ -139,7 +139,8 @@ func (wa *WebAPI) serveHTTPThumbnail(w http.ResponseWriter, r *http.Request) {
 		} else if fileType == "video" {
 			http.ServeFile(w, r, wa.templatePath+"/icon_video.png")
 		} else {
-			http.Error(w, "Cannot get thumbnail for "+relativePath, http.StatusBadRequest)
+			// Folder
+			http.ServeFile(w, r, wa.templatePath+"/icon_folder.png")
 		}
 	}
 }
