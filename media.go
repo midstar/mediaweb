@@ -33,7 +33,18 @@ type File struct {
 	Path string // Including Name. Always using / (even on Windows)
 }
 
+// createMedia creates a new media. If thumb cache is enabled the path is
+// created when needed.
 func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
+	if enableThumbCache {
+		directory := filepath.Dir(thumbPath)
+		err := os.MkdirAll(directory, os.ModePerm)
+		if err != nil {
+			llog.Error("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
+			llog.Info("Thumbnail cache will be disabled")
+			enableThumbCache = false
+		}
+	}
 	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache: enableThumbCache,
@@ -284,16 +295,25 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 }
 
 // generateThumbnail generates a thumbnail from any of the supported
-// images.
+// images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
 	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
 	if err != nil {
 		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
 	}
 	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+
+	// Create subdirectories if needed
+	directory := filepath.Dir(fullThumbPath)
+	err = os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Unable to create directories in %s for creating thumbnail. Reason %s", fullThumbPath, err)
+	}
+
+	// Write thumbnail to file
 	outFile, err := os.Create(fullThumbPath)
 	if err != nil {
-		return fmt.Errorf("Unable open %s for creating thumbnail. Reason %s", fullThumbPath, err)
+		return fmt.Errorf("Unable to open %s for creating thumbnail. Reason %s", fullThumbPath, err)
 	}
 	defer outFile.Close()
 	err = imaging.Encode(outFile, thumbImg, imaging.JPEG)
@@ -311,21 +331,32 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 	err := m.writeEXIFThumbnail(w, relativeFilePath)
 	if err != nil && m.enableThumbCache {
+		err = nil
+
 		// No EXIF, check thumb cache
 		thumbFileName, err := m.thumbnailPath(relativeFilePath)
 		if err != nil {
-			llog.Warn("Unable to get thumb file name. Reason: %s", err)
 			return err
 		}
 		thumbFile, err := os.Open(thumbFileName)
 		if err != nil {
 			// No thumb exist. Create it
-			// TBD
-		} else {
-			defer thumbFile.Close()
-			// Thumbnail found
-			_, err = io.Copy(w, thumbFile)
+			llog.Info("Creating new thumbnail for %s", relativeFilePath)
+			fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+			if err != nil {
+				return err
+			}
+			err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+			if err != nil {
+				return err
+			}
+			thumbFile, err = os.Open(thumbFileName)
+			if err != nil {
+				return err
+			}
 		}
+		defer thumbFile.Close()
+		_, err = io.Copy(w, thumbFile)
 	}
 	return err
 }

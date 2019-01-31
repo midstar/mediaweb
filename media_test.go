@@ -73,8 +73,8 @@ func TestIsRotationNeeded(t *testing.T) {
 }
 
 func TestRotateAndWrite(t *testing.T) {
-	outFileName := "testmedia/tmpout/jpeg_rotated_fixed.jpg"
-	os.Mkdir("testmedia/tmpout", os.ModeDir) // If already exist no problem
+	outFileName := "tmpout/TestRotateAndWrite/jpeg_rotated_fixed.jpg"
+	os.MkdirAll("tmpout/TestRotateAndWrite", os.ModeDir) // If already exist no problem
 	os.Remove(outFileName)
 	media := createMedia("testmedia", ".", true, true)
 	outFile, err := os.Create(outFileName)
@@ -89,7 +89,7 @@ func TestRotateAndWrite(t *testing.T) {
 
 func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 	inFileName := "exif_rotate/" + filename
-	outFileName := "testmedia/tmpout/thumb_" + filename
+	outFileName := "tmpout/TestWriteEXIFThumbnail/thumb_" + filename
 	os.Remove(outFileName)
 	outFile, err := os.Create(outFileName)
 	assertExpectNoErr(t, "unable to create out", err)
@@ -102,7 +102,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 }
 
 func TestWriteEXIFThumbnail(t *testing.T) {
-	os.Mkdir("testmedia/tmpout", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestWriteEXIFThumbnail", os.ModeDir) // If already exist no problem
 	media := createMedia("testmedia", ".", true, true)
 
 	tEXIFThumbnail(t, media, "normal.jpg")
@@ -186,24 +186,68 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 }
 
 func TestGenerateImageThumbnail(t *testing.T) {
-	os.Mkdir("testmedia/tmpout", os.ModeDir)                            // If already exist no problem
-	os.Mkdir("testmedia/tmpout/TestGenerateImageThumbnail", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestGenerateImageThumbnail", os.ModeDir) // If already exist no problem
 
 	media := createMedia("", "", true, true)
 
-	tGenerateImageThumbnail(t, media, "testmedia/jpeg.jpg", "testmedia/tmpout/TestGenerateImageThumbnail/jpeg_thumbnail.jpg")
-	tGenerateImageThumbnail(t, media, "testmedia/jpeg_rotated.jpg", "testmedia/tmpout/TestGenerateImageThumbnail/jpeg_rotated_thumbnail.jpg")
-	tGenerateImageThumbnail(t, media, "testmedia/png.png", "testmedia/tmpout/TestGenerateImageThumbnail/png_thumbnail.jpg")
-	tGenerateImageThumbnail(t, media, "testmedia/gif.gif", "testmedia/tmpout/TestGenerateImageThumbnail/gif_thumbnail.jpg")
-	tGenerateImageThumbnail(t, media, "testmedia/tiff.tiff", "testmedia/tmpout/TestGenerateImageThumbnail/tiff_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/jpeg.jpg", "tmpout/TestGenerateImageThumbnail/jpeg_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/jpeg_rotated.jpg", "tmpout/TestGenerateImageThumbnail/jpeg_rotated_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/png.png", "tmpout/TestGenerateImageThumbnail/png_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/gif.gif", "tmpout/TestGenerateImageThumbnail/gif_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/tiff.tiff", "tmpout/TestGenerateImageThumbnail/tiff_thumbnail.jpg")
+	tGenerateImageThumbnail(t, media, "testmedia/exif_rotate/no_exif.jpg", "tmpout/TestGenerateImageThumbnail/exif_rotate/no_exif.jpg")
 
 	// Test some invalid
 	err := media.generateImageThumbnail("nonexisting.png", "dont_matter.png")
 	assertExpectErr(t, "", err)
 
-	err = media.generateImageThumbnail("testmedia/jpeg.jpg", "/invalid/path/out.jpg")
+	err = media.generateImageThumbnail("testmedia/invalid.jpg", "dont_matter.jpg")
 	assertExpectErr(t, "", err)
+}
 
-	err = media.generateImageThumbnail("testmedia/invalid.jpg", "/invalid/path/out.jpg")
-	assertExpectErr(t, "", err)
+func tWriteThumbnail(t *testing.T, media *Media, inFileName, outFileName string, failExpected bool) {
+	os.Remove(outFileName)
+	outFile, err := os.Create(outFileName)
+	assertExpectNoErr(t, "unable to create out", err)
+	defer outFile.Close()
+	err = media.writeThumbnail(outFile, inFileName)
+	if failExpected {
+		assertExpectErr(t, "should fail", err)
+	} else {
+		assertExpectNoErr(t, "unable to write thumbnail", err)
+		t.Logf("Manually check that %s thumbnail is ok", outFileName)
+	}
+}
+
+func TestWriteThumbnail(t *testing.T) {
+	os.MkdirAll("tmpcache/TestWriteThumbnail", os.ModeDir) // If already exist no problem
+	os.RemoveAll("tmpcache/TestWriteThumbnail/*")
+	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModeDir) // If already exist no problem
+	os.RemoveAll("tmpout/TestWriteThumbnail/*")
+
+	media := createMedia("testmedia", "tmpcache/TestWriteThumbnail", true, true)
+
+	// JPEG with embedded EXIF
+	tWriteThumbnail(t, media, "jpeg.jpg", "tmpout/TestWriteThumbnail/jpeg.jpg", false)
+
+	// JPEG without embedded EXIF
+	tWriteThumbnail(t, media, "exif_rotate/no_exif.jpg", "tmpout/TestWriteThumbnail/jpeg_no_exif.jpg", false)
+
+	// Non JPEG - no exif
+	tWriteThumbnail(t, media, "png.png", "tmpout/TestWriteThumbnail/png.jpg", false)
+
+	// Non existing file
+	tWriteThumbnail(t, media, "dont_exist.jpg", "tmpout/TestWriteThumbnail/dont_exist.jpg", true)
+
+	// Invalid file
+	tWriteThumbnail(t, media, "invalid.jpg", "tmpout/TestWriteThumbnail/invalid.jpg", true)
+
+	// Disable thumb cache
+	media = createMedia("testmedia", "tmpcache/TestWriteThumbnail", false, true)
+
+	// JPEG with embedded EXIF
+	tWriteThumbnail(t, media, "jpeg.jpg", "tmpout/TestWriteThumbnail/jpeg.jpg", false)
+
+	// Non JPEG - no exif
+	tWriteThumbnail(t, media, "png.png", "tmpout/TestWriteThumbnail/png.jpg", true)
 }
