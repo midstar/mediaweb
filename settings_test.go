@@ -14,7 +14,7 @@ func TestSettingsDefault(t *testing.T) {
 		`
 port = 9834
 mediapath = Y:\pictures`
-	fullPath := createConfigFile(t, "TestSettingsDefault.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettingsDefault.conf", contents)
 	s := loadSettings(fullPath)
 
 	// Mandatory values
@@ -41,7 +41,7 @@ autorotate = false
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 `
-	fullPath := createConfigFile(t, "TestSettings.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettings.conf", contents)
 	s := loadSettings(fullPath)
 
 	// Mandatory values
@@ -68,7 +68,7 @@ autorotate = invalid
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 `
-	fullPath := createConfigFile(t, "TestSettings.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettings.conf", contents)
 	s := loadSettings(fullPath)
 
 	// Mandatory values
@@ -89,12 +89,13 @@ logfile = /tmp/log/mediaweb.log
 func expectPanic(t *testing.T) {
 	// Panic handler (panic is expected)
 	recover()
+	confPaths = defaultConfPaths // Reset default configuration paths
 	t.Log("No worry. Panic is expected in the test!!")
 }
 
 func TestSettingsNotExisting(t *testing.T) {
 	defer expectPanic(t)
-	loadSettings("dontexist.cfg")
+	loadSettings("dontexist.conf")
 	t.Fatal("Non existing file. Panic expected")
 }
 
@@ -102,7 +103,7 @@ func TestSettingsMissingPort(t *testing.T) {
 	contents :=
 		`
 mediapath = Y:\pictures`
-	fullPath := createConfigFile(t, "TestSettingsMissingPort.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettingsMissingPort.conf", contents)
 	defer expectPanic(t)
 	loadSettings(fullPath)
 	t.Fatal("Panic expected")
@@ -112,7 +113,7 @@ func TestSettingsInvalidPort(t *testing.T) {
 	contents :=
 		`port=nonint
 mediapath = Y:\pictures`
-	fullPath := createConfigFile(t, "TestSettingsInvalidPort.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettingsInvalidPort.conf", contents)
 	defer expectPanic(t)
 	loadSettings(fullPath)
 	t.Fatal("Panic expected")
@@ -121,7 +122,7 @@ mediapath = Y:\pictures`
 func TestSettingsMissingMediaPath(t *testing.T) {
 	contents :=
 		`port=80`
-	fullPath := createConfigFile(t, "TestSettingsMissingMediaPath.cfg", contents)
+	fullPath := createConfigFile(t, "TestSettingsMissingMediaPath.conf", contents)
 	defer expectPanic(t)
 	loadSettings(fullPath)
 	t.Fatal("Panic expected")
@@ -159,4 +160,21 @@ func createConfigFile(t *testing.T, name, contents string) string {
 		t.Fatalf("Unable to create configuration file. Reason: %s", err)
 	}
 	return fullName
+}
+
+func TestFindConfFile(t *testing.T) {
+	// Default
+	path := findConfFile()
+	if path != "mediaweb.conf" {
+		t.Fatalf("It should have found mediaweb.conf but found %s", path)
+	}
+}
+
+func TestFindConfFileMissing(t *testing.T) {
+	defer expectPanic(t)
+
+	confPaths = []string{"dontexist.conf", "/etc/dontexist.conf"}
+
+	findConfFile() // Shall panic
+	t.Fatalf("Should have paniced here")
 }

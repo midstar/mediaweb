@@ -5,9 +5,13 @@ import (
 )
 
 func main() {
-	llog.SetLevel(llog.LvlTrace)
-	media := /* createMedia(".", ".", false) */ createMedia("Y:", "tmpcache/live", true, true)
-	webAPI := CreateWebAPI(9834, "templates", media)
+	s := loadSettings(findConfFile())
+	llog.SetLevel(s.logLevel)
+	if s.logFile != "" {
+		llog.SetFile(s.logFile, 1024) // 1 MB logs
+	}
+	media := createMedia(s.mediaPath, s.thumbPath, s.enableThumbCache, s.autoRotate)
+	webAPI := CreateWebAPI(s.port, "templates", media)
 	httpServerDone := webAPI.Start()
 	<-httpServerDone // Block until http server is done
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/midstar/gocfg"
 	"github.com/midstar/llog"
@@ -18,10 +19,33 @@ type settings struct {
 	logFile          string     // Log file ("" means stderr)
 }
 
-// loadSettings loads settings from a .cfg file. Panics if configuration file
+// defaultConfPath holds configuration file paths in priority order
+var defaultConfPaths = []string{"mediaweb.conf", "/etc/mediaweb.conf", "/etc/mediaweb/mediaweb.conf"}
+
+// For unit test purposes we do it like this (to be able to change confPaths)
+var confPaths = defaultConfPaths
+
+// findConfFile finds the location of the configuration file depending on confPaths
+// panics if no configuration file was found
+func findConfFile() string {
+	result := ""
+	for _, path := range confPaths {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			result = path
+			break
+		}
+	}
+	if result == "" {
+		llog.Panic("No configuration file found. Looked in %s", strings.Join(confPaths, ", "))
+	}
+	return result
+}
+
+// loadSettings loads settings from a .conf file. Panics if configuration file
 // don't exist or if any of the mandatory settings don't exist.
 func loadSettings(fileName string) settings {
 	result := settings{}
+	llog.Info("Loading configuration: %s", fileName)
 	config, err := gocfg.LoadConfiguration(fileName)
 	if err != nil {
 		llog.Panic("%s", err)
