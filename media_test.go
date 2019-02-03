@@ -26,6 +26,27 @@ func LogTime(t *testing.T, whatWasMeasured string) {
 	t.Logf("%s %d ms", whatWasMeasured, deltaMs)
 }
 
+func TestGetFiles(t *testing.T) {
+	media := createMedia("testmedia", ".", true, true)
+	files, err := media.getFiles("")
+	assertExpectNoErr(t, "", err)
+	assertTrue(t, "No files found", len(files) > 5)
+}
+
+func TestGetFilesInvalid(t *testing.T) {
+	media := createMedia("testmedia", ".", true, true)
+	files, err := media.getFiles("invalidfolder")
+	assertExpectErr(t, "invalid path shall give errors", err)
+	assertTrue(t, "Should not find any files", len(files) == 0)
+}
+
+func TestGetFilesHacker(t *testing.T) {
+	media := createMedia("testmedia", ".", true, true)
+	files, err := media.getFiles("../..")
+	assertExpectErr(t, "hacker path shall give errors", err)
+	assertTrue(t, "Should not find any files", len(files) == 0)
+}
+
 func TestIsRotationNeeded(t *testing.T) {
 	media := createMedia("testmedia", ".", true, true)
 
