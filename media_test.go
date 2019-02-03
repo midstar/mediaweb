@@ -74,7 +74,7 @@ func TestIsRotationNeeded(t *testing.T) {
 
 func TestRotateAndWrite(t *testing.T) {
 	outFileName := "tmpout/TestRotateAndWrite/jpeg_rotated_fixed.jpg"
-	os.MkdirAll("tmpout/TestRotateAndWrite", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestRotateAndWrite", os.ModePerm) // If already exist no problem
 	os.Remove(outFileName)
 	media := createMedia("testmedia", ".", true, true)
 	outFile, err := os.Create(outFileName)
@@ -102,7 +102,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 }
 
 func TestWriteEXIFThumbnail(t *testing.T) {
-	os.MkdirAll("tmpout/TestWriteEXIFThumbnail", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestWriteEXIFThumbnail", os.ModePerm) // If already exist no problem
 	media := createMedia("testmedia", ".", true, true)
 
 	tEXIFThumbnail(t, media, "normal.jpg")
@@ -186,7 +186,7 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 }
 
 func TestGenerateImageThumbnail(t *testing.T) {
-	os.MkdirAll("tmpout/TestGenerateImageThumbnail", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestGenerateImageThumbnail", os.ModePerm) // If already exist no problem
 
 	media := createMedia("", "", true, true)
 
@@ -220,9 +220,9 @@ func tWriteThumbnail(t *testing.T, media *Media, inFileName, outFileName string,
 }
 
 func TestWriteThumbnail(t *testing.T) {
-	os.MkdirAll("tmpcache/TestWriteThumbnail", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpcache/TestWriteThumbnail", os.ModePerm) // If already exist no problem
 	os.RemoveAll("tmpcache/TestWriteThumbnail/*")
-	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModeDir) // If already exist no problem
+	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModePerm) // If already exist no problem
 	os.RemoveAll("tmpout/TestWriteThumbnail/*")
 
 	media := createMedia("testmedia", "tmpcache/TestWriteThumbnail", true, true)

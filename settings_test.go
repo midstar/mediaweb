@@ -152,7 +152,7 @@ func checkLvl(t *testing.T, expected llog.Level, strLevel string) {
 
 // createConfigFile creates a configuration file. Returns the full path to it.
 func createConfigFile(t *testing.T, name, contents string) string {
-	os.MkdirAll("tmpout", os.ModeDir)
+	os.MkdirAll("tmpout", os.ModePerm)
 	fullName := "tmpout/" + name
 	os.Remove(fullName) // Remove old if it exist
 	err := ioutil.WriteFile(fullName, []byte(contents), 0644)
