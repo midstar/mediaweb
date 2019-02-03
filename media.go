@@ -36,6 +36,7 @@ type File struct {
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
 func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
+	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
 		err := os.MkdirAll(directory, os.ModePerm)
@@ -43,8 +44,13 @@ func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, auto
 			llog.Error("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
 			llog.Info("Thumbnail cache will be disabled")
 			enableThumbCache = false
+		} else {
+			llog.Info("Thumbnail cache path: %s", thumbPath)
 		}
+	} else {
+		llog.Info("Thumbnail cache disabled")
 	}
+	llog.Info("JPEG auto rotate: %t", autoRotate)
 	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache: enableThumbCache,
