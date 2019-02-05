@@ -2,3 +2,5 @@
 debug*
 tmpout
 tmpcache
+main-packr.go
+packrd
