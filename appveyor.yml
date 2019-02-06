@@ -1,0 +1,35 @@
+# Common configuration
+
+platform: x64
+
+clone_folder: c:\gopath\src\github.com\midstar\mediaweb
+
+environment:
+  GOPATH: c:\gopath
+
+install:
+  - echo %PATH%
+  - echo %GOPATH%
+  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - go version
+  - go env
+  - go get github.com\mattn\goveralls
+  - got get github.com\midstar\llog
+  - got get github.com\midstar\gocfg
+  - go get -u github.com\gobuffalo\packr\v2\...
+  - go get -u github.com\gobuffalo\packr\v2\packr2
+ 
+build_script:
+  - go test -v -cover github.com\midstar\mediaweb -coverprofile=coverage.out
+  - '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
+
+
+# here we are going to override common configuration
+for:
+
+# Master branch
+branches:
+  only:
+    - master
+
+  version: 1.0.0.{build}
