@@ -28,8 +28,9 @@ build_script:
 for:
 
 # Master branch
-branches:
-  only:
-    - master
+-
+  branches:
+    only:
+     - master
 
   version: 1.0.0.{build}
