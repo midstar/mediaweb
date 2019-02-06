@@ -14,8 +14,8 @@ install:
   - go version
   - go env
   - go get github.com\mattn\goveralls
-  - got get github.com\midstar\llog
-  - got get github.com\midstar\gocfg
+  - go get github.com\midstar\llog
+  - go get github.com\midstar\gocfg
   - go get -u github.com\gobuffalo\packr\v2\...
   - go get -u github.com\gobuffalo\packr\v2\packr2
  
