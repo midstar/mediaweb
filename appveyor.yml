@@ -40,7 +40,7 @@ for:
     only:
       - image: Visual Studio 2017
 
-  clone_folder: c:\gopath\src\github.com\$username\$project
+  clone_folder: c:\gopath\src\github.com\midstar\mediaweb
 
   environment:
     GOPATH: c:\gopath
@@ -51,7 +51,7 @@ for:
     only:
       - image: Ubuntu
 
-  clone_folder: /usr/go/src/github.com/$username/$project
+  clone_folder: /usr/go/src/github.com/midstar/mediaweb
 
   environment:
     GOPATH: /usr/go
