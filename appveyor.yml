@@ -29,7 +29,7 @@ build_script:
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
 
   # Linux (don't publish to coveralls.io)
-  #- sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
+  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
 
 
 for:
@@ -55,3 +55,5 @@ for:
 
   environment:
     GOPATH: /usr/go
+
+  stack: go 1.10

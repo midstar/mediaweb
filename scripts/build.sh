@@ -1,6 +1,20 @@
-# Builds plm using the correct version, build time and git hash
+# Builds mediaweb using the correct version, build time and git hash
+if [ -z $1 ]; then
+  echo No version provided. Using unofficial.
+  export VERSION=unofficial
+else
+  export VERSION=$1
+fi
+
+DATETIME=`date`
+GITHASH=`git rev-parse HEAD`
+
+echo version: $VERSION
+echo git hash: $GITHASH
+echo date time: $DATETIME
+
 echo building / installing
-pushd $GOPATH/src/github.com/midstar/mediaweb
+cd $GOPATH/src/github.com/midstar/mediaweb
 packr2
-popd
-go install -ldflags="-X 'main.applicationBuildTime=$DATE $TIME' -X main.applicationVersion=$1 -X main.applicationGitHash=$GITHASH" github.com/midstar/mediaweb
+go install -ldflags="-X 'main.applicationBuildTime=$DATETIME' -X main.applicationVersion=$1 -X main.applicationGitHash=$GITHASH" github.com/midstar/mediaweb
+
