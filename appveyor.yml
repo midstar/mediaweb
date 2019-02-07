@@ -8,19 +8,11 @@ image:
 platform: x64
 
 environment:
-  matrix:
-    # Windows
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      clone_folder: c:\gopath\src\github.com\$username\$project
-
-    # Linux
-    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      clone_folder: /usr/go/src/github.com/$username/$project
-  
+  - clone_folder: c:\gopath\src\github.com\$username\$project
+  - GOPATH: c:\gopath
 
 install:
   # Windows
-  - cmd: set GOPATH=c:\gopath
   - cmd: set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
   - cmd: go get github.com\mattn\goveralls
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
