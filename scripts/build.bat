@@ -1,5 +1,5 @@
 @echo off
-REM Builds plm using the correct version, build time and git hash
+REM Builds MediaWEB using the correct version, build time and git hash
 if [%1] EQU [] (
   echo No version provided. Using unofficial.
   echo VERSION=unofficial

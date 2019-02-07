@@ -1,25 +1,53 @@
+# MediaWEB appveyor configuration for Windows and Linux (x64)
+
 # Common configuration
+image: 
+- Visual Studio 2017
+- Ubuntu
 
 platform: x64
 
-clone_folder: c:\gopath\src\github.com\midstar\mediaweb
+clone_folder: 
+  matrix:
+    # Windows
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+        c:\gopath\src\github.com\$username\$project
+
+    # Linux
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+        /usr/go/src/github.com/$username/$project
 
 environment:
-  GOPATH: c:\gopath
+  matrix:
+    # Windows
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+        GOPATH: c:\gopath
+
+    # Linux
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+        GOPATH: /usr/go/
+  
 
 install:
-  - echo %PATH%
-  - echo %GOPATH%
-  - set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
-  - go version
-  - go env
-  - go get github.com\mattn\goveralls
-  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
+  # Windows
+  - cmd: set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - cmd: go get github.com\mattn\goveralls
+  - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
+
+  # Linux
+  - sh: export PATH=$GOPATH/bin:$PATH
+  - sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh'
  
 build_script:
-  - go test -v -cover github.com\midstar\mediaweb -coverprofile=coverage.out
-  - '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
-  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
+  # Common
+  - go test -v -cover github.com/midstar/mediaweb -coverprofile=coverage.out
+
+  # Windows
+  - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
+  - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
+
+  # Linux (don't publish to coveralls.io)
+  - sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
 
 
 # here we are going to override common configuration
