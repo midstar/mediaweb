@@ -9,6 +9,8 @@ platform: x64
 
 version: 1.0.0.{build}
 
+stack: go 1.10
+
 install:
   # Windows
   - cmd: set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
@@ -56,4 +58,3 @@ for:
   environment:
     GOPATH: /usr/go
 
-  stack: go 1.10
