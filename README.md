@@ -31,6 +31,12 @@ TBD
 
 TBD
 
+## Future improvements
+
+* Create thumbnails for videos (probably using ffmpeg)
+* Add support for TLS/SSL
+* Add Windows installer (install MediaWEB as a service on Windows)
+
 ## Author and license
 
 This application is written by Joel Midstjärna and is licensed under the MIT License.

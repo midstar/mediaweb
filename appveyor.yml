@@ -19,7 +19,7 @@ install:
 build_script:
   - go test -v -cover github.com\midstar\mediaweb -coverprofile=coverage.out
   - '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
-  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install.bat %APPVEYOR_BUILD_VERSION%'
+  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
 
 
 # here we are going to override common configuration
