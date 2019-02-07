@@ -18,7 +18,7 @@ install:
   # Linux
   - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
-  - sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh'
+  - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
  
 build_script:
   # Common
