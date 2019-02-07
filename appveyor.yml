@@ -7,25 +7,19 @@ image:
 
 platform: x64
 
-clone_folder: 
-  matrix:
-    # Windows
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      c:\gopath\src\github.com\$username\$project
-
-    # Linux
-    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-      /usr/go/src/github.com/$username/$project
-
 environment:
   matrix:
     # Windows
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       GOPATH: c:\gopath
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      clone_folder: c:\gopath\src\github.com\$username\$project
 
     # Linux
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
       GOPATH: /usr/go/
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      clone_folder: /usr/go/src/github.com/$username/$project
   
 
 install:
