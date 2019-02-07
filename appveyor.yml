@@ -8,8 +8,8 @@ image:
 platform: x64
 
 environment:
-  - clone_folder: c:\gopath\src\github.com\$username\$project
-  - GOPATH: c:\gopath
+  clone_folder: c:\gopath\src\github.com\$username\$project
+  GOPATH: c:\gopath
 
 install:
   # Windows
