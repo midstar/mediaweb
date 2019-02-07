@@ -6,7 +6,7 @@
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb?svg=true)](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb)
 [![Coverage Status](https://coveralls.io/repos/github/midstar/mediaweb/badge.svg?branch=master)](https://coveralls.io/github/midstar/mediaweb?branch=master)
 
-MediaWeb is a small self-contained web server software to enable you to access your photos and videos over Internet in your WEB browser.
+MediaWeb is a small self-contained web server software to enable you to access your photos and videos over the Internet in your WEB browser.
 
 The main design goal of MediaWEB is that no additional dependencies shall be needed, such as a server (Apache, NGINX, IIS etc.) or database (MySQL, sqlite etc.). The only files required to run MediaWEB are:
 
