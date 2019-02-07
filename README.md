@@ -1,3 +1,5 @@
+![GitHub Logo](/templates/logo.png)
+
 # MediaWEB - Access your photos and videos over Internet
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/midstar/mediaweb)](https://goreportcard.com/report/github.com/midstar/mediaweb)

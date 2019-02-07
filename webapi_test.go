@@ -72,14 +72,30 @@ func shutdown(t *testing.T) {
 	http.DefaultServeMux = new(http.ServeMux)
 }
 
-func TestLoadIndex(t *testing.T) {
+func TestStatic(t *testing.T) {
 	go main()
 	defer shutdown(t)
 
+	// Get default (index)
 	index := getHTML(t, "")
 	if !strings.Contains(index, "<title>MediaWEB</title>") {
 		t.Fatal("Index html title missing")
 	}
+
+	// Get index
+	index = getHTML(t, "index.html")
+	if !strings.Contains(index, "<title>MediaWEB</title>") {
+		t.Fatal("Index html title missing")
+	}
+
+	// Get a png
+	image := getBinary(t, "icon_folder.png", "image/png")
+	assertTrue(t, "", len(image) > 100)
+
+	// Get a non-existing png
+	resp, err := http.Get(fmt.Sprintf("%s/invalid.html", baseURL))
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }
 
 func TestListFolders(t *testing.T) {
@@ -181,7 +197,7 @@ func TestInvalidPath(t *testing.T) {
 	go main()
 	defer shutdown(t)
 
-	resp, err := http.Get(fmt.Sprintf("%s/invalid", baseURL))
+	resp, err := http.Post(fmt.Sprintf("%s/invalid", baseURL), "", nil)
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }

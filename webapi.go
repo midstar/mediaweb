@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 
 	packr "github.com/gobuffalo/packr/v2"
@@ -57,28 +58,46 @@ func (wa *WebAPI) Stop() {
 // ServeHTTP handles incoming HTTP requests
 func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var head string
+	originalURL := r.URL.Path
 	head, r.URL.Path = shiftPath(r.URL.Path)
 	if head == "shutdown" && r.Method == "POST" {
 		wa.Stop()
-	} else if head == "" && r.Method == "GET" {
-		wa.serveHTTPIndex(w, r)
 	} else if head == "folder" && r.Method == "GET" {
 		wa.serveHTTPFolder(w, r)
 	} else if head == "media" && r.Method == "GET" {
 		wa.serveHTTPMedia(w, r)
 	} else if head == "thumb" && r.Method == "GET" {
 		wa.serveHTTPThumbnail(w, r)
+	} else if r.Method == "GET" {
+		r.URL.Path = originalURL
+		wa.serveHTTPStatic(w, r)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "This is not a valid path: %s or method %s!", r.URL.Path, r.Method)
 	}
 }
 
-func (wa *WebAPI) serveHTTPIndex(w http.ResponseWriter, r *http.Request) {
-	index, _ := wa.box.Find("index.html")
-	w.Header().Set("Content-Type", "text/html")
-	w.Write(index)
-	//http.ServeFile(w, r, filepath.Join(wa.templatePath, "index.html"))
+func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
+	fileName := r.URL.Path
+	if len(r.URL.Path) > 0 {
+		fileName = r.URL.Path[1:] // Remove '/'
+	}
+	if fileName == "" {
+		// Default is index page
+		fileName = "index.html"
+	}
+	bytes, err := wa.box.Find(fileName)
+	if err != nil || len(bytes) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "This is not a valid path: %s!", r.URL.Path)
+	} else {
+		if filepath.Ext(fileName) == ".html" {
+			w.Header().Set("Content-Type", "text/html")
+		} else {
+			w.Header().Set("Content-Type", "image/png")
+		}
+		w.Write(bytes)
+	}
 }
 
 // serveHTTPFolder generates JSON will files in folder
