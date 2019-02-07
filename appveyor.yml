@@ -7,9 +7,7 @@ image:
 
 platform: x64
 
-environment:
-  clone_folder: c:\gopath\src\github.com\$username\$project
-  GOPATH: c:\gopath
+version: 1.0.0.{build}
 
 install:
   # Windows
@@ -18,7 +16,7 @@ install:
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
 
   # Linux
-  - sh: export GOPATH=/usr/go/
+  - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
   - sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh'
  
@@ -34,13 +32,26 @@ build_script:
   #- sh: '$GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
 
 
-# here we are going to override common configuration
 for:
-
-# Master branch
+  
+# Special configurations for Windows
 -
-  branches:
+  matrix:
     only:
-     - master
+      - image: Visual Studio 2017
 
-  version: 1.0.0.{build}
+  clone_folder: c:\gopath\src\github.com\$username\$project
+
+  environment:
+    GOPATH: c:\gopath
+
+# Special configurations for Linux
+-
+  matrix:
+    only:
+      - image: Ubuntu
+
+  clone_folder: /usr/go/src/github.com/$username/$project
+
+  environment:
+    GOPATH: /usr/go
