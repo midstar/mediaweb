@@ -20,7 +20,7 @@ install:
   # Linux
   - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
-  - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
+  - sh: sudo sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
  
 build_script:
   # Common
@@ -29,9 +29,10 @@ build_script:
   # Windows
   - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
+  - cmd: 7z a mediaweb_windows_x64.zip %GOPATH%\bin\mediaweb.exe mediaweb.conf
 
   # Linux (don't publish to coveralls.io)
-  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
+  - sh: 'sudo sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
 
 
 for:
