@@ -11,21 +11,21 @@ clone_folder:
   matrix:
     # Windows
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-        c:\gopath\src\github.com\$username\$project
+      c:\gopath\src\github.com\$username\$project
 
     # Linux
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-        /usr/go/src/github.com/$username/$project
+      /usr/go/src/github.com/$username/$project
 
 environment:
   matrix:
     # Windows
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-        GOPATH: c:\gopath
+      GOPATH: c:\gopath
 
     # Linux
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-        GOPATH: /usr/go/
+      GOPATH: /usr/go/
   
 
 install:
