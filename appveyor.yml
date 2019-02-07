@@ -14,16 +14,12 @@ install:
   - go version
   - go env
   - go get github.com\mattn\goveralls
-  - go get github.com\midstar\llog
-  - go get github.com\midstar\gocfg
-  - go get github.com\disintegration\imaging
-  - go get github.com\rwcarlsen\goexif\exif
-  - go get -u github.com\gobuffalo\packr\v2\...
-  - go get -u github.com\gobuffalo\packr\v2\packr2
+  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
  
 build_script:
   - go test -v -cover github.com\midstar\mediaweb -coverprofile=coverage.out
   - '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
+  - '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install.bat %APPVEYOR_BUILD_VERSION%'
 
 
 # here we are going to override common configuration
