@@ -52,7 +52,7 @@ On Linux/Mac execute (from a shell):
     sh install_deps.sh
     sh build.sh
 
-The mediaweb executable will be in the GOPATH/bin directory.
+The mediaweb executable and an example configuration file will be in $GOPATH/src/github.com/midstar/mediaweb
 
 
 ## Future improvements

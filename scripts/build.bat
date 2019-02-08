@@ -10,11 +10,10 @@ echo version: %VERSION%
 for /f %%i in ('git rev-parse HEAD') do set GITHASH=%%i
 echo git hash: %GITHASH%
 echo building / installing
-pushd %GOPATH%\src\github.com\midstar\mediaweb
+cd %GOPATH%\src\github.com\midstar\mediaweb
 set PACKRCMD=packr2
 echo %PACKRCMD%
 %PACKRCMD%
-popd
-set INSTALLCMD=go install -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
+set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 %INSTALLCMD%

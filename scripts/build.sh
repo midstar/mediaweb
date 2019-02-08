@@ -16,5 +16,5 @@ echo date time: $DATETIME
 echo building / installing
 cd $GOPATH/src/github.com/midstar/mediaweb
 packr2
-go install -ldflags="-X 'main.applicationBuildTime=$DATETIME' -X main.applicationVersion=$1 -X main.applicationGitHash=$GITHASH" github.com/midstar/mediaweb
+go build -ldflags="-X 'main.applicationBuildTime=$DATETIME' -X main.applicationVersion=$1 -X main.applicationGitHash=$GITHASH" github.com/midstar/mediaweb
 
