@@ -36,18 +36,18 @@ build_script:
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: tar -zcvf mediaweb_linux_x64.tar.gz mediaweb.conf -C $GOPATH/bin/ mediaweb
 
-  # Deploy to GitHub (only on master AND on tags)
-  deploy:
-    release: mediaweb-v$(appveyor_build_version)
-    description: ''
-    provider: GitHub
-    auth_token:
-      secure: $(GITHUB_TOKEN) # your encrypted token from GitHub
-    draft: false
-    prerelease: false
-    on:
-      branch: master                 # release from master branch only
-      APPVEYOR_REPO_TAG: true        # deploy on tag push only
+# Deploy to GitHub (only on master AND on tags)
+deploy:
+  release: mediaweb-v$(appveyor_build_version)
+  description: ''
+  provider: GitHub
+  auth_token:
+    secure: $(GITHUB_TOKEN) # your encrypted token from GitHub
+  draft: false
+  prerelease: false
+  on:
+    branch: master                 # release from master branch only
+    APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 for:
   
