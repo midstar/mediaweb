@@ -23,13 +23,37 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 * Thumbnail support, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache
 * Automatic rotation JPEG images when needed (based on EXIF information)
 
-## Install
+## Install and configure
 
-TBD
+Download the binaries for your platform [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
-## Configuration
+If the binaries don't exist for your platform, see "Build from source" below.
 
-TBD
+Update the mediapath setting in mediaweb.conf. You might also want to change the port setting.
+
+Just start the mediaweb executable. It will look for the mediaweb.conf in the same folder.
+
+## Build from source
+
+To build from source on any platform you need to:
+
+* Install Golang 
+* Set the GOPATH environment variable
+
+On Windows execute (from cmd.exe):
+
+    cd %GOPATH%\src\github.com\midstar\mediaweb\scripts
+    install_deps.bat
+    build.bat
+
+On Linux/Mac execute (from a shell):
+
+    cd $GOPATH/src/github.com/midstar/mediaweb/scripts
+    sh install_deps.sh
+    sh build.sh
+
+The mediaweb executable will be in the GOPATH/bin directory.
+
 
 ## Future improvements
 
