@@ -11,10 +11,10 @@ for /f %%i in ('git rev-parse HEAD') do set GITHASH=%%i
 echo git hash: %GITHASH%
 echo building / installing
 cd %GOPATH%\src\github.com\midstar\mediaweb
-REM set PACKRCMD=packr2
-REM echo %PACKRCMD%
-REM %PACKRCMD%
-REM type main-packr.go
-set INSTALLCMD=packr2 build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
+set PACKRCMD=packr2
+echo %PACKRCMD%
+%PACKRCMD%
+type main-packr.go
+set INSTALLCMD=go install -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 %INSTALLCMD%

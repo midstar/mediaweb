@@ -30,7 +30,7 @@ build_script:
   # Windows and publish result on coveralls.io
   - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
-  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.conf mediaweb.exe 
+  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.conf %GOPATH%\bin\mediaweb.exe 
 
   # Linux PC/x64
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
