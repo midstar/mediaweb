@@ -63,6 +63,26 @@ func getObject(t *testing.T, path string, v interface{}) {
 	}
 }
 
+func startserver(t *testing.T) {
+	go main()
+	waitserver(t)
+}
+
+// waitserver waits for the server to be up and running
+func waitserver(t *testing.T) {
+	client := http.Client{Timeout: 100 * time.Millisecond}
+	maxTries := 10
+	for i := 0; i < maxTries; i++ {
+		_, err := client.Get(fmt.Sprintf("%s", baseURL))
+		if err == nil {
+			// Up and running :-)
+			return
+		}
+	}
+	t.Fatalf("Server never started")
+}
+
+// shutdown shuts down server and clears the serveMux
 func shutdown(t *testing.T) {
 	// No answer expecetd on POST shutdown (short timeout)
 	client := http.Client{Timeout: 1 * time.Second}
@@ -73,7 +93,7 @@ func shutdown(t *testing.T) {
 }
 
 func TestStatic(t *testing.T) {
-	go main()
+	startserver(t)
 	defer shutdown(t)
 
 	// Get default (index)
@@ -99,7 +119,7 @@ func TestStatic(t *testing.T) {
 }
 
 func TestListFolders(t *testing.T) {
-	go main()
+	startserver(t)
 	defer shutdown(t)
 
 	var files []File
@@ -108,7 +128,7 @@ func TestListFolders(t *testing.T) {
 }
 
 func TestGetMedia(t *testing.T) {
-	go main()
+	startserver(t)
 	defer shutdown(t)
 
 	image := getBinary(t, "media/gif.gif", "image/gif")
@@ -136,7 +156,7 @@ func TestGetMedia(t *testing.T) {
 }
 
 func TestGetThumbnail(t *testing.T) {
-	go main()
+	startserver(t)
 	defer shutdown(t)
 
 	image := getBinary(t, "thumb/gif.gif", "image/jpeg")
@@ -167,6 +187,7 @@ func TestGetThumbnailNoCache(t *testing.T) {
 	box := packr.New("templates", "./templates")
 	webAPI := CreateWebAPI(9834, "templates", media, box)
 	webAPI.Start()
+	waitserver(t)
 	defer shutdown(t)
 
 	image := getBinary(t, "thumb/gif.gif", "image/png")
@@ -194,7 +215,7 @@ func TestGetThumbnailNoCache(t *testing.T) {
 }
 
 func TestInvalidPath(t *testing.T) {
-	go main()
+	startserver(t)
 	defer shutdown(t)
 
 	resp, err := http.Post(fmt.Sprintf("%s/invalid", baseURL), "", nil)
