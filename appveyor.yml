@@ -20,7 +20,8 @@ install:
   # Linux
   - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
-  - sh: sudo sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
+  - sh: sudo chmod -R a+rwx $GOPATH
+  - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
  
 build_script:
   # Common
@@ -32,7 +33,7 @@ build_script:
   - cmd: 7z a mediaweb_windows_x64.zip mediaweb.conf %GOPATH%\bin\mediaweb.exe 
 
   # Linux (don't publish to coveralls.io)
-  - sh: 'sudo sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
+  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: tar -zcvf mediaweb_linux_x64.tar.gz mediaweb.conf -C $GOPATH/bin/ mediaweb
 
 
