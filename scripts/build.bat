@@ -12,6 +12,8 @@ echo git hash: %GITHASH%
 echo building / installing
 cd %GOPATH%\src\github.com\midstar\mediaweb
 set PACKRCMD=packr2
+echo Current directory: %CD%
+echo GPOATH: %GOPATH%
 echo %PACKRCMD%
 %PACKRCMD%
 type main-packr.go
