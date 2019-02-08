@@ -14,6 +14,7 @@ cd %GOPATH%\src\github.com\midstar\mediaweb
 set PACKRCMD=packr2
 echo %PACKRCMD%
 %PACKRCMD%
+type main-packr.go
 set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 %INSTALLCMD%
