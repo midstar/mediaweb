@@ -11,9 +11,9 @@ for /f %%i in ('git rev-parse HEAD') do set GITHASH=%%i
 echo git hash: %GITHASH%
 echo building / installing
 cd %GOPATH%\src\github.com\midstar\mediaweb
-set PACKRCMD=packr2
-echo Current directory: %CD%
-echo GPOATH: %GOPATH%
+REM packr2 has a bug in Windows where absolute paths are generated instead
+REM of relative paths. We use --legacy to fix this
+set PACKRCMD=packr2 --legacy
 echo %PACKRCMD%
 %PACKRCMD%
 type main-packr.go
