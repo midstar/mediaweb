@@ -9,16 +9,15 @@ platform: x64
 
 version: 1.0.0.{build}
 
-stack: go 1.10
+stack: go 1.11
 
 install:
   # Windows
-  - cmd: set PATH=%GOPATH%\bin;c:\go\bin;%PATH%
+  - cmd: set PATH=%GOPATH%\bin;%PATH%
   - cmd: go get github.com\mattn\goveralls
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
 
   # Linux
-  - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
   - sh: sudo chmod -R a+rwx $GOPATH
   - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
@@ -29,6 +28,7 @@ build_script:
 
   # Windows and publish result on coveralls.io
   - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
+  - cmd: go env
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
   - cmd: 7z a mediaweb_windows_x64.zip mediaweb.conf %GOPATH%\bin\mediaweb.exe 
 
