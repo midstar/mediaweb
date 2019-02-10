@@ -8,6 +8,12 @@
 #    port:      Network port number (default 9834)
 #
 
+# Global configurations
+export CONFIG=/etc/mediaweb.conf
+export EXEDESTINATION=/usr/sbin/mediaweb
+export SERVICECONFIG=/etc/systemd/system/mediaweb.service
+
+
 print_usage() {
   echo "Usage:"
   echo
@@ -23,6 +29,7 @@ print_usage() {
   echo "For MediaWEB uninstallation:"
   echo
   echo "  sudo sh service.sh uninstall"
+  echo
   exit 1
 }
 
@@ -44,37 +51,48 @@ install_service() {
     echo "To install MediaWEB as a service using this script the system"
     echo "needs to support systemd services. Please manually install as"
     echo "an init/init.d service or similar."
-    echo TBD exit 1
     echo
+    exit 1
   fi
 
   if ! [ -d "/etc/systemd/system" ]; then
     echo "Unable to access /etc/systemd/system"
     echo
-    echo "Try run this script as root, i.e:"
-    echo
-    echo "sudo sh install_service.sh"
-    echo TBD exit 1
-    echo
+    exit 1
   fi
 
   if [ ! -f "mediaweb" ]; then
-      echo "ERROR! MediaWEB executable, mediaweb, not found"
-      echo
-      echo "You need to run this script in the path where you have the"
-      echo "MediaWEB executable"
-      exit 1
+		echo "ERROR! MediaWEB executable, mediaweb, not found"
+		echo
+		echo "You need to run this script in the path where you have the"
+		echo "MediaWEB executable"
+		exit 1
   fi
 
-  # Check if running with systemctl is-active --quiet service && echo Service is running
+	# Check if service is already installed
+  systemctl is-active --quiet mediaweb && {
+	  echo "MediaWEB service is already installed."
+		echo 
+		echo "Uninstalling previous version..."
+		echo
+		
+		systemctl disable mediaweb || {
+			echo "ERROR! Unable to disable MediaWEB service"
+			echo
+			exit 1
+		}
+		
+		systemctl stop mediaweb || {
+			echo "ERROR! Unable to stop MediaWEB service"
+			echo
+			exit 1
+		}
+	}
 
 
   #########################################################
   # Create mediaweb.conf
   #########################################################
-
-  #TBD export CONFIG=/etc/mediaweb.conf
-  export CONFIG=mediaweb.conf
 
   export KEEP=n
   if [ -f "$CONFIG" ]; then
@@ -116,9 +134,6 @@ install_service() {
     echo "# MediaWEB configuration file" > $CONFIG || {
       echo "Unable to create $CONFIG"
       echo
-      echo "Try run this script as root, i.e:"
-      echo
-      echo "sudo sh install_service.sh"
       exit 1
     }
     echo >> $CONFIG
@@ -148,15 +163,10 @@ install_service() {
   #########################################################
   # Copy the mediaweb executable to /usr/sbin
   #########################################################
-  echo TBD export EXEDESTINATION=/usr/sbin/mediaweb
-  export EXEDESTINATION=mediaweb_new
 
   cp mediaweb $EXEDESTINATION || {
-    echo "Unable to copy mediaweb to $EXEDESTINATION"
+    echo "ERROR! Unable to copy mediaweb to $EXEDESTINATION"
     echo
-    echo "Try run this script as root, i.e:"
-    echo
-    echo "sudo sh install_service.sh"
     exit 1
   }
   echo "Copied : $EXEDESTINATION"
@@ -166,15 +176,9 @@ install_service() {
   # Create webmedia.service systemd configuration
   #########################################################
 
-  #TBD export SERVICECONFIG=/etc/systemd/system/mediaweb.service
-  export SERVICECONFIG=mediaweb.service
-
   echo "[Unit]" > $SERVICECONFIG || {
-    echo "Unable to create $SERVICECONFIG"
+    echo "ERROR! Unable to create $SERVICECONFIG"
     echo
-    echo "Try run this script as root, i.e:"
-    echo
-    echo "sudo sh install_service.sh"
     exit 1
   }
   echo "Description=MediaWEB service" >> $SERVICECONFIG
@@ -196,21 +200,88 @@ install_service() {
   #########################################################
   # Start and enable webmedia service
   #########################################################
+	
+	systemctl enable mediaweb || {
+    echo "ERROR! Unable to enable MediaWEB service"
+    echo
+    exit 1
+	}
+	
+	systemctl start mediaweb || {
+    echo "ERROR! Unable to start MediaWEB service"
+    echo
+    exit 1
+	}
+
 
   echo
   echo "MediaWEB service successfully installed :-)"
+	echo
 
+}
+
+remove_file() {
+	if [ -f $1 ]; then 
+	  echo "Removing: $1"
+	  rm $1 || {
+	    echo "WARNING! Unable to remove $1"
+			echo
+	  }
+	fi
+}
+
+uninstall_service() {
+
+  echo "--------------------------------------------------"
+  echo "Uninstallation of MediaWEB service                "
+  echo "--------------------------------------------------"
+  echo
+	
+	# Check if service is already installed
+  systemctl is-active --quiet mediaweb && {
+	  echo "MediaWEB service is running."
+		echo 
+		echo "Uninstalling MediaWEB service"
+		echo
+		
+		systemctl disable mediaweb || {
+			echo "ERROR! Unable to disable MediaWEB service"
+			echo
+			exit 1
+		}
+		
+		systemctl stop mediaweb || {
+			echo "ERROR! Unable to stop MediaWEB service"
+			echo
+			exit 1
+		}
+	}
+	
+	remove_file $SERVICECONFIG
+	remove_file $CONFIG
+	remove_file $EXEDESTINATION
+
+	echo
+	echo "Uninstallation complete!"
+	echo
 }
 
 
 
+if [ "$(whoami)" != "root" ]; then
+  echo "You need to run this script with root priviledges:"
+  echo
+  echo "  sudo sh service.sh ..."
+  echo
+  exit 1
+fi
 
 if [ -z $1 ]; then
   print_usage
-elif [ "$1" == "install" ]; then
+elif [ "$1" = "install" ]; then
   install_service $2 $3
-elif  [ "$1" == "uninstall" ]; then
-  echo TBD uninstall_service
+elif  [ "$1" = "uninstall" ]; then
+  uninstall_service
 else
   echo "ERROR! Unknown command '$1'"
   echo
