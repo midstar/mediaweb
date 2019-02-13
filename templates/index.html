@@ -1,0 +1,392 @@
+<html>
+  <head>
+    <title>MediaWEB</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <style>
+
+    /***************************************/
+    /* Style for navigator                 */
+    #navigator {
+        margin-left: 20px;
+    }
+
+    #navigator a {
+        color: blue; 
+        text-decoration: none;
+    }
+
+    /***************************************/
+    /* Style for items                     */
+
+    .item {
+        width: 160px;
+        height: 190px;
+        margin-top: 5px;
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-bottom: 10px;/*
+        border-style: solid;
+        border-color: #A30003;
+        border-width: 1px;
+        border-radius:3px 3px 0px 0px;*/
+        display:inline-block;
+        overflow: hidden;
+    }
+    .thumb {
+        padding-top: 5px;
+        padding-left: 5px;
+        padding-right: 5px;
+        padding-bottom: 5px;   
+    }
+    .thumb img {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+        width:128px; 
+        height:128px;
+    }
+    .thumb:hover img {
+        transform: scale(1.1);
+        cursor: pointer;
+    }
+    .name {
+        text-align: center;
+    }
+
+
+    /***************************************/
+    /* Style for media viewer modal        */
+
+    /* The Modal (background) */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        padding-top: 100px; /* Location of the box */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+    }
+
+    /* Modal Content (image) */
+    .modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90%
+        /*max-width: 700px;*/
+    }
+
+    /* Caption of Modal Image */
+    #caption {
+        margin: auto;
+        display: block;
+        width: 80%;
+        max-width: 700px;
+        text-align: center;
+        color: #ccc;
+        padding: 10px 0;
+        height: 150px;
+    }
+
+    /* Add Animation */
+    .modal-content, #caption {  
+        -webkit-animation-name: zoom;
+        -webkit-animation-duration: 0.6s;
+        animation-name: zoom;
+        animation-duration: 0.6s;
+    }
+
+    @-webkit-keyframes zoom {
+        from {-webkit-transform:scale(0)} 
+        to {-webkit-transform:scale(1)}
+    }
+
+    @keyframes zoom {
+        from {transform:scale(0)} 
+        to {transform:scale(1)}
+    }
+
+    /* Media viewer buttons */
+    .mediaButton {
+        position: absolute;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+
+    .mediaButton:hover,
+    .mediaButton:focus {
+        color: #bbb;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    #mediaViewerClose {
+        top: 15px;
+        right: 35px;
+    }
+
+    #mediaViewerPrev {
+        top: 30%;
+        left: 35px;
+    }
+
+     #mediaViewerNext {
+        top: 30%;
+        right: 35px;
+    }   
+
+    /* 100% Image Width on Smaller Screens */
+    @media only screen and (max-width: 700px){
+        .modal-content {
+            width: 100%;
+        }
+    }    
+    </style>
+    <script>
+
+    /* Globals */
+    var globalFiles = []; // All files are global
+
+
+    window.onload = function() {
+
+        /* Setup close of file dialog */
+        var span = document.getElementById("mediaViewerClose");
+        span.onclick = closeFileDialog
+
+        var path = ""
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("path")) {
+            path = params.get("path");
+        } 
+
+        updateNavigator(path);
+
+        loadJSON("folder/" + path, onNewFiles, onError);
+
+    }
+
+    function updateNavigator(path) {
+        var partsTmp = path.split("/");
+        var parts = [];
+        // Copy all non empty parts (split might add empty elements)
+        for (var i = 0 ; i < partsTmp.length ; i++) {
+            if (partsTmp[i].trim().length > 0) {
+                parts.push(partsTmp[i]);
+            }
+        }
+
+        /* No navigator on top level */
+        if (parts.length > 0) {
+            var navigator = document.getElementById("navigator")
+            var links = "<a href='?path='>top</a>"
+            var url = "";
+            for (var i = 0 ; i < parts.length ; i++) {
+                part = parts[i];
+                url += "/" + part;
+                if (i == (parts.length - 1)) {
+                    // Last element is no link
+                    links += " / " + part
+                } else {
+                    links += " / <a href='?path=" + url + "'>" + part + "</a>"
+                }
+            }
+            navigator.insertAdjacentHTML("beforeend", links);
+        }
+
+    }
+
+    /* Set location. Will update URL and reload page. */
+    function setLocation(path) {
+        const params = new URLSearchParams(window.location.search);
+        params.set("path", path)
+        window.location.search = params.toString();   
+    }
+
+    function closeFileDialog() {
+        var modal = document.getElementById('mediaViewer');
+        modal.style.display = "none";
+        // Disable arrow keys
+        document.onkeydown = null;
+    }
+
+    /* index refers to the file index in global globalFiles array */
+    function openFileDialog(index) {
+        var file = globalFiles[index];
+        var mediaUrl = "media/" + file.Path;
+        var caption = file.Name;
+
+        
+        var modalImg = document.getElementById("mediaViewerImg");
+        var modalVideo = document.getElementById("mediaViewerVideo");
+        if (file.Type == "image") {
+            // This is an image
+            modalImg.src = mediaUrl;
+            modalVideo.style.display = "none"; // Hide video
+            modalImg.style.display = "block"; // Show image
+        } else if (file.Type == "video") {
+            // This is a video
+            modalVideo.src = mediaUrl;
+            modalImg.style.display = "none"; // Hide image
+            modalVideo.style.display = "block"; // Show video
+        } else {
+            alert("Unsupported file: " + file.Type);
+        }
+
+        // Set the caption
+        var captionText = document.getElementById("caption");
+        captionText.innerHTML = caption;
+
+        // Figure out which previous media is
+        var prev = index;
+        do {
+            prev--;
+            if (prev < 0) {
+                // Wrap
+                prev = globalFiles.length - 1;
+            }
+        } while (globalFiles[prev].Type == "folder")
+        var prevButton = document.getElementById("mediaViewerPrev");
+        prevButton.onclick = function() { 
+            openFileDialog(prev);
+        }
+
+        // Figure out which next media is
+        var next = index;
+        do {
+            next++;
+            if (next >= globalFiles.length) {
+                // Wrap
+                next = 0;
+            }
+        } while (globalFiles[next].Type == "folder")
+        var nextButton = document.getElementById("mediaViewerNext");
+        nextButton.onclick = function() { 
+            openFileDialog(next);
+        }
+
+        // Enable left and right arrow keys on keyboard
+        enableArrowKeys(prevButton.onclick, nextButton.onclick, closeFileDialog);
+
+        // Display the modal
+        var modal = document.getElementById('mediaViewer');
+        modal.style.display = "block";
+
+    }
+
+    function enableArrowKeys(leftFunction, rightFunction, escFunction) {
+        document.onkeydown = function(e) {
+            e = e || window.event;
+            if (e.keyCode == '27') {
+                // escape
+                escFunction();
+            } else if (e.keyCode == '37') {
+                // left arrow
+                leftFunction();
+            }
+            else if (e.keyCode == '39') {
+                // right arrow
+                rightFunction();
+            }
+        }
+    }
+
+    function onNewFiles(files) {
+
+        /* Remove old file items */
+        var items = document.getElementById('items');
+        while (items.firstChild) {
+            items.removeChild(items.firstChild);
+        }
+
+        /* Update the global files */
+        globalFiles = files;
+
+        /* Add file items */
+        for (var i=0; i < files.length; i++) {
+            var file = files[i];
+            addFileItem(file.Type, file.Name, file.Path, i);
+        }
+    }
+
+    function addFileItem(type, name, path, index) {
+        var itemTxt =
+"<div class='item'> \
+    <div class='thumb'> \
+       <img src='thumb/" + path + "' alt='" + type +"'> \
+   </div> \
+   <div class='name'> \
+       " + name + " \
+   </div> \
+<div>";
+        var items = document.getElementById("items")
+        items.insertAdjacentHTML( 'beforeend', itemTxt );
+
+        // Add click event to the thumb div
+        var itemDiv = items.lastChild; // The newly created item
+        var thumb = itemDiv.getElementsByClassName("thumb")[0];
+        thumb.onclick = function() {
+            if (type == "image" || type == "video") {
+                openFileDialog(index);
+            } else if (type == "folder") {
+                setLocation(path);
+            }
+        }
+    }
+
+    function onError(error) {
+        alert(error);
+    }
+
+    function loadJSON(filePath, success, error)
+    {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function()
+        {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    if (success)
+                        success(JSON.parse(xhr.responseText));
+            } else {
+                if (error)
+                    error(xhr);
+                }
+            }
+        };
+        xhr.open("GET", filePath, true);
+        xhr.send();
+    }
+
+    </script>
+  </head>
+  <body>
+
+  <div id="navigator">
+  <!--<a href="?path=">top<a> / <a href="?path=pictures">pictures<a> / <a href="?path=pictures/vi">vi<a>-->
+  </div>
+  
+  <div id="items">
+  <!-- File items goes here -->
+  </div>
+
+  <!-- The Media Viewer -->
+  <div id="mediaViewer" class="modal">
+    <span class="mediaButton close" id="mediaViewerClose">&times;</span>
+    <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
+    <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
+    <!-- For images -->
+    <img class="modal-content" id="mediaViewerImg" style="display: none;">
+    <!-- For videos -->
+    <video controls class="modal-content" id="mediaViewerVideo" style="display: none;"></video>
+    <div id="caption"></div>
+  </div>
+
+  </body>
+</html>
