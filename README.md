@@ -48,6 +48,19 @@ Then run following for all Linux platforms:
 
 Follow the instructions in the service.sh script.
 
+To perform additional configuration, edit:
+
+    sudo vi /etc/mediaweb.conf
+
+And then restart the MediaWEB service with:
+
+    sudo systemctl restart mediaweb
+
+To uninstall MediaWEB run:
+
+    sudo sh service uninstall
+
+
 ## Download and install on Windows (64bit)
 
 Download mediaweb_windows_x64.zip [here on GitHub](https://github.com/midstar/mediaweb/releases).
@@ -87,7 +100,7 @@ and then run the mediaweb executable.
 
 On Linux platforms execute following to install MediaWEB as a service:
 
-    sudo -E sh scripts/service.sh install
+    sudo sh scripts/service.sh install
 
 
 ## Future improvements
