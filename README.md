@@ -58,7 +58,8 @@ And then restart the MediaWEB service with:
 
 To uninstall MediaWEB run:
 
-    sudo sh service uninstall
+    cd ~/mediaweb
+    sudo sh service.sh uninstall
 
 
 ## Download and install on Windows (64bit)
