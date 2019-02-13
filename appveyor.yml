@@ -36,8 +36,8 @@ build_script:
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: tar -zcvf mediaweb_linux_x64.tar.gz mediaweb.conf mediaweb
 
-  # Test service installation script
-  - sh: 'sudo sh scripts/service.sh install $GOPATH/src/github.com/midstar/mediaweb/testmedia'
+  # Test service installation/uninstallation script
+  - sh: 'sudo -E sh scripts/service_test.sh'
 
   # Linux ARM (cross compile from linux x64)
   - sh: rm mediaweb
