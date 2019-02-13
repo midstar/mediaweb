@@ -23,36 +23,71 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 * Thumbnail support, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache
 * Automatic rotation JPEG images when needed (based on EXIF information)
 
-## Install and configure
+## Download and install Linux
 
-Download the binaries for your platform [here on GitHub](https://github.com/midstar/mediaweb/releases).
+For PC x64 based Linux write following in a shell:
 
-If the binaries don't exist for your platform, see "Build from source" below.
+    export MW_ARCH=x64
+
+For ARM based Linux on for example Raspberry Pi, Banana Pi, ROCK64 etc:
+
+    export MW_ARCH=arm
+
+Then run following for all Linux platforms:
+
+    mkdir ~/mediaweb
+    cd ~/mediaweb
+    curl -s https://api.github.com/repos/midstar/mediaweb/releases/latest \
+    | grep browser_download_url \
+    | grep "mediaweb_linux_${MW_ARCH}.tar.gz"
+    | cut -d : -f 2,3 \
+    | tr -d \" \
+    | wget -qi -
+     tar xvzf mediaweb_linux_${MW_ARCH}.tar.gz
+     sudo sh service.sh install
+
+Follow the instructions in the service.sh script.
+
+## Download and install on Windows (64bit)
+
+Download mediaweb_windows_x64.zip [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
 Update the mediapath setting in mediaweb.conf. You might also want to change the port setting.
 
 Just start the mediaweb executable. It will look for the mediaweb.conf in the same folder.
 
-## Build from source
+It is currently not possible to run MediaWEB as a system service on Windows without any external software.
+
+## Build from source (any platform)
 
 To build from source on any platform you need to:
 
 * Install Golang 
 * Set the GOPATH environment variable
 
+Then:
+
+    git clone https://github.com/midstar/mediaweb.git
+
 On Windows execute (from cmd.exe):
 
-    cd %GOPATH%\src\github.com\midstar\mediaweb\scripts
-    install_deps.bat
-    build.bat
+    cd %GOPATH%\src\github.com\midstar\mediaweb
+    scripts\install_deps.bat
+    scripts\build.bat
 
 On Linux/Mac execute (from a shell):
 
-    cd $GOPATH/src/github.com/midstar/mediaweb/scripts
-    sh install_deps.sh
-    sh build.sh
+    cd $GOPATH/src/github.com/midstar/mediaweb
+    sh scripts/install_deps.sh
+    sh scripts/build.sh
 
-The mediaweb executable and an example configuration file will be in $GOPATH/src/github.com/midstar/mediaweb
+The mediaweb executable and an example configuration file will be in 
+$GOPATH/src/github.com/midstar/mediaweb. Edit the configuration file
+and then run the mediaweb executable.
+
+On Linux platforms execute following to install MediaWEB as a service:
+
+    sudo -E sh scripts/service.sh install
 
 
 ## Future improvements
