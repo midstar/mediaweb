@@ -39,7 +39,7 @@ Then run following for all Linux platforms:
     cd ~/mediaweb
     curl -s https://api.github.com/repos/midstar/mediaweb/releases/latest \
     | grep browser_download_url \
-    | grep "mediaweb_linux_${MW_ARCH}.tar.gz"
+    | grep "mediaweb_linux_${MW_ARCH}.tar.gz" \
     | cut -d : -f 2,3 \
     | tr -d \" \
     | wget -qi -
