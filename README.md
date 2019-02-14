@@ -79,18 +79,16 @@ To build from source on any platform you need to:
 * Install Golang 
 * Set the GOPATH environment variable
 
-Then:
-
-    git clone https://github.com/midstar/mediaweb.git
-
 On Windows execute (from cmd.exe):
 
+    go get github.com/midstar/mediaweb
     cd %GOPATH%\src\github.com\midstar\mediaweb
     scripts\install_deps.bat
     scripts\build.bat
 
 On Linux/Mac execute (from a shell):
 
+    go get github.com/midstar/mediaweb
     cd $GOPATH/src/github.com/midstar/mediaweb
     sh scripts/install_deps.sh
     sh scripts/build.sh
