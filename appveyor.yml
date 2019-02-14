@@ -7,6 +7,9 @@ image:
 
 platform: x64
 
+# Do not build on tags (GitHub and BitBucket)
+skip_tags: true
+
 version: 1.0.0.{build}
 
 stack: go 1.11
@@ -55,8 +58,7 @@ deploy:
   draft: false
   prerelease: false
   on:
-    branch: master                 # release from master branch only
-    APPVEYOR_REPO_TAG: true        # deploy on tag push only
+    branch: master
 
 for:
   
