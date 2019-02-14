@@ -50,7 +50,7 @@ build_script:
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
-  release: mediaweb-v$(appveyor_build_version)
+  release: mediaweb-v$(APPVEYOR_BUILD_VERSION)
   description: ''
   provider: GitHub
   auth_token:
