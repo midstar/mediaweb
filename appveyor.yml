@@ -51,7 +51,7 @@ deploy:
   description: ''
   provider: GitHub
   auth_token:
-    secure: $(GITHUB_TOKEN) # your encrypted token from GitHub
+    secure: $(GITHUB_TOKEN)
   draft: false
   prerelease: false
   on:
