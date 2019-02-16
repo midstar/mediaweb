@@ -33,13 +33,15 @@ build_script:
   # Windows and publish result on coveralls.io
   - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
-  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.exe configs\mediaweb.conf scripts\service.bat
+  - sh: 'copy scripts\service.bat .'
+  - sh: 'copy configs\mediaweb.conf .'
+  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.exe mediaweb.conf service.bat
 
   # Linux PC/x64
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: 'cp scripts/service.sh .'
   - sh: 'cp configs/mediaweb.conf .'
-  - sh: tar -zcvf mediaweb_linux_x64.tar.gz mediaweb.conf mediaweb service.sh
+  - sh: tar -zcvf mediaweb_linux_x64.tar.gz  mediaweb mediaweb.conf service.sh
 
   # Test service installation/uninstallation script
   - sh: 'sudo -E sh scripts/service_test.sh'
@@ -47,7 +49,7 @@ build_script:
   # Linux ARM (cross compile from linux x64)
   - sh: rm mediaweb
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh $APPVEYOR_BUILD_VERSION'
-  - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb.conf mediaweb service.sh
+  - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb mediaweb.conf service.sh
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
