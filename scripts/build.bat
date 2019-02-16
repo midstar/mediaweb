@@ -17,6 +17,6 @@ set PACKRCMD=packr2 --legacy
 echo %PACKRCMD%
 %PACKRCMD%
 type main-packr.go
-set INSTALLCMD=go install -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
+set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 %INSTALLCMD%
