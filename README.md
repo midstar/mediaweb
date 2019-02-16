@@ -68,7 +68,7 @@ Download mediaweb_windows_x64_setup.exe [here on GitHub](https://github.com/mids
 
 Run the installer and follow the instructions.
 
-To modyfy changes just edit mediaweb.conf in the installation directory and restart the mediaweb
+To modify changes just edit mediaweb.conf in the installation directory and restart the mediaweb
 service in task manager.
 
 ## Build from source (any platform)
