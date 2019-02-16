@@ -162,19 +162,38 @@ FunctionEnd
 ;======================================================================================================================
 ; Application install section
 Section "${APPLICATION_NAME}" SectionMain
-  MessageBox MB_OK|MB_ICONSTOP "Mediapath = $0"
-  Quit
 
   SectionIn RO
   
   ; Set output path to the installation directory.
   SetOutPath $INSTDIR
   
+  ; Create configuration file
+  FileOpen $4 "$INSTDIR\mediaweb.conf" w
+
+  FileWrite $4 "port = 9834$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "mediapath = $0$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "# Thumb cache path is by default your operating systems$\r$\n"
+  FileWrite $4 "# temp folder + mediaweb. Uncomment below to set to$\r$\n"
+  FileWrite $4 "# another location. Not used if enablethumbcache = off.$\r$\n"
+  FileWrite $4 "#thumbpath =$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "# Thumbnail cache is on by default$\r$\n"
+  FileWrite $4 "#enablethumbcache = off$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "#autorotate = off$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "logfile = mediaweb.log$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "# Log level is 'info' by default$\r$\n"
+  FileWrite $4 "#loglevel = trace$\r$\n"
+
+  FileClose $4
+
   ; Copy mediaweb binary
   File "${APPLICATION_BINARY}\mediaweb.exe"
-	
-	; Copy mediaweb default configuration
-  File "${APPLICATION_SOURCE}\configs\mediaweb.conf"
 	
 	; Copy mediaweb URL
   File "${APPLICATION_SOURCE}\MediaWEB.url"
@@ -230,7 +249,7 @@ SectionEnd
 Section "Start Menu Shortcuts" SectionStartMenu
 
   CreateDirectory "$SMPROGRAMS\${APPLICATION_FOLDER}"
-  CreateShortcut "$SMPROGRAMS\${APPLICATION_FOLDER}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+  CreateShortcut "$SMPROGRAMS\${APPLICATION_FOLDER}\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\logo.ico" 0
   CreateShortcut "$SMPROGRAMS\${APPLICATION_FOLDER}\MediaWEB.lnk" "$INSTDIR\MediaWEB.url" "" "$INSTDIR\logo.ico" 0
 	
 SectionEnd
