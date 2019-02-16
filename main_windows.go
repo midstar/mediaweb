@@ -17,7 +17,9 @@ type program struct {
 
 func (p *program) Start(s service.Service) error {
 	// Start should not block. Do the actual work async.
-	os.Chdir(p.workingDir)
+	if p.workingDir != "" {
+		os.Chdir(p.workingDir)
+	}
 	p.webAPI = mainCommon()
 	go p.run()
 	return nil
