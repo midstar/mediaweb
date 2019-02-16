@@ -70,7 +70,13 @@ Update the mediapath setting in mediaweb.conf. You might also want to change the
 
 Just start the mediaweb executable. It will look for the mediaweb.conf in the same folder.
 
-It is currently not possible to run MediaWEB as a system service on Windows without any external software.
+If you want to install mediaweb as a service, start cmd.exe in administrator mode and run:
+
+    service.bat install
+
+To uinstall the service run:
+
+    service.bat uninstall
 
 ## Build from source (any platform)
 
@@ -96,6 +102,10 @@ On Linux/Mac execute (from a shell):
 The mediaweb executable and an example configuration file will be in 
 $GOPATH/src/github.com/midstar/mediaweb. Edit the configuration file
 and then run the mediaweb executable.
+
+To install as a Windows service start cmd.exe in administrator mode and run:
+
+    scripts\service.bat install
 
 On Linux platforms execute following to install MediaWEB as a service:
 
