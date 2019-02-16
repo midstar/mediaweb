@@ -64,19 +64,12 @@ To uninstall MediaWEB run:
 
 ## Download and install on Windows (64bit)
 
-Download mediaweb_windows_x64.zip [here on GitHub](https://github.com/midstar/mediaweb/releases).
+Download mediaweb_windows_x64_setup.exe [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
-Update the mediapath setting in mediaweb.conf. You might also want to change the port setting.
+Run the installer and follow the instructions.
 
-Just start the mediaweb executable. It will look for the mediaweb.conf in the same folder.
-
-If you want to install mediaweb as a service, start cmd.exe in administrator mode and run:
-
-    service.bat install
-
-To uinstall the service run:
-
-    service.bat uninstall
+To modyfy changes just edit mediaweb.conf in the installation directory and restart the mediaweb
+service in task manager.
 
 ## Build from source (any platform)
 
@@ -116,7 +109,7 @@ On Linux platforms execute following to install MediaWEB as a service:
 
 * Create thumbnails for videos (probably using ffmpeg)
 * Add support for TLS/SSL
-* Add Windows installer (install MediaWEB as a service on Windows)
+
 
 ## Author and license
 
