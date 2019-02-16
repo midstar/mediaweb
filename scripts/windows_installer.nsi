@@ -62,6 +62,7 @@ RequestExecutionLevel admin
 !insertmacro MUI_PAGE_LICENSE "${APPLICATION_SOURCE}\LICENSE.txt"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
+Page custom selectMediaPathPage selectMediaPathPageLeave
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
@@ -112,10 +113,57 @@ Function .onInit
 
 FunctionEnd
 
+;======================================================================================================================
+; Custom dialog Select Media Path
+
+Var Dialog
+Var TextMediaPath
+
+Function selectMediaPathPage
+  !insertmacro MUI_HEADER_TEXT "Media Directory" "Provide photo and video directory to share."
+
+  #Create Dialog and quit if error
+  nsDialogs::Create 1018
+  Pop $Dialog
+  ${If} $Dialog == error
+          Abort
+  ${EndIf}       
+
+  ${NSD_CreateGroupBox} 5% 16u 90% 34u "Media directory"
+  Pop $0
+
+    ReadEnvStr $0 USERPROFILE
+    ${NSD_CreateDirRequest} 15% 30u 49% 12u "$0\Pictures"
+    Pop $TextMediaPath
+
+    ${NSD_CreateBrowseButton} 65% 30u 20% 12u "Browse..."
+    Pop $0
+    ${NSD_OnClick} $0 OnDirBrowse
+
+  ${NSD_CreateLabel} 5% 70u 100% 12u "Note! You can always change this later by updating mediaweb.conf"
+  Pop $0
+
+  nsDialogs::Show
+FunctionEnd
+
+Function OnDirBrowse
+  ${NSD_GetText} $TextMediaPath $0
+  nsDialogs::SelectFolderDialog "Select Media Directory" "$0" 
+  Pop $0
+  ${If} $0 != error
+      ${NSD_SetText} $TextMediaPath "$0"
+  ${EndIf}
+FunctionEnd
+
+Function selectMediaPathPageLeave
+    ${NSD_GetText} $TextMediaPath $0
+FunctionEnd
 
 ;======================================================================================================================
 ; Application install section
 Section "${APPLICATION_NAME}" SectionMain
+  MessageBox MB_OK|MB_ICONSTOP "Mediapath = $0"
+  Quit
 
   SectionIn RO
   
