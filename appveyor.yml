@@ -40,6 +40,9 @@ build_script:
   # Windows Test  service installation/uninstallation script
   - cmd: 'scripts/service_test.bat'
 
+  # Windows create windows setup (installer)
+  - cmd: 'makensis -DVERSION=%APPVEYOR_BUILD_VERSION% %GOPATH%\src\github.com\midstar\mediaweb\scripts\windows_installer.nsi'
+
   # Linux PC/x64
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: 'cp scripts/service.sh .'
@@ -82,6 +85,8 @@ for:
   artifacts:
     - path: mediaweb_windows_x64.zip
       name: mediaweb_windows_x64.zip
+    - path: mediaweb_windows_x64_setup.exe
+      name: mediaweb_windows_x64_setup.exe
 
 # Special configurations for Linux
 -
