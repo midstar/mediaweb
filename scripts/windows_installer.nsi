@@ -27,7 +27,7 @@
 !define APPLICATION_NAME "MediaWEB"
 !define APPLICATION_FOLDER "MediaWEB"
 !define APPLICATION_SOURCE "$%GOPATH%\src\github.com\midstar\mediaweb"
-!define APPLICATION_BINARY "$%GOPATH%\bin"
+!define APPLICATION_BINARY "$%GOPATH%\src\github.com\midstar\mediaweb"
 
 ; The application version. Override with /DVERSION flag
 !ifndef VERSION
@@ -133,14 +133,6 @@ Section "${APPLICATION_NAME}" SectionMain
 	
 	; Copy mediaweb icon
   File "${APPLICATION_SOURCE}\testmedia\logo.ico"
-	
-	; Copy the templates
-	SetOutPath "$INSTDIR\templates"
-	File "${APPLICATION_SOURCE}\templates\*.*"
-	
-	; Copy mediaweb
-	SetOutPath "$INSTDIR\client"
-	File "${APPLICATION_BINARY}\mediaweb.exe"
 	
 	
   
