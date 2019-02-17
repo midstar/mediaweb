@@ -61,6 +61,19 @@ func (wa *WebAPI) Stop() {
 
 // ServeHTTP handles incoming HTTP requests
 func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// Handle authentication
+	if wa.userName != "" {
+		// Authentication required
+		user, pass, _ := r.BasicAuth()
+		if wa.userName != user || wa.password != pass {
+			w.Header().Set("WWW-Authenticate", "Basic realm=\"MediaWEB requires username and password\"")
+			http.Error(w, "Unauthorized. Invalid username or password.", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Handle request
 	var head string
 	originalURL := r.URL.Path
 	llog.Trace("Got request: %s", r.URL.Path)
