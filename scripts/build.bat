@@ -13,11 +13,9 @@ echo building / installing
 cd %GOPATH%\src\github.com\midstar\mediaweb
 REM packr2 has a bug in Windows where absolute paths are generated instead
 REM of relative paths. We use --legacy to fix this
-set PACKRCMD=packr2 --legacy
-echo %PACKRCMD%
-%PACKRCMD%
-type a_main-packr.go
-set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
+REM set PACKRCMD=packr2 --legacy
+REM echo %PACKRCMD%
+REM %PACKRCMD%
+set INSTALLCMD=packr2 build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
-dir
 %INSTALLCMD%
