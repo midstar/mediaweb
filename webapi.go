@@ -19,17 +19,21 @@ type WebAPI struct {
 	templatePath string // Path to the templates
 	media        *Media
 	box          *packr.Box
+	userName     string // User name ("" means no authentication)
+	password     string // Password
 }
 
 // CreateWebAPI creates a new Web API instance
-func CreateWebAPI(port int, templatePath string, media *Media, box *packr.Box) *WebAPI {
+func CreateWebAPI(port int, templatePath string, media *Media, box *packr.Box, userName, password string) *WebAPI {
 	portStr := fmt.Sprintf(":%d", port)
 	server := &http.Server{Addr: portStr}
 	webAPI := &WebAPI{
 		server:       server,
 		templatePath: templatePath,
 		media:        media,
-		box:          box}
+		box:          box,
+		userName:     userName,
+		password:     password}
 	http.Handle("/", webAPI)
 	return webAPI
 }

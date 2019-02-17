@@ -189,6 +189,11 @@ Section "${APPLICATION_NAME}" SectionMain
   FileWrite $4 "$\r$\n"
   FileWrite $4 "# Log level is 'info' by default$\r$\n"
   FileWrite $4 "#loglevel = trace$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "# User name and password for authentication. Leave commented$\r$\n"
+  FileWrite $4 "# for no authentication$\r$\n"
+  FileWrite $4 "#username = myusername$\r$\n"
+  FileWrite $4 "#password = mypassword$\r$\n"
 
   FileClose $4
 

@@ -155,6 +155,11 @@ install_service() {
     echo >> $CONFIG
     echo "# Log level is 'info' by default" >> $CONFIG
     echo "#loglevel = trace" >> $CONFIG
+    echo >> $CONFIG
+    echo "# User name and password for authentication. Leave commented" >> $CONFIG
+    echo "# for no authentication" >> $CONFIG
+    echo "#username = myusername" >> $CONFIG
+    echo "#password = mypassword" >> $CONFIG
     
     echo "Wrote  : $CONFIG"
 

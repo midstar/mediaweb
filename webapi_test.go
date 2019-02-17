@@ -185,7 +185,7 @@ func TestGetThumbnail(t *testing.T) {
 func TestGetThumbnailNoCache(t *testing.T) {
 	media := createMedia("testmedia", "", false, true)
 	box := packr.New("templates", "./templates")
-	webAPI := CreateWebAPI(9834, "templates", media, box)
+	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)

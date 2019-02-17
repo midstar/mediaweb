@@ -17,6 +17,8 @@ type settings struct {
 	autoRotate       bool       // Rotate JPEG files when needed
 	logLevel         llog.Level // Logging level
 	logFile          string     // Log file ("" means stderr)
+	userName         string     // User name ("" means no authentication)
+	password         string     // Password
 }
 
 // defaultConfPath holds configuration file paths in priority order
@@ -104,6 +106,16 @@ func loadSettings(fileName string) settings {
 	// Default: info
 	logLevel := config.GetString("loglevel", "info")
 	result.logLevel = toLogLvl(logLevel)
+
+	// Load username (OPTIONAL)
+	// Default: "" (no authentication)
+	userName := config.GetString("username", "")
+	result.userName = userName
+
+	// Load password (OPTIONAL)
+	// Default: ""
+	password := config.GetString("password", "")
+	result.password = password
 
 	return result
 }
