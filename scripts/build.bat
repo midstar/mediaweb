@@ -16,6 +16,7 @@ REM of relative paths. We use --legacy to fix this
 set PACKRCMD=packr2 --legacy
 echo %PACKRCMD%
 %PACKRCMD%
+type a_main-packr.go
 set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 dir
