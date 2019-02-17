@@ -67,6 +67,7 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Authentication required
 		user, pass, _ := r.BasicAuth()
 		if wa.userName != user || wa.password != pass {
+			llog.Info("Invalid user login attempt. user: %s, password: %s", user, pass)
 			w.Header().Set("WWW-Authenticate", "Basic realm=\"MediaWEB requires username and password\"")
 			http.Error(w, "Unauthorized. Invalid username or password.", http.StatusUnauthorized)
 			return
