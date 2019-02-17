@@ -125,6 +125,11 @@ func TestListFolders(t *testing.T) {
 	var files []File
 	getObject(t, "folder", &files)
 	assertTrue(t, "", len(files) > 5)
+
+	// Test list folder that don't exist
+	resp, err := http.Get(fmt.Sprintf("%s/folder/dont/exist", baseURL))
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }
 
 func TestGetMedia(t *testing.T) {
@@ -151,6 +156,10 @@ func TestGetMedia(t *testing.T) {
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 
 	resp, err = http.Get(fmt.Sprintf("%s/media/exif_rotate", baseURL))
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
+
+	resp, err = http.Get(fmt.Sprintf("%s/media/../../hacker.png", baseURL))
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }

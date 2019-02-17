@@ -2,10 +2,10 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/kardianos/service"
+	"github.com/midstar/llog"
 )
 
 var logger service.Logger
@@ -47,14 +47,7 @@ func main() {
 	prg := &program{workingDir: workingDir}
 	s, err := service.New(prg, svcConfig)
 	if err != nil {
-		log.Fatal(err)
+		llog.Panic("%s", err)
 	}
-	logger, err = s.Logger(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = s.Run()
-	if err != nil {
-		logger.Error(err)
-	}
+	s.Run()
 }
