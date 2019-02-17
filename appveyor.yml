@@ -37,6 +37,10 @@ build_script:
   - cmd: 'copy configs\mediaweb.conf .'
   - cmd: 7z a mediaweb_windows_x64.zip mediaweb.exe mediaweb.conf service.bat
 
+  # Windows Debugging - remove later
+  - cmd: 'rename templates old_templates'
+
+
   # Windows Test  service installation/uninstallation script
   - cmd: 'scripts/service_test.bat'
 
