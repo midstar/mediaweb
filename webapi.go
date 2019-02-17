@@ -19,17 +19,21 @@ type WebAPI struct {
 	templatePath string // Path to the templates
 	media        *Media
 	box          *packr.Box
+	userName     string // User name ("" means no authentication)
+	password     string // Password
 }
 
 // CreateWebAPI creates a new Web API instance
-func CreateWebAPI(port int, templatePath string, media *Media, box *packr.Box) *WebAPI {
+func CreateWebAPI(port int, templatePath string, media *Media, box *packr.Box, userName, password string) *WebAPI {
 	portStr := fmt.Sprintf(":%d", port)
 	server := &http.Server{Addr: portStr}
 	webAPI := &WebAPI{
 		server:       server,
 		templatePath: templatePath,
 		media:        media,
-		box:          box}
+		box:          box,
+		userName:     userName,
+		password:     password}
 	http.Handle("/", webAPI)
 	return webAPI
 }
@@ -57,6 +61,20 @@ func (wa *WebAPI) Stop() {
 
 // ServeHTTP handles incoming HTTP requests
 func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// Handle authentication
+	if wa.userName != "" {
+		// Authentication required
+		user, pass, _ := r.BasicAuth()
+		if wa.userName != user || wa.password != pass {
+			llog.Info("Invalid user login attempt. user: %s, password: %s", user, pass)
+			w.Header().Set("WWW-Authenticate", "Basic realm=\"MediaWEB requires username and password\"")
+			http.Error(w, "Unauthorized. Invalid username or password.", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	// Handle request
 	var head string
 	originalURL := r.URL.Path
 	llog.Trace("Got request: %s", r.URL.Path)

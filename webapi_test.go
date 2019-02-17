@@ -32,6 +32,22 @@ func getHTML(t *testing.T, path string) string {
 	return respToString(resp.Body)
 }
 
+func getHTMLAuthenticate(t *testing.T, path, user, pass string, expectFail bool) string {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", baseURL, path), nil)
+	req.SetBasicAuth(user, pass)
+	resp, err := client.Do(req)
+	assertExpectNoErr(t, "", err)
+	if expectFail {
+		assertEqualsInt(t, "", int(http.StatusUnauthorized), int(resp.StatusCode))
+		return ""
+	}
+	assertEqualsInt(t, "", int(http.StatusOK), int(resp.StatusCode))
+	assertEqualsStr(t, "", "text/html", resp.Header.Get("content-type"))
+	defer resp.Body.Close()
+	return respToString(resp.Body)
+}
+
 func getBinary(t *testing.T, path, contentType string) []byte {
 	resp, err := http.Get(fmt.Sprintf("%s/%s", baseURL, path))
 	assertExpectNoErr(t, "", err)
@@ -125,6 +141,11 @@ func TestListFolders(t *testing.T) {
 	var files []File
 	getObject(t, "folder", &files)
 	assertTrue(t, "", len(files) > 5)
+
+	// Test list folder that don't exist
+	resp, err := http.Get(fmt.Sprintf("%s/folder/dont/exist", baseURL))
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }
 
 func TestGetMedia(t *testing.T) {
@@ -151,6 +172,10 @@ func TestGetMedia(t *testing.T) {
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 
 	resp, err = http.Get(fmt.Sprintf("%s/media/exif_rotate", baseURL))
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
+
+	resp, err = http.Get(fmt.Sprintf("%s/media/../../hacker.png", baseURL))
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
 }
@@ -185,7 +210,7 @@ func TestGetThumbnail(t *testing.T) {
 func TestGetThumbnailNoCache(t *testing.T) {
 	media := createMedia("testmedia", "", false, true)
 	box := packr.New("templates", "./templates")
-	webAPI := CreateWebAPI(9834, "templates", media, box)
+	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
@@ -221,4 +246,37 @@ func TestInvalidPath(t *testing.T) {
 	resp, err := http.Post(fmt.Sprintf("%s/invalid", baseURL), "", nil)
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusNotFound), int(resp.StatusCode))
+}
+
+func TestAuthentication(t *testing.T) {
+	media := createMedia("testmedia", "", true, true)
+	box := packr.New("templates", "./templates")
+	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
+	webAPI.Start()
+	waitserver(t)
+	defer shutdown(t)
+
+	// Try to get without any authentication header
+	resp, err := http.Get(baseURL)
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "", int(http.StatusUnauthorized), int(resp.StatusCode))
+
+	// Try to get with a valid user and password
+	index := getHTMLAuthenticate(t, "index.html", "myuser", "mypass", false)
+	if !strings.Contains(index, "<title>MediaWEB</title>") {
+		t.Fatal("Index html title missing")
+	}
+
+	// Try to get with an invalid user but valid password
+	getHTMLAuthenticate(t, "index.html", "invalid", "mypass", true)
+
+	// Try to get with a valid user but invalid password
+	getHTMLAuthenticate(t, "index.html", "myuser", "invalid", true)
+
+	// Try to get with a valid user and password again
+	index = getHTMLAuthenticate(t, "index.html", "myuser", "mypass", false)
+	if !strings.Contains(index, "<title>MediaWEB</title>") {
+		t.Fatal("Index html title missing")
+	}
+
 }

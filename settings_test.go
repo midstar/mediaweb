@@ -27,6 +27,8 @@ mediapath = Y:\pictures`
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
 	assertEqualsInt(t, "logLevel", int(llog.LvlInfo), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "", s.logFile)
+	assertEqualsStr(t, "userName", "", s.userName)
+	assertEqualsStr(t, "password", "", s.password)
 
 }
 
@@ -40,6 +42,8 @@ enablethumbcache = off
 autorotate = false
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
+username = an_email@password.com
+password = A!#_q7*+
 `
 	fullPath := createConfigFile(t, "TestSettings.conf", contents)
 	s := loadSettings(fullPath)
@@ -54,6 +58,8 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsBool(t, "autoRotate", false, s.autoRotate)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
+	assertEqualsStr(t, "userName", "an_email@password.com", s.userName)
+	assertEqualsStr(t, "password", "A!#_q7*+", s.password)
 
 }
 
