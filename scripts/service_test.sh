@@ -21,7 +21,7 @@ if ! [ "$HTTP_STATUS" = "200" ]; then
 	echo "Expected status code 200, but got $HTTP_STATUS"
 	exit 1
 fi
-if ! [ -f "/var/mediaweb.log" ]; then
+if ! [ -f "/var/log/mediaweb.log" ]; then
 	echo "Test Failed! No log file was created in /var/mediaweb.log"
 	echo
 	exit 1
