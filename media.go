@@ -272,8 +272,7 @@ func (m *Media) writeEXIFThumbnail(w io.Writer, relativeFilePath string) error {
 		case 8:
 			outImg = imaging.Rotate90(img)
 		}
-		err = imaging.Encode(w, outImg, imaging.JPEG)
-		//return err
+		imaging.Encode(w, outImg, imaging.JPEG)
 	} else {
 		// No rotation is needed
 		w.Write(thumbBytes)

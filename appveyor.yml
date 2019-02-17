@@ -33,20 +33,33 @@ build_script:
   # Windows and publish result on coveralls.io
   - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
-  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.conf %GOPATH%\bin\mediaweb.exe 
+  - cmd: 'copy scripts\service.bat .'
+  - cmd: 'copy configs\mediaweb.conf .'
+  - cmd: 7z a mediaweb_windows_x64.zip mediaweb.exe mediaweb.conf service.bat
+
+  # Windows rename tempates directory to secure that packr is working
+  - cmd: 'rename templates old_templates'
+
+
+  # Windows Test  service installation/uninstallation script
+  - cmd: 'scripts/service_test.bat'
+
+  # Windows create windows setup (installer)
+  - cmd: 'makensis -DVERSION=%APPVEYOR_BUILD_VERSION% %GOPATH%\src\github.com\midstar\mediaweb\scripts\windows_installer.nsi'
 
   # Linux PC/x64
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: 'cp scripts/service.sh .'
-  - sh: tar -zcvf mediaweb_linux_x64.tar.gz mediaweb.conf mediaweb service.sh
+  - sh: 'cp configs/mediaweb.conf .'
+  - sh: tar -zcvf mediaweb_linux_x64.tar.gz  mediaweb mediaweb.conf service.sh
 
-  # Test service installation/uninstallation script
+  # Linux Test service installation/uninstallation script
   - sh: 'sudo -E sh scripts/service_test.sh'
 
   # Linux ARM (cross compile from linux x64)
   - sh: rm mediaweb
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh $APPVEYOR_BUILD_VERSION'
-  - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb.conf mediaweb service.sh
+  - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb mediaweb.conf service.sh
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
@@ -76,6 +89,8 @@ for:
   artifacts:
     - path: mediaweb_windows_x64.zip
       name: mediaweb_windows_x64.zip
+    - path: mediaweb_windows_x64_setup.exe
+      name: mediaweb_windows_x64_setup.exe
 
 # Special configurations for Linux
 -

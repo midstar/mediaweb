@@ -5,7 +5,7 @@ import (
 	"github.com/midstar/llog"
 )
 
-func main() {
+func mainCommon() *WebAPI {
 	s := loadSettings(findConfFile())
 	llog.SetLevel(s.logLevel)
 	if s.logFile != "" {
@@ -17,6 +17,5 @@ func main() {
 	media := createMedia(s.mediaPath, s.thumbPath, s.enableThumbCache, s.autoRotate)
 	box := packr.New("templates", "./templates")
 	webAPI := CreateWebAPI(s.port, "templates", media, box)
-	httpServerDone := webAPI.Start()
-	<-httpServerDone // Block until http server is done
+	return webAPI
 }

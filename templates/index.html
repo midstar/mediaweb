@@ -356,7 +356,7 @@
                         success(JSON.parse(xhr.responseText));
             } else {
                 if (error)
-                    error(xhr);
+                    error(xhr.responseText + "\n\nMake sure you have updated the mediapath \nproperty in mediaweb.conf correctly!");
                 }
             }
         };

@@ -59,6 +59,7 @@ func (wa *WebAPI) Stop() {
 func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var head string
 	originalURL := r.URL.Path
+	llog.Trace("Got request: %s", r.URL.Path)
 	head, r.URL.Path = shiftPath(r.URL.Path)
 	if head == "shutdown" && r.Method == "POST" {
 		wa.Stop()
@@ -89,7 +90,7 @@ func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
 	bytes, err := wa.box.Find(fileName)
 	if err != nil || len(bytes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "This is not a valid path: %s!", r.URL.Path)
+		fmt.Fprintf(w, "Unable to find: %s!", fileName)
 	} else {
 		if filepath.Ext(fileName) == ".html" {
 			w.Header().Set("Content-Type", "text/html")

@@ -153,7 +153,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "afile.jpg", p)
 
-	p, err = media.getFullMediaPath("../../secret_file")
+	_, err = media.getFullMediaPath("../../secret_file")
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Relative path
@@ -162,7 +162,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "arelative/path/afile.jpg", p)
 
-	p, err = media.getFullMediaPath("../../secret_file")
+	_, err = media.getFullMediaPath("../../secret_file")
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Absolute path
@@ -171,7 +171,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "/root/absolute/path/afile.jpg", p)
 
-	p, err = media.getFullMediaPath("../../secret_file")
+	_, err = media.getFullMediaPath("../../secret_file")
 	assertExpectErr(t, "hackers shall not be allowed", err)
 }
 
@@ -190,10 +190,10 @@ func TestThumbnailPath(t *testing.T) {
 	assertExpectNoErr(t, "", err)
 	assertEqualsStr(t, "", "/d/thumbpath/subdrive/_myimage.jpg", thumbPath)
 
-	thumbPath, err = media.thumbnailPath("subdrive/myimage")
+	_, err = media.thumbnailPath("subdrive/myimage")
 	assertExpectErr(t, "", err)
 
-	thumbPath, err = media.thumbnailPath("subdrive/../../hacker")
+	_, err = media.thumbnailPath("subdrive/../../hacker")
 	assertExpectErr(t, "", err)
 }
 
