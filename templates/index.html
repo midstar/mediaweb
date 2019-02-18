@@ -302,6 +302,12 @@
                 prev = globalFiles.length - 1;
             }
         } while (globalFiles[prev].Type == "folder")
+
+        if (globalFiles[prev].Type == "image") {
+            // Cache image
+            preload("media/" + globalFiles[prev].Path);
+        } 
+
         var prevButton = document.getElementById("mediaViewerPrev");
         prevButton.onclick = function() { 
             openFileDialog(prev);
@@ -316,6 +322,12 @@
                 next = 0;
             }
         } while (globalFiles[next].Type == "folder")
+
+        if (globalFiles[next].Type == "image") {
+            // Cache image
+            preload("media/" + globalFiles[next].Path);
+        } 
+
         var nextButton = document.getElementById("mediaViewerNext");
         nextButton.onclick = function() { 
             openFileDialog(next);
@@ -411,6 +423,20 @@
         };
         xhr.open("GET", filePath, true);
         xhr.send();
+    }
+
+
+    // Function for caching images (to reduce loading times)
+    var cachedImages = new Array()
+    var cachedImagesIndex = 0;
+    function preload(imageUrl) {
+        cachedImages[cachedImagesIndex] = new Image()
+        cachedImages[cachedImagesIndex].src = imageUrl
+        cachedImagesIndex++
+        // Store maximum 2 images in cache
+        if (cachedImagesIndex == 2) {
+            cachedImagesIndex = 0;
+        }
     }
 
     </script>
