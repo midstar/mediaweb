@@ -8,7 +8,7 @@
 
 MediaWeb is a small self-contained web server software to enable you to access your photos and videos over the Internet in your WEB browser.
 
-The main design goal of MediaWEB is that no additional dependencies shall be needed, such as a server (Apache, NGINX, IIS etc.) or database (MySQL, sqlite etc.). The only files required to run MediaWEB are:
+The main design goal of MediaWEB is that no additional dependencies shall be needed, such as a script engine (Java, Python, Perl, Ruby etc.), or server (Apache, NGINX, IIS etc.) or database (MySQL, sqlite etc.). The only files required to run MediaWEB are:
 
 * The mediaweb executable
 * A configuration file, mediaweb.conf
@@ -22,6 +22,7 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 * Simple WEB GUI for viewing your images and videos
 * Thumbnail support, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache
 * Automatic rotation JPEG images when needed (based on EXIF information)
+* Optional authentication with username and password
 
 ## Download and install Linux
 

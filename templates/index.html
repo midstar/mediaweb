@@ -148,6 +148,33 @@
             width: 100%;
         }
     }    
+
+    /* Loader / spinner */
+    #loader {
+        position: fixed;
+        top: 15px;
+        left: 35px;
+        /*margin-top: -60px;
+        margin-left: -60px;*/
+        border: 4px solid #bcbcbc;
+        border-radius: 50%;
+        border-top: 4px solid #707070;
+        border-bottom: 4px solid #707070;
+        width: 15px;
+        height: 15px;
+        -webkit-animation: spin 1s linear infinite;
+        animation: spin 1s linear infinite;
+    }
+
+    @-webkit-keyframes spin {
+        0% { -webkit-transform: rotate(0deg); }
+        100% { -webkit-transform: rotate(360deg); }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
     </style>
     <script>
 
@@ -161,6 +188,11 @@
         var span = document.getElementById("mediaViewerClose");
         span.onclick = closeFileDialog
 
+        /* Setup onload for images (close loader/spinner) */
+        var img = document.getElementById("mediaViewerImg");
+        img.addEventListener("load", hideLoader)
+
+        /* Check for URL search parameters */
         var path = ""
         const params = new URLSearchParams(window.location.search);
         if (params.has("path")) {
@@ -217,6 +249,17 @@
         document.onkeydown = null;
     }
 
+    function showLoader() {
+        var loader = document.getElementById("loader");
+        loader.style.display = "block"; 
+    }
+
+    function hideLoader() {
+        var loader = document.getElementById("loader");
+        loader.style.display = "none"; 
+    }
+
+
     /* index refers to the file index in global globalFiles array */
     function openFileDialog(index) {
         var file = globalFiles[index];
@@ -231,13 +274,19 @@
             modalImg.src = mediaUrl;
             modalVideo.style.display = "none"; // Hide video
             modalImg.style.display = "block"; // Show image
+    
+            showLoader() // Show loader / spinner
+
         } else if (file.Type == "video") {
             // This is a video
             modalVideo.src = mediaUrl;
             modalImg.style.display = "none"; // Hide image
             modalVideo.style.display = "block"; // Show video
+    
+            hideLoader() // Hide loader / spinner
         } else {
             alert("Unsupported file: " + file.Type);
+            hideLoader() // Hide loader / spinner
         }
 
         // Set the caption
@@ -253,6 +302,12 @@
                 prev = globalFiles.length - 1;
             }
         } while (globalFiles[prev].Type == "folder")
+
+        if (globalFiles[prev].Type == "image") {
+            // Cache image
+            preload("media/" + globalFiles[prev].Path);
+        } 
+
         var prevButton = document.getElementById("mediaViewerPrev");
         prevButton.onclick = function() { 
             openFileDialog(prev);
@@ -267,6 +322,12 @@
                 next = 0;
             }
         } while (globalFiles[next].Type == "folder")
+
+        if (globalFiles[next].Type == "image") {
+            // Cache image
+            preload("media/" + globalFiles[next].Path);
+        } 
+
         var nextButton = document.getElementById("mediaViewerNext");
         nextButton.onclick = function() { 
             openFileDialog(next);
@@ -364,6 +425,20 @@
         xhr.send();
     }
 
+
+    // Function for caching images (to reduce loading times)
+    var cachedImages = new Array()
+    var cachedImagesIndex = 0;
+    function preload(imageUrl) {
+        cachedImages[cachedImagesIndex] = new Image()
+        cachedImages[cachedImagesIndex].src = imageUrl
+        cachedImagesIndex++
+        // Store maximum 2 images in cache
+        if (cachedImagesIndex == 2) {
+            cachedImagesIndex = 0;
+        }
+    }
+
     </script>
   </head>
   <body>
@@ -378,6 +453,7 @@
 
   <!-- The Media Viewer -->
   <div id="mediaViewer" class="modal">
+    <div id="loader"></div>
     <span class="mediaButton close" id="mediaViewerClose">&times;</span>
     <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
     <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
