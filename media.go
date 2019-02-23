@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+	packr "github.com/gobuffalo/packr/v2"
 	"github.com/midstar/llog"
 	"github.com/rwcarlsen/goexif/exif"
 )
@@ -21,10 +22,11 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath        string // Top level path for media files
-	thumbPath        string // Top level path for thumbnails
-	enableThumbCache bool   // Generate thumbnails
-	autoRotate       bool   // Rotate JPEG files when needed
+	mediaPath        string     // Top level path for media files
+	thumbPath        string     // Top level path for thumbnails
+	enableThumbCache bool       // Generate thumbnails
+	autoRotate       bool       // Rotate JPEG files when needed
+	box              *packr.Box // For icons
 }
 
 // File represents a folder or any other file
@@ -36,7 +38,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
+func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -55,7 +57,8 @@ func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, auto
 	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache: enableThumbCache,
-		autoRotate:       autoRotate}
+		autoRotate:       autoRotate,
+		box:              box}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	return media
 }
@@ -367,7 +370,7 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 		thumbFile, err := os.Open(thumbFileName)
 		if err != nil {
 			// No thumb exist. Create it
-			llog.Info("Creating new thumbnail for %s", relativeFilePath)
+			llog.Trace("Creating new thumbnail for %s", relativeFilePath)
 			fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 			if err != nil {
 				return err
@@ -415,7 +418,47 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	defer os.Remove(screenShot) // Remove temporary file
 
 	// Generate thumbnail from the screenshot
-	return m.generateImageThumbnail(screenShot, fullThumbPath)
+	img, err := imaging.Open(screenShot, imaging.AutoOrientation(true))
+	if err != nil {
+		return fmt.Errorf("Unable to open screenshot image %s. Reason: %s", screenShot, err)
+	}
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+
+	// Add small video icon i upper right corner to indicate that this is
+	// a video
+	iconVideoImg, err := m.getVideoIcon()
+	if err != nil {
+		return err
+	}
+	thumbImg = imaging.Overlay(thumbImg, iconVideoImg, image.Pt(155, 11), 1.0)
+
+	// Write thumbnail to file
+	outFile, err := os.Create(fullThumbPath)
+	if err != nil {
+		return fmt.Errorf("Unable to open %s for creating thumbnail. Reason %s", fullThumbPath, err)
+	}
+	defer outFile.Close()
+	err = imaging.Encode(outFile, thumbImg, imaging.JPEG)
+
+	return err
+}
+
+// Cache to avoid regenerate icon each time (do it once)
+var videoIcon image.Image
+
+func (m *Media) getVideoIcon() (image.Image, error) {
+	if videoIcon != nil {
+		// To avoid re-generate
+		return videoIcon, nil
+	}
+	var err error
+	videoIconBytes, _ := m.box.Find("icon_video.png")
+	videoIcon, err = imaging.Decode(bytes.NewReader(videoIconBytes))
+	if err != nil {
+		return nil, err
+	}
+	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Lanczos)
+	return videoIcon, nil
 }
 
 // extractVideoScreenshot extracts a screenshot from a video using external

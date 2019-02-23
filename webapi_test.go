@@ -215,8 +215,8 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func TestGetThumbnailNoCache(t *testing.T) {
-	media := createMedia("testmedia", "", false, true)
 	box := packr.New("templates", "./templates")
+	media := createMedia(box, "testmedia", "", false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -256,8 +256,8 @@ func TestInvalidPath(t *testing.T) {
 }
 
 func TestAuthentication(t *testing.T) {
-	media := createMedia("testmedia", "", true, true)
 	box := packr.New("templates", "./templates")
+	media := createMedia(box, "testmedia", "", true, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)
