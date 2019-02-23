@@ -350,6 +350,9 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 //  3. Generate a thumbnail to cache and write
 //  4. If all above fails return error
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
+	if !m.isImage(relativeFilePath) && !m.isVideo(relativeFilePath) {
+		return fmt.Errorf("not a supported media type")
+	}
 	err := m.writeEXIFThumbnail(w, relativeFilePath)
 	if err != nil && m.enableThumbCache {
 		err = nil
