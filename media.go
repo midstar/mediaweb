@@ -52,10 +52,12 @@ func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, auto
 		llog.Info("Thumbnail cache disabled")
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
-	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
+	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache: enableThumbCache,
 		autoRotate:       autoRotate}
+	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
+	return media
 }
 
 // getFullPath returns the full path from an absolute base
@@ -401,20 +403,44 @@ func (m *Media) videoThumbnailSupport() bool {
 
 // generateVideoThumbnail generates a thumbnail from any of the supported
 // videos. Will create necessary subdirectories in the thumbpath.
-//
-// Utilizes the external ffmpeg software.
 func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) error {
+	// The temporary file for the screenshot
+	screenShot := fullThumbPath + ".sh.jpg"
+
+	// Extract the screenshot
+	err := m.extractVideoScreenshot(fullMediaPath, screenShot)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(screenShot) // Remove temporary file
+
+	// Generate thumbnail from the screenshot
+	return m.generateImageThumbnail(screenShot, fullThumbPath)
+}
+
+// extractVideoScreenshot extracts a screenshot from a video using external
+// ffmpeg software. Will create necessary directories in the outFilePath
+func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	if !m.videoThumbnailSupport() {
 		return fmt.Errorf("video thumbnails not supported. ffmpeg not installed")
 	}
+
+	// Create subdirectories if needed
+	directory := filepath.Dir(outFilePath)
+	err := os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Unable to create directories in %s for extracting screenshot. Reason %s", outFilePath, err)
+	}
+
+	// Define argments for ffmpeg
 	ffmpegArgs := []string{
 		"-i",
-		fullMediaPath,
+		inFilePath,
 		"-ss",
 		"00:00:05", // 5 seconds into movie
 		"-vframes",
 		"1",
-		fullThumbPath}
+		outFilePath}
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -423,7 +449,7 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	cmd := exec.Command(ffmpegCmd, ffmpegArgs...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		errorStr := fmt.Sprintf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
