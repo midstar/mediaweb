@@ -23,7 +23,7 @@ install:
   - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
   - sh: sudo chmod -R a+rwx $GOPATH
-  - sh: go get github.com\mattn\goveralls
+  - sh: go get github.com/mattn/goveralls
   - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
 
   # Linux install ffmpeg
