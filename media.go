@@ -367,7 +367,11 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 			if err != nil {
 				return err
 			}
-			err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+			if m.isVideo(fullMediaPath) {
+				err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
+			} else {
+				err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+			}
 			if err != nil {
 				return err
 			}
@@ -387,7 +391,7 @@ var ffmpegCmd = "ffmpeg"
 
 // videoThumbnailSupport returns true if ffmpeg is installed, and thus
 // video thumbnails is supported
-func videoThumbnailSupport() bool {
+func (m *Media) videoThumbnailSupport() bool {
 	_, err := exec.LookPath(ffmpegCmd)
 	return err == nil
 }
@@ -397,7 +401,7 @@ func videoThumbnailSupport() bool {
 //
 // Utilizes the external ffmpeg software.
 func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) error {
-	if !videoThumbnailSupport() {
+	if !m.videoThumbnailSupport() {
 		return fmt.Errorf("video thumbnails not supported. ffmpeg not installed")
 	}
 	ffmpegArgs := []string{
@@ -418,8 +422,10 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
+		errorStr := fmt.Sprintf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
+		llog.Error(errorStr)
+		return fmt.Errorf(errorStr)
 	}
 	return err
 }

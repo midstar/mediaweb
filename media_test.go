@@ -109,6 +109,7 @@ func TestRotateAndWrite(t *testing.T) {
 }
 
 func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
+	t.Helper()
 	inFileName := "exif_rotate/" + filename
 	outFileName := "tmpout/TestWriteEXIFThumbnail/thumb_" + filename
 	os.Remove(outFileName)
@@ -199,6 +200,7 @@ func TestThumbnailPath(t *testing.T) {
 }
 
 func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName string) {
+	t.Helper()
 	os.Remove(outFileName)
 	RestartTimer()
 	err := media.generateImageThumbnail(inFileName, outFileName)
@@ -229,6 +231,7 @@ func TestGenerateImageThumbnail(t *testing.T) {
 }
 
 func tWriteThumbnail(t *testing.T, media *Media, inFileName, outFileName string, failExpected bool) {
+	t.Helper()
 	os.Remove(outFileName)
 	outFile, err := os.Create(outFileName)
 	assertExpectNoErr(t, "unable to create out", err)
@@ -259,6 +262,11 @@ func TestWriteThumbnail(t *testing.T) {
 	// Non JPEG - no exif
 	tWriteThumbnail(t, media, "png.png", "tmpout/TestWriteThumbnail/png.jpg", false)
 
+	// Video - only if video is supported
+	if media.videoThumbnailSupport() {
+		tWriteThumbnail(t, media, "video.mp4", "tmpout/TestWriteThumbnail/video.jpg", false)
+	}
+
 	// Non existing file
 	tWriteThumbnail(t, media, "dont_exist.jpg", "tmpout/TestWriteThumbnail/dont_exist.jpg", true)
 
@@ -283,21 +291,24 @@ func TestVideoThumbnailSupport(t *testing.T) {
 		ffmpegCmd = origCmd
 	}()
 
-	t.Logf("ffmpeg supported: %v", videoThumbnailSupport())
+	media := createMedia("", "", true, true)
+
+	t.Logf("ffmpeg supported: %v", media.videoThumbnailSupport())
 
 	ffmpegCmd = "thiscommanddontexit"
-	assertFalse(t, ffmpegCmd, videoThumbnailSupport())
+	assertFalse(t, ffmpegCmd, media.videoThumbnailSupport())
 
 	ffmpegCmd = "cmd"
-	shallBeTrueOnWindows := videoThumbnailSupport()
+	shallBeTrueOnWindows := media.videoThumbnailSupport()
 
 	ffmpegCmd = "echo"
-	shallBeTrueOnNonWindows := videoThumbnailSupport()
+	shallBeTrueOnNonWindows := media.videoThumbnailSupport()
 
 	assertTrue(t, "Shall be true on at least one platform", shallBeTrueOnWindows || shallBeTrueOnNonWindows)
 }
 
 func tGenerateVideoThumbnail(t *testing.T, media *Media, inFileName, outFileName string) {
+	t.Helper()
 	os.Remove(outFileName)
 	RestartTimer()
 	err := media.generateVideoThumbnail(inFileName, outFileName)
@@ -308,7 +319,8 @@ func tGenerateVideoThumbnail(t *testing.T, media *Media, inFileName, outFileName
 }
 
 func TestGenerateVideoThumbnail(t *testing.T) {
-	if !videoThumbnailSupport() {
+	media := createMedia("", "", true, true)
+	if !media.videoThumbnailSupport() {
 		t.Skip("ffmpeg not installed skipping test")
 		return
 	}
@@ -316,8 +328,6 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	os.MkdirAll(tmp, os.ModePerm) // If already exist no problem
 	tmpSpace := "tmpout/TestGenerateVideoThumbnail/with space in path"
 	os.MkdirAll(tmpSpace, os.ModePerm) // If already exist no problem
-
-	media := createMedia("", "", true, true)
 
 	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmp+"/video_thumbnail.jpg")
 	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmpSpace+"/video_thumbnail.jpg")
