@@ -119,6 +119,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 	err = media.writeEXIFThumbnail(outFile, inFileName)
 	LogTime(t, inFileName+" thumbnail time")
 	assertExpectNoErr(t, "unable to extract thumbnail", err)
+	assertFileExist(t, "", outFileName)
 	t.Logf("Manually check that %s thumbnail is ok", outFileName)
 }
 
@@ -203,6 +204,7 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 	err := media.generateImageThumbnail(inFileName, outFileName)
 	LogTime(t, inFileName+"thumbnail generation: ")
 	assertExpectNoErr(t, "", err)
+	assertFileExist(t, "", outFileName)
 	t.Logf("Manually check that %s thumbnail is ok", outFileName)
 }
 
@@ -271,4 +273,49 @@ func TestWriteThumbnail(t *testing.T) {
 
 	// Non JPEG - no exif
 	tWriteThumbnail(t, media, "png.png", "tmpout/TestWriteThumbnail/png.jpg", true)
+}
+
+func TestVideoThumbnailSupport(t *testing.T) {
+	// Since we cannot guarantee that ffmpeg is available on the test
+	// host we will replace the ffmpeg command temporary
+	origCmd := ffmpegCmd
+	defer func() {
+		ffmpegCmd = origCmd
+	}()
+
+	t.Logf("ffmpeg supported: %v", videoThumbnailSupport())
+
+	ffmpegCmd = "thiscommanddontexit"
+	assertFalse(t, ffmpegCmd, videoThumbnailSupport())
+
+	ffmpegCmd = "cmd"
+	shallBeTrueOnWindows := videoThumbnailSupport()
+
+	ffmpegCmd = "echo"
+	shallBeTrueOnNonWindows := videoThumbnailSupport()
+
+	assertTrue(t, "Shall be true on at least one platform", shallBeTrueOnWindows || shallBeTrueOnNonWindows)
+}
+
+func tGenerateVideoThumbnail(t *testing.T, media *Media, inFileName, outFileName string) {
+	os.Remove(outFileName)
+	RestartTimer()
+	err := media.generateVideoThumbnail(inFileName, outFileName)
+	LogTime(t, inFileName+"thumbnail generation: ")
+	assertExpectNoErr(t, "", err)
+	assertFileExist(t, "", outFileName)
+	t.Logf("Manually check that %s thumbnail is ok", outFileName)
+}
+
+func TestGenerateVideoThumbnail(t *testing.T) {
+	if !videoThumbnailSupport() {
+		t.Skip("ffmpeg not installed skipping test")
+		return
+	}
+	tmp := "tmpout/TestGenerateVideoThumbnail"
+	os.MkdirAll(tmp, os.ModePerm) // If already exist no problem
+
+	media := createMedia("", "", true, true)
+
+	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmp+"/video_thumbnail.jpg")
 }

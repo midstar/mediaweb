@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -299,7 +300,7 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 	return m.getFullThumbPath(relativeThumbnailPath)
 }
 
-// generateThumbnail generates a thumbnail from any of the supported
+// generateImageThumbnail generates a thumbnail from any of the supported
 // images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
 	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
@@ -362,6 +363,48 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 		}
 		defer thumbFile.Close()
 		_, err = io.Copy(w, thumbFile)
+	}
+	return err
+}
+
+// For testing purposes
+var ffmpegCmd = "ffmpeg"
+
+// videoThumbnailSupport returns true if ffmpeg is installed, and thus
+// video thumbnails is supported
+func videoThumbnailSupport() bool {
+	_, err := exec.LookPath(ffmpegCmd)
+	return err == nil
+}
+
+// generateVideoThumbnail generates a thumbnail from any of the supported
+// videos. Will create necessary subdirectories in the thumbpath.
+//
+// Utilizes the external ffmpeg software.
+func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) error {
+	if !videoThumbnailSupport() {
+		return fmt.Errorf("video thumbnails not supported. ffmpeg not installed")
+	}
+	ffmpegArgs := []string{
+		"-i",
+		fullMediaPath,
+		"-ss",
+		"00:00:05", // 5 seconds into movie
+		"-vframes",
+		"1",
+		fullThumbPath}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	//cmd := exec.Command(ffmpegCmd, ffmpegArg)
+	cmd := exec.Command(ffmpegCmd, ffmpegArgs...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
+			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
 	}
 	return err
 }
