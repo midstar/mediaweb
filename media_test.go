@@ -314,8 +314,15 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	}
 	tmp := "tmpout/TestGenerateVideoThumbnail"
 	os.MkdirAll(tmp, os.ModePerm) // If already exist no problem
+	tmpSpace := "tmpout/TestGenerateVideoThumbnail/with space in path"
+	os.MkdirAll(tmpSpace, os.ModePerm) // If already exist no problem
 
 	media := createMedia("", "", true, true)
 
 	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmp+"/video_thumbnail.jpg")
+	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmpSpace+"/video_thumbnail.jpg")
+
+	// Test some invalid
+	err := media.generateImageThumbnail("nonexisting.mp4", "dont_matter.jpg")
+	assertExpectErr(t, "", err)
 }

@@ -128,23 +128,47 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 // For all other files (including folders) "" is returned.
 // relativeFileName can also include an absolute or relative path.
 func (m *Media) getFileType(relativeFileName string) string {
-	extension := filepath.Ext(relativeFileName)
 
 	// Check if this is an image
-	for _, imgExtension := range imgExtensions {
-		if strings.EqualFold(extension, imgExtension) {
-			return "image"
-		}
+	if m.isImage(relativeFileName) {
+		return "image"
 	}
 
 	// Check if this is a video
-	for _, vidExtension := range vidExtensions {
-		if strings.EqualFold(extension, vidExtension) {
-			return "video"
-		}
+	if m.isVideo(relativeFileName) {
+		return "video"
 	}
 
-	return "" // Not a video or an image
+	return "" // Not a video nor an image
+}
+
+func (m *Media) isImage(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	for _, imgExtension := range imgExtensions {
+		if strings.EqualFold(extension, imgExtension) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Media) isVideo(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	for _, vidExtension := range vidExtensions {
+		if strings.EqualFold(extension, vidExtension) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Media) isJPEG(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	if strings.EqualFold(extension, ".jpg") == false &&
+		strings.EqualFold(extension, ".jpeg") == false {
+		return false
+	}
+	return true
 }
 
 func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
@@ -163,15 +187,6 @@ func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
 		return nil
 	}
 	return ex
-}
-
-func (m *Media) isJPEG(pathAndFile string) bool {
-	extension := filepath.Ext(pathAndFile)
-	if strings.EqualFold(extension, ".jpg") == false &&
-		strings.EqualFold(extension, ".jpeg") == false {
-		return false
-	}
-	return true
 }
 
 // isRotationNeeded returns true if the file needs to be rotated.
