@@ -64,10 +64,13 @@
 
     /* The Modal (background) */
     .modal {
+        /*border-style: solid; 
+        border-width: 5x 5px 5px 5px;
+        border-color: purple;*/
         display: none; /* Hidden by default */
         position: fixed; /* Stay in place */
         z-index: 1; /* Sit on top */
-        padding-top: 100px; /* Location of the box */
+        padding-top: 30px; /* Location of the box */
         left: 0;
         top: 0;
         width: 100%; /* Full width */
@@ -77,8 +80,11 @@
         background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
     }
 
-    /* Modal Content (image) */
+    /* Modal Content (image/video) */
     .modal-content {
+        /*border-style: solid;
+        border-width: 1px 1px 1px 1px;
+        border-color: red;*/
         margin: auto;
         display: block;
         max-width: 90%;
@@ -88,6 +94,9 @@
 
     /* Caption of Modal Image */
     #caption {
+        /*border-style: solid;
+        border-width: 1px 1px 1px 1px;
+        border-color: blue;*/
         margin: auto;
         display: block;
         width: 80%;
@@ -95,8 +104,16 @@
         text-align: center;
         color: #ccc;
         padding: 10px 0;
-        height: 150px;
+        max-height: 10%;
     }
+
+
+    /* 100% Image Width on Smaller Screens */
+    @media only screen and (max-width: 700px){
+        .modal-content {
+            width: 100%;
+        }
+    }   
 
     /* Add Animation */
     .modal-content, #caption {  
@@ -145,13 +162,6 @@
      #mediaViewerNext {
         top: 30%;
         right: 35px;
-    }   
-
-    /* 100% Image Width on Smaller Screens */
-    @media only screen and (max-width: 700px){
-        .modal-content {
-            width: 100%;
-        }
     }    
 
     /* Loader / spinner */
@@ -515,10 +525,12 @@
     <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
     <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
     <!-- For images -->
-    <img class="modal-content" id="mediaViewerImg" style="display: none;">
+    <img  id="mediaViewerImg" class="modal-content" style="display: none;">
     <!-- For videos -->
-    <video controls class="modal-content" id="mediaViewerVideo" style="display: none;"></video>
+    <video controls id="mediaViewerVideo" class="modal-content" style="display: none;"></video>
+    <!-- Common caption -->
     <div id="caption"></div>
+
   </div>
 
   </body>

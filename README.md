@@ -21,6 +21,12 @@ No additional stuff, such as dockers and similar is required.
 
 MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana Pi, ROCK64 and similar. It is still very fast and can be used with advantage on PC:s running Windows, Linux or Mac OS.
 
+## Screenshots
+
+![browser](testmedia/screenshot_browser.jpg)
+
+![viewer](testmedia/screenshot_viewer.jpg)
+
 ## Features
 
 * Simple WEB GUI for viewing your images and videos
