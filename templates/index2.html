@@ -45,6 +45,7 @@
     position: relative;
     top: 50%; /* Center horizontally part 1/2 */
     transform: translateY(-50%); /* Center horizontally part 2/2 */
+    pointer-events: none; /* So that mouse events can be captured */
 }
 
 .media-caption {
@@ -82,9 +83,17 @@ var mediaIndex = 0;
 var nbrOfMedia = 3;
 
 window.onload = function() {
+
+    var containers = document.getElementsByClassName("media-containers")[0];
+
+    containers.addEventListener('mousedown', lock, false);
+    containers.addEventListener('touchstart', lock, false);
+
+    containers.addEventListener('mouseup', move, false);
+    containers.addEventListener('touchend', move, false);
+
     document.onkeydown = function(e) {
         var mediaViewer = document.getElementsByClassName("media-viewer")[0];
-        var containers = document.getElementsByClassName("media-containers")[0];
         e = e || window.event;
         if (e.keyCode == '27') {
             // escape
@@ -95,22 +104,55 @@ window.onload = function() {
             }
         } else if (e.keyCode == '37') {
             // left arrow
-            mediaIndex--;
-            if (mediaIndex < 0) {
-                mediaIndex = nbrOfMedia - 1; // Wrap
-            }
-            containers.style.setProperty("--i", mediaIndex);
+            prevMedia();
         }
         else if (e.keyCode == '39') {
             // right arrow
-            mediaIndex++;
-            if (mediaIndex >= nbrOfMedia) {
-                mediaIndex = 0; // Wrap
-            }
-            containers.style.setProperty("--i", mediaIndex);
+            nextMedia();
         }
     }
 }
+
+function prevMedia() {
+    var containers = document.getElementsByClassName("media-containers")[0];
+    mediaIndex--;
+    if (mediaIndex < 0) {
+        mediaIndex = nbrOfMedia - 1; // Wrap
+    }
+    containers.style.setProperty("--i", mediaIndex);    
+}
+
+function nextMedia() {
+    var containers = document.getElementsByClassName("media-containers")[0];
+    mediaIndex++;
+    if (mediaIndex >= nbrOfMedia) {
+        mediaIndex = 0; // Wrap
+    }
+    containers.style.setProperty("--i", mediaIndex);  
+}
+
+var x0 = null; // Last mouse/touch x position
+
+function lock(e) { x0 = unify(e).clientX }
+
+function move(e) {
+  if(x0 || x0 === 0) {
+    let dx = unify(e).clientX - x0;
+
+    if (dx < 0) {
+        nextMedia();
+    } else if (dx > 0) {
+        prevMedia();
+    }
+
+    x0 = null
+  }
+}
+
+function unify(e) { 
+    return e.changedTouches ? e.changedTouches[0] : e 
+}
+
 
 </script>
 
