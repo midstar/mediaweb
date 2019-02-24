@@ -1,0 +1,124 @@
+<html>
+<head>
+<style>
+
+.media-viewer {
+    position: fixed; 
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    background: black;
+}
+
+.media-containers {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%; /* For backup only */
+    --n: 3; /* Number of images - updated with javascript */
+    width: calc(var(--n)*100%); /* Make fit all containers */
+    --i: 0; /* Which image to view - updated with javascript */
+    transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
+}
+
+.media-container {
+    min-height: 100%; /* needed so Firefox doesn't make img shrink to fit */
+    height: 100%; /* can't take this out either as it breaks Chrome */
+    width: 100%; /* can't take this out either as it breaks Chrome */
+    width: calc(100%/var(--n)); /* Make each container fit the screen */
+}
+
+.media-object-container {
+    width: 100%;
+    height: calc(100% - 35px);
+    text-align: center; /* center content inside div */
+}
+
+.media-object {
+    max-width: 100%;
+    max-height: 100%;
+    display: inline-block;
+    position: relative;
+    top: 50%; /* Center horizontally part 1/2 */
+    transform: translateY(-50%); /* Center horizontally part 2/2 */
+}
+
+.media-caption {
+    width: 100%;
+    height: 30px;
+    margin-top: 5px;
+    color: white;
+    text-align: center; /* center content inside div */
+}
+
+</style>
+
+<script>
+
+// Globals
+var mediaIndex = 0;
+var nbrOfMedia = 3;
+
+window.onload = function() {
+    document.onkeydown = function(e) {
+        var containers = document.getElementsByClassName("media-containers")[0];
+        e = e || window.event;
+        if (e.keyCode == '27') {
+            // escape
+            alert("Escape");
+        } else if (e.keyCode == '37') {
+            // left arrow
+            mediaIndex--;
+            if (mediaIndex < 0) {
+                mediaIndex = nbrOfMedia - 1; // Wrap
+            }
+            containers.style.setProperty("--i", mediaIndex);
+        }
+        else if (e.keyCode == '39') {
+            // right arrow
+            mediaIndex++;
+            if (mediaIndex >= nbrOfMedia) {
+                mediaIndex = 0; // Wrap
+            }
+            containers.style.setProperty("--i", mediaIndex);
+        }
+    }
+}
+
+</script>
+
+</head>
+<body>
+<div class="media-viewer">
+    <div class="media-containers">
+        <div class="media-container">
+            <div class="media-object-container">
+                <img class="media-object" src="/media/jpeg.jpg">
+            </div>
+            <div class="media-caption">/media/jpeg.jpg</div>
+        </div>
+        <div class="media-container">
+            <div class="media-object-container">
+                <img class="media-object" src="/media/png.png">
+            </div>
+            <div class="media-caption">/media/png.png</div>
+        </div>
+        <div class="media-container">
+            <div class="media-object-container">
+                <img class="media-object" src="/media/screenshot_browser.jpg">
+            </div>
+            <div class="media-caption">/media/screenshot_browser.jpg</div>
+        </div><!--
+        <div class="media-container">
+            <div class="media-object-container">
+                <img class="media-object" src="/media/jpeg_rotated.jpg">
+            </div>
+            <div class="media-caption">/media/jpeg_rotated.jpg</div>
+        </div>-->
+    </div>
+</div>
+</body>
+</html>
