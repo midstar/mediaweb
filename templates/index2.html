@@ -23,6 +23,7 @@
     width: calc(var(--n)*100%); /* Make fit all containers */
     --i: 0; /* Which image to view - updated with javascript */
     transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
+    transition: transform .5s ease-out; /* Swipe transition */
 }
 
 .media-container {
@@ -86,6 +87,9 @@ window.onload = function() {
 
     var containers = document.getElementsByClassName("media-containers")[0];
 
+    containers.addEventListener('mousemove', e => {e.preventDefault()}, false);
+    containers.addEventListener('touchmove', e => {e.preventDefault()}, false);
+
     containers.addEventListener('mousedown', lock, false);
     containers.addEventListener('touchstart', lock, false);
 
@@ -114,21 +118,19 @@ window.onload = function() {
 }
 
 function prevMedia() {
-    var containers = document.getElementsByClassName("media-containers")[0];
-    mediaIndex--;
-    if (mediaIndex < 0) {
-        mediaIndex = nbrOfMedia - 1; // Wrap
+    if (mediaIndex > 0) {
+        mediaIndex--;
+        var containers = document.getElementsByClassName("media-containers")[0];
+        containers.style.setProperty("--i", mediaIndex);    
     }
-    containers.style.setProperty("--i", mediaIndex);    
 }
 
 function nextMedia() {
-    var containers = document.getElementsByClassName("media-containers")[0];
-    mediaIndex++;
-    if (mediaIndex >= nbrOfMedia) {
-        mediaIndex = 0; // Wrap
-    }
-    containers.style.setProperty("--i", mediaIndex);  
+    if (mediaIndex < (nbrOfMedia - 1)) {
+        mediaIndex++;
+        var containers = document.getElementsByClassName("media-containers")[0];
+        containers.style.setProperty("--i", mediaIndex);
+    }  
 }
 
 var x0 = null; // Last mouse/touch x position
