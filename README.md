@@ -13,14 +13,24 @@ The main design goal of MediaWEB is that no additional dependencies shall be nee
 * The mediaweb executable
 * A configuration file, mediaweb.conf
 
+Optional dependencies are:
+
+* [ffmpeg](https://www.ffmpeg.org/) for video thumbnail support
+
 No additional stuff, such as dockers and similar is required. 
 
 MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana Pi, ROCK64 and similar. It is still very fast and can be used with advantage on PC:s running Windows, Linux or Mac OS.
 
+## Screenshots
+
+![browser](testmedia/screenshot_browser.jpg)
+
+![viewer](testmedia/screenshot_viewer.jpg)
+
 ## Features
 
 * Simple WEB GUI for viewing your images and videos
-* Thumbnail support, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache
+* Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed.
 * Automatic rotation JPEG images when needed (based on EXIF information)
 * Optional authentication with username and password
 
@@ -49,6 +59,10 @@ Then run following for all Linux platforms:
 
 Follow the instructions in the service.sh script.
 
+For video thumbnail support, install ffmpeg:
+
+    sudo apt-get install ffmpeg
+
 To perform additional configuration, edit:
 
     sudo vi /etc/mediaweb.conf
@@ -71,6 +85,8 @@ Run the installer and follow the instructions.
 
 To modify changes just edit mediaweb.conf in the installation directory and restart the mediaweb
 service in task manager.
+
+You need to install [ffmpeg](https://www.ffmpeg.org/) separately and put ffmpeg into your PATH to get video thumbnail support.
 
 ## Build from source (any platform)
 
@@ -108,7 +124,6 @@ On Linux platforms execute following to install MediaWEB as a service:
 
 ## Future improvements
 
-* Create thumbnails for videos (probably using ffmpeg)
 * Add support for TLS/SSL
 
 

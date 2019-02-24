@@ -168,7 +168,7 @@ func (wa *WebAPI) serveHTTPThumbnail(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		w.Header().Set("Content-Type", "image/jpeg")
 	} else {
-		// No thumbnail. Use the default
+		// No thumbnail. Use the default 
 		w.Header().Set("Content-Type", "image/png")
 		fileType := wa.media.getFileType(relativePath)
 		if fileType == "image" {

@@ -17,21 +17,27 @@ stack: go 1.11
 install:
   # Windows
   - cmd: set PATH=%GOPATH%\bin;%PATH%
-  - cmd: go get github.com\mattn\goveralls
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
 
   # Linux
   - sh: export GOPATH=/usr/go
   - sh: export PATH=$GOPATH/bin:$PATH
   - sh: sudo chmod -R a+rwx $GOPATH
+  - sh: go get github.com/mattn/goveralls
   - sh: sh $GOPATH/src/github.com/midstar/mediaweb/scripts/install_deps.sh
- 
+
+  # Linux install ffmpeg
+  - sh: sudo apt -yq update > /dev/null
+  - sh: sudo apt install -yq --no-install-suggests --no-install-recommends ffmpeg > /dev/null
+
 build_script:
   # Common
   - go test -v -cover github.com/midstar/mediaweb -coverprofile=coverage.out
 
-  # Windows and publish result on coveralls.io
-  - cmd: '%GOPATH%/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=%COVERALLS_TOKEN%'
+  # Publish result on coveralls.io (pick the Linux result since we have ffmpeg there)
+  - sh: '$GOPATH/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=$COVERALLS_TOKEN'
+
+  # Windows build and zip
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\build.bat %APPVEYOR_BUILD_VERSION%'
   - cmd: 'copy scripts\service.bat .'
   - cmd: 'copy configs\mediaweb.conf .'
@@ -40,14 +46,13 @@ build_script:
   # Windows rename tempates directory to secure that packr is working
   - cmd: 'rename templates old_templates'
 
-
   # Windows Test  service installation/uninstallation script
   - cmd: 'scripts/service_test.bat'
 
   # Windows create windows setup (installer)
   - cmd: 'makensis -DVERSION=%APPVEYOR_BUILD_VERSION% %GOPATH%\src\github.com\midstar\mediaweb\scripts\windows_installer.nsi'
 
-  # Linux PC/x64
+  # Linux PC/x64 build and zip
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build.sh $APPVEYOR_BUILD_VERSION'
   - sh: 'cp scripts/service.sh .'
   - sh: 'cp configs/mediaweb.conf .'

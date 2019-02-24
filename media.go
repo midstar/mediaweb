@@ -7,10 +7,12 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/disintegration/imaging"
+	packr "github.com/gobuffalo/packr/v2"
 	"github.com/midstar/llog"
 	"github.com/rwcarlsen/goexif/exif"
 )
@@ -20,10 +22,11 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath        string // Top level path for media files
-	thumbPath        string // Top level path for thumbnails
-	enableThumbCache bool   // Generate thumbnails
-	autoRotate       bool   // Rotate JPEG files when needed
+	mediaPath        string     // Top level path for media files
+	thumbPath        string     // Top level path for thumbnails
+	enableThumbCache bool       // Generate thumbnails
+	autoRotate       bool       // Rotate JPEG files when needed
+	box              *packr.Box // For icons
 }
 
 // File represents a folder or any other file
@@ -35,7 +38,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
+func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -51,10 +54,13 @@ func createMedia(mediaPath string, thumbPath string, enableThumbCache bool, auto
 		llog.Info("Thumbnail cache disabled")
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
-	return &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
+	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache: enableThumbCache,
-		autoRotate:       autoRotate}
+		autoRotate:       autoRotate,
+		box:              box}
+	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
+	return media
 }
 
 // getFullPath returns the full path from an absolute base
@@ -127,23 +133,47 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 // For all other files (including folders) "" is returned.
 // relativeFileName can also include an absolute or relative path.
 func (m *Media) getFileType(relativeFileName string) string {
-	extension := filepath.Ext(relativeFileName)
 
 	// Check if this is an image
-	for _, imgExtension := range imgExtensions {
-		if strings.EqualFold(extension, imgExtension) {
-			return "image"
-		}
+	if m.isImage(relativeFileName) {
+		return "image"
 	}
 
 	// Check if this is a video
-	for _, vidExtension := range vidExtensions {
-		if strings.EqualFold(extension, vidExtension) {
-			return "video"
-		}
+	if m.isVideo(relativeFileName) {
+		return "video"
 	}
 
-	return "" // Not a video or an image
+	return "" // Not a video nor an image
+}
+
+func (m *Media) isImage(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	for _, imgExtension := range imgExtensions {
+		if strings.EqualFold(extension, imgExtension) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Media) isVideo(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	for _, vidExtension := range vidExtensions {
+		if strings.EqualFold(extension, vidExtension) {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *Media) isJPEG(pathAndFile string) bool {
+	extension := filepath.Ext(pathAndFile)
+	if strings.EqualFold(extension, ".jpg") == false &&
+		strings.EqualFold(extension, ".jpeg") == false {
+		return false
+	}
+	return true
 }
 
 func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
@@ -162,15 +192,6 @@ func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
 		return nil
 	}
 	return ex
-}
-
-func (m *Media) isJPEG(pathAndFile string) bool {
-	extension := filepath.Ext(pathAndFile)
-	if strings.EqualFold(extension, ".jpg") == false &&
-		strings.EqualFold(extension, ".jpeg") == false {
-		return false
-	}
-	return true
 }
 
 // isRotationNeeded returns true if the file needs to be rotated.
@@ -299,7 +320,7 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 	return m.getFullThumbPath(relativeThumbnailPath)
 }
 
-// generateThumbnail generates a thumbnail from any of the supported
+// generateImageThumbnail generates a thumbnail from any of the supported
 // images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
 	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
@@ -334,6 +355,9 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 //  3. Generate a thumbnail to cache and write
 //  4. If all above fails return error
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
+	if !m.isImage(relativeFilePath) && !m.isVideo(relativeFilePath) {
+		return fmt.Errorf("not a supported media type")
+	}
 	err := m.writeEXIFThumbnail(w, relativeFilePath)
 	if err != nil && m.enableThumbCache {
 		err = nil
@@ -346,12 +370,16 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 		thumbFile, err := os.Open(thumbFileName)
 		if err != nil {
 			// No thumb exist. Create it
-			llog.Info("Creating new thumbnail for %s", relativeFilePath)
+			llog.Trace("Creating new thumbnail for %s", relativeFilePath)
 			fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 			if err != nil {
 				return err
 			}
-			err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+			if m.isVideo(fullMediaPath) {
+				err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
+			} else {
+				err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+			}
 			if err != nil {
 				return err
 			}
@@ -362,6 +390,114 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 		}
 		defer thumbFile.Close()
 		_, err = io.Copy(w, thumbFile)
+	}
+	return err
+}
+
+// For testing purposes
+var ffmpegCmd = "ffmpeg"
+
+// videoThumbnailSupport returns true if ffmpeg is installed, and thus
+// video thumbnails is supported
+func (m *Media) videoThumbnailSupport() bool {
+	_, err := exec.LookPath(ffmpegCmd)
+	return err == nil
+}
+
+// generateVideoThumbnail generates a thumbnail from any of the supported
+// videos. Will create necessary subdirectories in the thumbpath.
+func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) error {
+	// The temporary file for the screenshot
+	screenShot := fullThumbPath + ".sh.jpg"
+
+	// Extract the screenshot
+	err := m.extractVideoScreenshot(fullMediaPath, screenShot)
+	if err != nil {
+		return err
+	}
+	defer os.Remove(screenShot) // Remove temporary file
+
+	// Generate thumbnail from the screenshot
+	img, err := imaging.Open(screenShot, imaging.AutoOrientation(true))
+	if err != nil {
+		return fmt.Errorf("Unable to open screenshot image %s. Reason: %s", screenShot, err)
+	}
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+
+	// Add small video icon i upper right corner to indicate that this is
+	// a video
+	iconVideoImg, err := m.getVideoIcon()
+	if err != nil {
+		return err
+	}
+	thumbImg = imaging.Overlay(thumbImg, iconVideoImg, image.Pt(155, 11), 1.0)
+
+	// Write thumbnail to file
+	outFile, err := os.Create(fullThumbPath)
+	if err != nil {
+		return fmt.Errorf("Unable to open %s for creating thumbnail. Reason %s", fullThumbPath, err)
+	}
+	defer outFile.Close()
+	err = imaging.Encode(outFile, thumbImg, imaging.JPEG)
+
+	return err
+}
+
+// Cache to avoid regenerate icon each time (do it once)
+var videoIcon image.Image
+
+func (m *Media) getVideoIcon() (image.Image, error) {
+	if videoIcon != nil {
+		// To avoid re-generate
+		return videoIcon, nil
+	}
+	var err error
+	videoIconBytes, _ := m.box.Find("icon_video.png")
+	videoIcon, err = imaging.Decode(bytes.NewReader(videoIconBytes))
+	if err != nil {
+		return nil, err
+	}
+	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Lanczos)
+	return videoIcon, nil
+}
+
+// extractVideoScreenshot extracts a screenshot from a video using external
+// ffmpeg software. Will create necessary directories in the outFilePath
+func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
+	if !m.videoThumbnailSupport() {
+		return fmt.Errorf("video thumbnails not supported. ffmpeg not installed")
+	}
+
+	// Create subdirectories if needed
+	directory := filepath.Dir(outFilePath)
+	err := os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Unable to create directories in %s for extracting screenshot. Reason %s", outFilePath, err)
+	}
+
+	// Define argments for ffmpeg
+	ffmpegArgs := []string{
+		"-i",
+		inFilePath,
+		"-ss",
+		"00:00:05", // 5 seconds into movie
+		"-vframes",
+		"1",
+		outFilePath}
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	//cmd := exec.Command(ffmpegCmd, ffmpegArg)
+	cmd := exec.Command(ffmpegCmd, ffmpegArgs...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	if err != nil {
+		errorStr := fmt.Sprintf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
+			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
+		llog.Error(errorStr)
+		return fmt.Errorf(errorStr)
 	}
 	return err
 }

@@ -24,6 +24,7 @@ func respToString(response io.ReadCloser) string {
 }
 
 func getHTML(t *testing.T, path string) string {
+	t.Helper()
 	resp, err := http.Get(fmt.Sprintf("%s/%s", baseURL, path))
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusOK), int(resp.StatusCode))
@@ -33,6 +34,7 @@ func getHTML(t *testing.T, path string) string {
 }
 
 func getHTMLAuthenticate(t *testing.T, path, user, pass string, expectFail bool) string {
+	t.Helper()
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", baseURL, path), nil)
 	req.SetBasicAuth(user, pass)
@@ -49,6 +51,7 @@ func getHTMLAuthenticate(t *testing.T, path, user, pass string, expectFail bool)
 }
 
 func getBinary(t *testing.T, path, contentType string) []byte {
+	t.Helper()
 	resp, err := http.Get(fmt.Sprintf("%s/%s", baseURL, path))
 	assertExpectNoErr(t, "", err)
 	assertEqualsInt(t, "", int(http.StatusOK), int(resp.StatusCode))
@@ -60,6 +63,7 @@ func getBinary(t *testing.T, path, contentType string) []byte {
 }
 
 func getObject(t *testing.T, path string, v interface{}) {
+	t.Helper()
 	resp, err := http.Get(fmt.Sprintf("%s/%s", baseURL, path))
 	if err != nil {
 		t.Fatalf("Unable to get path %s. Reason: %s", path, err)
@@ -80,12 +84,14 @@ func getObject(t *testing.T, path string, v interface{}) {
 }
 
 func startserver(t *testing.T) {
+	t.Helper()
 	go main()
 	waitserver(t)
 }
 
 // waitserver waits for the server to be up and running
 func waitserver(t *testing.T) {
+	t.Helper()
 	client := http.Client{Timeout: 100 * time.Millisecond}
 	maxTries := 10
 	for i := 0; i < maxTries; i++ {
@@ -193,8 +199,9 @@ func TestGetThumbnail(t *testing.T) {
 	image = getBinary(t, "thumb/exif_rotate/no_exif.jpg", "image/jpeg")
 	assertTrue(t, "", len(image) > 100)
 
-	image = getBinary(t, "thumb/video.mp4", "image/png")
-	assertTrue(t, "", len(image) > 100)
+	// Below will be png if ffmpeg is not installed and jpeg if ffmpeg is installed
+	//image = getBinary(t, "thumb/video.mp4", "image/jpeg")
+	//assertTrue(t, "", len(image) > 100)
 
 	image = getBinary(t, "thumb/exif_rotate", "image/png")
 	assertTrue(t, "", len(image) > 100)
@@ -208,8 +215,8 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func TestGetThumbnailNoCache(t *testing.T) {
-	media := createMedia("testmedia", "", false, true)
 	box := packr.New("templates", "./templates")
+	media := createMedia(box, "testmedia", "", false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -249,8 +256,8 @@ func TestInvalidPath(t *testing.T) {
 }
 
 func TestAuthentication(t *testing.T) {
-	media := createMedia("testmedia", "", true, true)
 	box := packr.New("templates", "./templates")
+	media := createMedia(box, "testmedia", "", true, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)

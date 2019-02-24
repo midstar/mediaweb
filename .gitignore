@@ -2,6 +2,7 @@
 debug*
 tmpout
 tmpcache
+screenshottemp
 main-packr.go
 a_main-packr.go
 packrd

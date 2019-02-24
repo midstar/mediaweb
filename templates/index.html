@@ -7,7 +7,12 @@
     /***************************************/
     /* Style for navigator                 */
     #navigator {
-        margin-left: 20px;
+        /*margin-left: 20px;*/
+        overflow: hidden;
+        background-color: white;
+        position: fixed; /* Set the navbar to fixed position */
+        top: 0; /* Position the navbar at the top of the page */
+        width: 100%; /* Full width */
     }
 
     #navigator a {
@@ -59,10 +64,13 @@
 
     /* The Modal (background) */
     .modal {
+        /*border-style: solid; 
+        border-width: 5x 5px 5px 5px;
+        border-color: purple;*/
         display: none; /* Hidden by default */
         position: fixed; /* Stay in place */
         z-index: 1; /* Sit on top */
-        padding-top: 100px; /* Location of the box */
+        padding-top: 30px; /* Location of the box */
         left: 0;
         top: 0;
         width: 100%; /* Full width */
@@ -72,8 +80,11 @@
         background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
     }
 
-    /* Modal Content (image) */
+    /* Modal Content (image/video) */
     .modal-content {
+        /*border-style: solid;
+        border-width: 1px 1px 1px 1px;
+        border-color: red;*/
         margin: auto;
         display: block;
         max-width: 90%;
@@ -83,6 +94,9 @@
 
     /* Caption of Modal Image */
     #caption {
+        /*border-style: solid;
+        border-width: 1px 1px 1px 1px;
+        border-color: blue;*/
         margin: auto;
         display: block;
         width: 80%;
@@ -90,8 +104,16 @@
         text-align: center;
         color: #ccc;
         padding: 10px 0;
-        height: 150px;
+        max-height: 10%;
     }
+
+
+    /* 100% Image Width on Smaller Screens */
+    @media only screen and (max-width: 700px){
+        .modal-content {
+            width: 100%;
+        }
+    }   
 
     /* Add Animation */
     .modal-content, #caption {  
@@ -140,17 +162,10 @@
      #mediaViewerNext {
         top: 30%;
         right: 35px;
-    }   
-
-    /* 100% Image Width on Smaller Screens */
-    @media only screen and (max-width: 700px){
-        .modal-content {
-            width: 100%;
-        }
     }    
 
     /* Loader / spinner */
-    #loader {
+    .loader {
         position: fixed;
         top: 15px;
         left: 35px;
@@ -164,6 +179,10 @@
         height: 15px;
         -webkit-animation: spin 1s linear infinite;
         animation: spin 1s linear infinite;
+    }
+
+    #mediaLoader {
+       z-index: 1; /* Sit on top */ 
     }
 
     @-webkit-keyframes spin {
@@ -188,9 +207,9 @@
         var span = document.getElementById("mediaViewerClose");
         span.onclick = closeFileDialog
 
-        /* Setup onload for images (close loader/spinner) */
+        /* Setup onload for images in media viewer (close loader/spinner) */
         var img = document.getElementById("mediaViewerImg");
-        img.addEventListener("load", hideLoader)
+        img.addEventListener("load", hideMediaLoader)
 
         /* Check for URL search parameters */
         var path = ""
@@ -249,13 +268,23 @@
         document.onkeydown = null;
     }
 
-    function showLoader() {
-        var loader = document.getElementById("loader");
+    function showItemsLoader() {
+        var loader = document.getElementById("itemsLoader");
         loader.style.display = "block"; 
     }
 
-    function hideLoader() {
-        var loader = document.getElementById("loader");
+    function hideItemsLoader() {
+        var loader = document.getElementById("itemsLoader");
+        loader.style.display = "none"; 
+    }
+
+    function showMediaLoader() {
+        var loader = document.getElementById("mediaLoader");
+        loader.style.display = "block"; 
+    }
+
+    function hideMediaLoader() {
+        var loader = document.getElementById("mediaLoader");
         loader.style.display = "none"; 
     }
 
@@ -275,7 +304,7 @@
             modalVideo.style.display = "none"; // Hide video
             modalImg.style.display = "block"; // Show image
     
-            showLoader() // Show loader / spinner
+            showMediaLoader() // Show loader / spinner
 
         } else if (file.Type == "video") {
             // This is a video
@@ -283,10 +312,10 @@
             modalImg.style.display = "none"; // Hide image
             modalVideo.style.display = "block"; // Show video
     
-            hideLoader() // Hide loader / spinner
+            hideMediaLoader() // Hide loader / spinner
         } else {
             alert("Unsupported file: " + file.Type);
-            hideLoader() // Hide loader / spinner
+            hideMediaLoader() // Hide loader / spinner
         }
 
         // Set the caption
@@ -370,18 +399,31 @@
         /* Update the global files */
         globalFiles = files;
 
-        /* Add file items */
+        /* Add folders first (on top) */
         for (var i=0; i < files.length; i++) {
             var file = files[i];
-            addFileItem(file.Type, file.Name, file.Path, i);
+            if (file.Type == "folder") {
+                addFileItem(file.Type, file.Name, file.Path, i);
+            }
         }
+
+        /* Then add all other items */
+        for (var i=0; i < files.length; i++) {
+            var file = files[i];
+            if (file.Type != "folder") {
+                addFileItem(file.Type, file.Name, file.Path, i);
+            }
+        }
+
+        /* Start cyclic check if items are loaded */
+        checkIfAllThumbsLoaded();
     }
 
     function addFileItem(type, name, path, index) {
         var itemTxt =
 "<div class='item'> \
     <div class='thumb'> \
-       <img src='thumb/" + path + "' alt='" + type +"'> \
+       <img class='thumbImage' src='thumb/" + path + "' alt='" + type +"'> \
    </div> \
    <div class='name'> \
        " + name + " \
@@ -400,6 +442,28 @@
                 setLocation(path);
             }
         }
+    }
+
+    // Close the itemsLoader if all items (thumbs) are loaded.
+    // If not it calls itself after a certain time (i.e.
+    // polls the items regulary)
+    function checkIfAllThumbsLoaded() {
+        var thumbs = document.getElementsByClassName("thumbImage");
+        for (var i=0; i < thumbs.length; i++) {
+            var thumb = thumbs[i];
+            if (!thumb.complete) {
+                // At least one thumb has not been loaded
+
+                // Show spinner
+                showItemsLoader();
+
+                // Check again after 0.5 seconds
+                setTimeout(checkIfAllThumbsLoaded, 500)
+                return
+            }
+        }
+        // All thumbs loaded. Close the spinner
+        hideItemsLoader();
     }
 
     function onError(error) {
@@ -443,25 +507,30 @@
   </head>
   <body>
 
+  <!-- Directory navigator -->
   <div id="navigator">
-  <!--<a href="?path=">top<a> / <a href="?path=pictures">pictures<a> / <a href="?path=pictures/vi">vi<a>-->
   </div>
   
   <div id="items">
   <!-- File items goes here -->
   </div>
 
+  <!-- Loader for the items --> 
+  <div class="loader" id="itemsLoader"></div>
+
   <!-- The Media Viewer -->
   <div id="mediaViewer" class="modal">
-    <div id="loader"></div>
+    <div class="loader" id="mediaLoader"></div>
     <span class="mediaButton close" id="mediaViewerClose">&times;</span>
     <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
     <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
     <!-- For images -->
-    <img class="modal-content" id="mediaViewerImg" style="display: none;">
+    <img  id="mediaViewerImg" class="modal-content" style="display: none;">
     <!-- For videos -->
-    <video controls class="modal-content" id="mediaViewerVideo" style="display: none;"></video>
+    <video controls id="mediaViewerVideo" class="modal-content" style="display: none;"></video>
+    <!-- Common caption -->
     <div id="caption"></div>
+
   </div>
 
   </body>
