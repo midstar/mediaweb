@@ -10,7 +10,8 @@
     top: 0;
     overflow-x: hidden;
     overflow-y: hidden;
-    background: black;
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
 }
 
 .media-containers {
@@ -54,6 +55,24 @@
     text-align: center; /* center content inside div */
 }
 
+/* Add Animation (when opening) */
+.media-viewer {  
+    -webkit-animation-name: zoom;
+    -webkit-animation-duration: 0.6s;
+    animation-name: zoom;
+    animation-duration: 0.6s;
+}
+
+@-webkit-keyframes zoom {
+    from {-webkit-transform:scale(0)} 
+    to {-webkit-transform:scale(1)}
+}
+
+@keyframes zoom {
+    from {transform:scale(0)} 
+    to {transform:scale(1)}
+}
+
 </style>
 
 <script>
@@ -64,11 +83,16 @@ var nbrOfMedia = 3;
 
 window.onload = function() {
     document.onkeydown = function(e) {
+        var mediaViewer = document.getElementsByClassName("media-viewer")[0];
         var containers = document.getElementsByClassName("media-containers")[0];
         e = e || window.event;
         if (e.keyCode == '27') {
             // escape
-            alert("Escape");
+            if (mediaViewer.style.display == "none") {
+                mediaViewer.style.display = "block";
+            } else {
+                mediaViewer.style.display = "none";
+            }
         } else if (e.keyCode == '37') {
             // left arrow
             mediaIndex--;
@@ -92,6 +116,12 @@ window.onload = function() {
 
 </head>
 <body>
+
+this is some stuff in the background
+<p>
+that shall be invisible
+</p>
+
 <div class="media-viewer">
     <div class="media-containers">
         <div class="media-container">
