@@ -389,10 +389,20 @@
         /* Update the global files */
         globalFiles = files;
 
-        /* Add file items */
+        /* Add folders first (on top) */
         for (var i=0; i < files.length; i++) {
             var file = files[i];
-            addFileItem(file.Type, file.Name, file.Path, i);
+            if (file.Type == "folder") {
+                addFileItem(file.Type, file.Name, file.Path, i);
+            }
+        }
+
+        /* Then add all other items */
+        for (var i=0; i < files.length; i++) {
+            var file = files[i];
+            if (file.Type != "folder") {
+                addFileItem(file.Type, file.Name, file.Path, i);
+            }
         }
 
         /* Start cyclic check if items are loaded */
