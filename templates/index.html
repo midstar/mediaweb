@@ -150,7 +150,7 @@
     }    
 
     /* Loader / spinner */
-    #loader {
+    .loader {
         position: fixed;
         top: 15px;
         left: 35px;
@@ -164,6 +164,10 @@
         height: 15px;
         -webkit-animation: spin 1s linear infinite;
         animation: spin 1s linear infinite;
+    }
+
+    #mediaLoader {
+       z-index: 1; /* Sit on top */ 
     }
 
     @-webkit-keyframes spin {
@@ -188,9 +192,9 @@
         var span = document.getElementById("mediaViewerClose");
         span.onclick = closeFileDialog
 
-        /* Setup onload for images (close loader/spinner) */
+        /* Setup onload for images in media viewer (close loader/spinner) */
         var img = document.getElementById("mediaViewerImg");
-        img.addEventListener("load", hideLoader)
+        img.addEventListener("load", hideMediaLoader)
 
         /* Check for URL search parameters */
         var path = ""
@@ -249,13 +253,23 @@
         document.onkeydown = null;
     }
 
-    function showLoader() {
-        var loader = document.getElementById("loader");
+    function showItemsLoader() {
+        var loader = document.getElementById("itemsLoader");
         loader.style.display = "block"; 
     }
 
-    function hideLoader() {
-        var loader = document.getElementById("loader");
+    function hideItemsLoader() {
+        var loader = document.getElementById("itemsLoader");
+        loader.style.display = "none"; 
+    }
+
+    function showMediaLoader() {
+        var loader = document.getElementById("mediaLoader");
+        loader.style.display = "block"; 
+    }
+
+    function hideMediaLoader() {
+        var loader = document.getElementById("mediaLoader");
         loader.style.display = "none"; 
     }
 
@@ -275,7 +289,7 @@
             modalVideo.style.display = "none"; // Hide video
             modalImg.style.display = "block"; // Show image
     
-            showLoader() // Show loader / spinner
+            showMediaLoader() // Show loader / spinner
 
         } else if (file.Type == "video") {
             // This is a video
@@ -283,10 +297,10 @@
             modalImg.style.display = "none"; // Hide image
             modalVideo.style.display = "block"; // Show video
     
-            hideLoader() // Hide loader / spinner
+            hideMediaLoader() // Hide loader / spinner
         } else {
             alert("Unsupported file: " + file.Type);
-            hideLoader() // Hide loader / spinner
+            hideMediaLoader() // Hide loader / spinner
         }
 
         // Set the caption
@@ -375,13 +389,16 @@
             var file = files[i];
             addFileItem(file.Type, file.Name, file.Path, i);
         }
+
+        /* Start cyclic check if items are loaded */
+        checkIfAllThumbsLoaded();
     }
 
     function addFileItem(type, name, path, index) {
         var itemTxt =
 "<div class='item'> \
     <div class='thumb'> \
-       <img src='thumb/" + path + "' alt='" + type +"'> \
+       <img class='thumbImage' src='thumb/" + path + "' alt='" + type +"'> \
    </div> \
    <div class='name'> \
        " + name + " \
@@ -400,6 +417,28 @@
                 setLocation(path);
             }
         }
+    }
+
+    // Close the itemsLoader if all items (thumbs) are loaded.
+    // If not it calls itself after a certain time (i.e.
+    // polls the items regulary)
+    function checkIfAllThumbsLoaded() {
+        var thumbs = document.getElementsByClassName("thumbImage");
+        for (var i=0; i < thumbs.length; i++) {
+            var thumb = thumbs[i];
+            if (!thumb.complete) {
+                // At least one thumb has not been loaded
+
+                // Show spinner
+                showItemsLoader();
+
+                // Check again after 0.5 seconds
+                setTimeout(checkIfAllThumbsLoaded, 500)
+                return
+            }
+        }
+        // All thumbs loaded. Close the spinner
+        hideItemsLoader();
     }
 
     function onError(error) {
@@ -451,9 +490,12 @@
   <!-- File items goes here -->
   </div>
 
+  <!-- Loader for the items --> 
+  <div class="loader" id="itemsLoader"></div>
+
   <!-- The Media Viewer -->
   <div id="mediaViewer" class="modal">
-    <div id="loader"></div>
+    <div class="loader" id="mediaLoader"></div>
     <span class="mediaButton close" id="mediaViewerClose">&times;</span>
     <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
     <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
