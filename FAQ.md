@@ -32,7 +32,7 @@ If you need to access your images over the Internet you need to enable port forw
 
 ## Why are the Video thumbnails not generated?
 
-Secure that you have installed [ffmpeg](https://www.ffmpeg.org/), and that you have ffmpeg in your PATH environment variable. You can test that ffmpeg installed and your PATH environment correctly setup by opening a shell (bash on Linux or cmd.exe on Windows) and enter:
+Secure that you have installed [ffmpeg](https://www.ffmpeg.org/), and that you have ffmpeg in your PATH environment variable. You can test that ffmpeg is installed and your PATH environment is correctly setup by opening a shell (bash on Linux or cmd.exe on Windows) and enter:
 
     ffmpeg
 
