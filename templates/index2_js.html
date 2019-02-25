@@ -188,19 +188,39 @@ function unify(e) {
     return e.changedTouches ? e.changedTouches[0] : e 
 }
 
-var rID = null; // Animation frame request id
+var animationRequestID = null; // Animation frame request id
+var numberOfFrames = null; // Number of frames in animaiton
 
 function animateSlide(iFrom, iTo, currentFrame = 0) {
-    const NF = 30; // Number of frames
-    mediaContainers.style.setProperty('--i', iFrom + (iTo - iFrom)*currentFrame/NF);
+    if (currentFrame == 0) {
+        console.log("iFrom: " + iFrom);
+        console.log("iTo: " + iTo);
+        if (animationRequestID != null) {
+            // Another animation is in progress. Cancel that animation
+            cancelAnimationFrame(animationRequestID);
+            animationRequestID = null;
+        }
+        // Calculate number of frames.
+        var delta = 0; // will be 0.0 - 1.0
+        if (iTo > iFrom) {
+            delta = iTo - iFrom;
+        } else if (iFrom > iTo) {
+            delta = iFrom - iTo;
+        } else {
+            // iTo = iFrom (no animation required)
+            return;
+        }
+        numberOfFrames = Math.round(delta * 30); // 30 frames is ~0.5s
+    }
+    mediaContainers.style.setProperty('--i', iFrom + (iTo - iFrom)*currentFrame/numberOfFrames);
 
-    if(currentFrame === NF) {
-        cancelAnimationFrame(rID);
-        rID = null;
+    if(currentFrame === numberOfFrames) {
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
         return; // We are done
     }
 
-    rID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, ++currentFrame))
+    animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, ++currentFrame))
     //mediaContainers.style.setProperty("--i", iTo);
 }
 
