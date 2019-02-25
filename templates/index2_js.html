@@ -35,6 +35,7 @@
     width: 100%;
     height: calc(100% - 35px);
     text-align: center; /* center content inside div */
+    position: relative;
 }
 
 .media-object {
@@ -45,6 +46,16 @@
     top: 50%; /* Center horizontally part 1/2 */
     transform: translateY(-50%); /* Center horizontally part 2/2 */
     pointer-events: none; /* So that mouse events can be captured */
+}
+
+.media-thumb {
+    width: 256px;
+    height: 256px;
+    top: 20px;
+    left: 20px;
+    border-radius: 25px;
+    position: absolute; /* Stay in place in container */
+    z-index: 1; /* Sit on top */
 }
 
 .media-caption {
@@ -248,18 +259,21 @@ that shall be invisible
     <div class="media-containers smooth">
         <div class="media-container">
             <div class="media-object-container">
+                <img class="media-thumb" src="/thumb/jpeg.jpg">
                 <img class="media-object" src="/media/jpeg.jpg">
             </div>
             <div class="media-caption">/media/jpeg.jpg</div>
         </div>
         <div class="media-container">
             <div class="media-object-container">
+                <img class="media-thumb" src="/thumb/png.png">
                 <img class="media-object" src="/media/png.png">
             </div>
             <div class="media-caption">/media/png.png</div>
         </div>
         <div class="media-container">
             <div class="media-object-container">
+                <img class="media-thumb" src="/thumb/screenshot_browser.jpg">
                 <img class="media-object" src="/media/screenshot_browser.jpg">
             </div>
             <div class="media-caption">/media/screenshot_browser.jpg</div>
