@@ -166,7 +166,7 @@ function move(e) {
     let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
 
     let iIni = mediaIndex - f;
-    if (Math.abs(f) > 0.2) { // At least 20% drag
+    if (Math.abs(f) > 0.1) { // At least 10% drag
         if (dx < 0) {
             nextMedia(iIni);
         } else {
@@ -193,8 +193,6 @@ var numberOfFrames = null; // Number of frames in animaiton
 
 function animateSlide(iFrom, iTo, currentFrame = 0) {
     if (currentFrame == 0) {
-        console.log("iFrom: " + iFrom);
-        console.log("iTo: " + iTo);
         if (animationRequestID != null) {
             // Another animation is in progress. Cancel that animation
             cancelAnimationFrame(animationRequestID);
@@ -210,7 +208,7 @@ function animateSlide(iFrom, iTo, currentFrame = 0) {
             // iTo = iFrom (no animation required)
             return;
         }
-        numberOfFrames = Math.round(delta * 30); // 30 frames is ~0.5s
+        numberOfFrames = Math.round(delta * 20); // 20 frames is ~0.33s
     }
     mediaContainers.style.setProperty('--i', iFrom + (iTo - iFrom)*currentFrame/numberOfFrames);
 
