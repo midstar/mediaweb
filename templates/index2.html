@@ -25,7 +25,7 @@
 }
 
 .smooth { 
-    transition: transform .5s ease-out; 
+    transition: transform calc(var(--f, 1)*0.5s) ease-out; 
 }
 
 .media-container {
@@ -151,16 +151,27 @@ function move(e) {
   if(locked) {
     let dx = unify(e).clientX - x0;
 
+    w = window.innerWidth;
+    console.log("Dx is : " + dx);
+    console.log("Width is : " + w);
+    let f = 1 - Math.abs((dx/w).toFixed(2));
+
     mediaContainers.style.setProperty('--tx', '0px');
+    console.log("F is: " + f);
+    mediaContainers.style.setProperty('--f', f);
     mediaContainers.classList.toggle('smooth', true);
     locked = false;
     x0 = null
 
-    if (dx < 0) {
-        nextMedia();
-    } else if (dx > 0) {
-        prevMedia();
+    if (f < 0.8) { // At least 20% drag
+        if (dx < 0) {
+            nextMedia();
+        } else if (dx > 0) {
+            prevMedia();
+        }
     }
+
+
 
   }
 }
