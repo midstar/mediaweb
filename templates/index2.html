@@ -21,7 +21,6 @@
     width: 100%; /* For backup only */
     --n: 3; /* Number of images - updated with javascript */
     width: calc(var(--n)*100%); /* Make fit all containers */
-    --i: 1;
     transform: translate(calc(var(--i, 0)/var(--n)*-100% + var(--tx,0px))); /* Select container */
 }
 
@@ -90,6 +89,8 @@ var mediaContainers = null;
 window.onload = function() {
 
     mediaContainers = document.getElementsByClassName("media-containers")[0];
+
+    mediaContainers.style.setProperty('--n', nbrOfMedia);
 
     mediaContainers.addEventListener('mousemove', drag, false);
     mediaContainers.addEventListener('touchmove', drag, false);
@@ -187,7 +188,7 @@ that shall be invisible
 </p>
 
 <div class="media-viewer">
-    <div class="media-containers">
+    <div class="media-containers smooth">
         <div class="media-container">
             <div class="media-object-container">
                 <img class="media-object" src="/media/jpeg.jpg">
