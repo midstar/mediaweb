@@ -189,39 +189,50 @@ function unify(e) {
 }
 
 var animationRequestID = null; // Animation frame request id
-var numberOfFrames = null; // Number of frames in animaiton
 
-function animateSlide(iFrom, iTo, currentFrame = 0) {
-    if (currentFrame == 0) {
-        if (animationRequestID != null) {
-            // Another animation is in progress. Cancel that animation
-            cancelAnimationFrame(animationRequestID);
-            animationRequestID = null;
-        }
-        // Calculate number of frames.
-        var delta = 0; // will be 0.0 - 1.0
-        if (iTo > iFrom) {
-            delta = iTo - iFrom;
-        } else if (iFrom > iTo) {
-            delta = iFrom - iTo;
-        } else {
-            // iTo = iFrom (no animation required)
-            return;
-        }
-        numberOfFrames = Math.round(delta * 20); // 20 frames is ~0.33s
-    }
-    mediaContainers.style.setProperty('--i', iFrom + (iTo - iFrom)*currentFrame/numberOfFrames);
 
-    if(currentFrame === numberOfFrames) {
+function animateSlide(iFrom, iTo, startTime = null) {
+
+    if (animationRequestID != null && startTime == null) {
+        // Another animation is in progress. Cancel that animation
+        // and continue with the new one.
         cancelAnimationFrame(animationRequestID);
         animationRequestID = null;
-        return; // We are done
     }
 
-    animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, ++currentFrame))
-    //mediaContainers.style.setProperty("--i", iTo);
-}
+    if (iFrom == iTo) {
+        // No animation required
+        mediaContainers.style.setProperty('--i', iTo);
+        return;
+    }
 
+    if (startTime == null) {
+        // First frame - don't update anything now
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, Date.now()));
+        return;
+    }
+
+    const iRate = 0.004; // Increase of i per ms. 0.004 = 0.25 s for a full move
+    var iDelta = (Date.now() - startTime) * iRate;
+    var iNext;
+    if (iTo > iFrom) {
+        iNext = Math.min(iTo, iFrom + iDelta);
+    } else {
+        // iFrom > iTo
+        iNext = Math.max(iTo, iFrom - iDelta);
+    } 
+
+    mediaContainers.style.setProperty('--i', iNext);
+
+    if (iNext == iTo) {
+        // We are done
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
+    } else {
+        // Call for next animation
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, startTime))
+    }
+}
 
 </script>
 
