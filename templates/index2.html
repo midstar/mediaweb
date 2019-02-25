@@ -21,9 +21,12 @@
     width: 100%; /* For backup only */
     --n: 3; /* Number of images - updated with javascript */
     width: calc(var(--n)*100%); /* Make fit all containers */
-    --i: 0; /* Which image to view - updated with javascript */
-    transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
-    transition: transform .5s ease-out; /* Swipe transition */
+    --i: 1;
+    transform: translate(calc(var(--i, 0)/var(--n)*-100% + var(--tx,0px))); /* Select container */
+}
+
+.smooth { 
+    transition: transform .5s ease-out; 
 }
 
 .media-container {
@@ -82,19 +85,20 @@
 // Globals
 var mediaIndex = 0;
 var nbrOfMedia = 3;
+var mediaContainers = null;
 
 window.onload = function() {
 
-    var containers = document.getElementsByClassName("media-containers")[0];
+    mediaContainers = document.getElementsByClassName("media-containers")[0];
 
-    containers.addEventListener('mousemove', e => {e.preventDefault()}, false);
-    containers.addEventListener('touchmove', e => {e.preventDefault()}, false);
+    mediaContainers.addEventListener('mousemove', drag, false);
+    mediaContainers.addEventListener('touchmove', drag, false);
 
-    containers.addEventListener('mousedown', lock, false);
-    containers.addEventListener('touchstart', lock, false);
+    mediaContainers.addEventListener('mousedown', lock, false);
+    mediaContainers.addEventListener('touchstart', lock, false);
 
-    containers.addEventListener('mouseup', move, false);
-    containers.addEventListener('touchend', move, false);
+    mediaContainers.addEventListener('mouseup', move, false);
+    mediaContainers.addEventListener('touchend', move, false);
 
     document.onkeydown = function(e) {
         var mediaViewer = document.getElementsByClassName("media-viewer")[0];
@@ -120,26 +124,36 @@ window.onload = function() {
 function prevMedia() {
     if (mediaIndex > 0) {
         mediaIndex--;
-        var containers = document.getElementsByClassName("media-containers")[0];
-        containers.style.setProperty("--i", mediaIndex);    
+        mediaContainers.style.setProperty("--i", mediaIndex);    
     }
 }
 
 function nextMedia() {
     if (mediaIndex < (nbrOfMedia - 1)) {
         mediaIndex++;
-        var containers = document.getElementsByClassName("media-containers")[0];
-        containers.style.setProperty("--i", mediaIndex);
+        mediaContainers.style.setProperty("--i", mediaIndex);
     }  
 }
 
 var x0 = null; // Last mouse/touch x position
+var locked = false; // Mouse is down
 
-function lock(e) { x0 = unify(e).clientX }
+// Called on mouse/touch down 
+function lock(e) { 
+    x0 = unify(e).clientX; // Store start x position
+    locked = true;
+    mediaContainers.classList.toggle('smooth', false);
+}
 
+// Called on mouse/touch up 
 function move(e) {
-  if(x0 || x0 === 0) {
+  if(locked) {
     let dx = unify(e).clientX - x0;
+
+    mediaContainers.style.setProperty('--tx', '0px');
+    mediaContainers.classList.toggle('smooth', true);
+    locked = false;
+    x0 = null
 
     if (dx < 0) {
         nextMedia();
@@ -147,8 +161,14 @@ function move(e) {
         prevMedia();
     }
 
-    x0 = null
   }
+}
+
+// Called on mouse/touch drag
+function drag(e) { 
+    e.preventDefault();
+    if(locked)  
+        mediaContainers.style.setProperty('--tx', `${Math.round(unify(e).clientX - x0)}px`);
 }
 
 function unify(e) { 
