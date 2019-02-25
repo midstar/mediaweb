@@ -8,10 +8,12 @@
     height: 100%;
     left: 0;
     top: 0;
+    z-index: 1; /* Sit on top */
     overflow-x: hidden;
     overflow-y: hidden;
     background-color: rgb(0,0,0); /* Fallback color */
     background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+    display: none; /* Hidden by default */
 }
 
 .media-containers {
@@ -55,7 +57,7 @@
     left: 20px;
     border-radius: 25px;
     position: absolute; /* Stay in place in container */
-    z-index: 1; /* Sit on top */
+    z-index: 2; /* Sit on top */
 }
 
 .media-caption {
@@ -84,17 +86,48 @@
     to {transform:scale(1)}
 }
 
+/* Media viewer buttons */
+.mediaButton {
+    position: absolute;
+    color: #f1f1f1;
+    font-size: 80px;
+    font-weight: bold;
+    transition: 0.3s;
+    z-index: 2; /* Sit on top */
+}
+
+.mediaButton:hover,
+.mediaButton:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#mediaViewerClose {
+    top: 15px;
+    right: 35px;
+}
+
 </style>
 
 <script>
 
-// Globals
-var mediaIndex = 0;
-var nbrOfMedia = 3;
-var mediaContainers = null;
 
 window.onload = function() {
+    setupMediaViewer();
+    openMediaViewer();
+}
 
+
+// Media Viewer Globals
+var mediaIndex = 0;
+var nbrOfMedia = 3;
+var mediaViewer = null;
+var mediaContainers = null;
+
+// Only call once
+function setupMediaViewer() {
+    mediaViewer = document.getElementsByClassName("media-viewer")[0];
     mediaContainers = document.getElementsByClassName("media-containers")[0];
 
     mediaContainers.style.setProperty('--n', nbrOfMedia);
@@ -108,16 +141,17 @@ window.onload = function() {
     mediaContainers.addEventListener('mouseup', move, false);
     mediaContainers.addEventListener('touchend', move, false);
 
+    document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
+}
+
+// Be sure to call setupMediaViewer prior this function.
+function openMediaViewer() {
+    mediaViewer.style.display = "block";
     document.onkeydown = function(e) {
-        var mediaViewer = document.getElementsByClassName("media-viewer")[0];
         e = e || window.event;
         if (e.keyCode == '27') {
             // escape
-            if (mediaViewer.style.display == "none") {
-                mediaViewer.style.display = "block";
-            } else {
-                mediaViewer.style.display = "none";
-            }
+            closeMediaViewer();
         } else if (e.keyCode == '37') {
             // left arrow
             prevMedia();
@@ -127,6 +161,11 @@ window.onload = function() {
             nextMedia();
         }
     }
+}
+
+function closeMediaViewer() {
+    mediaViewer.style.display = "none";
+    document.onkeydown = null; // Disable arrow keys
 }
 
 // iPrev is the previous i value for smooth animation.
@@ -254,9 +293,11 @@ this is some stuff in the background
 <p>
 that shall be invisible
 </p>
+<button onclick="openMediaViewer();">open media viewer</button>
 
 <div class="media-viewer">
-    <div class="media-containers smooth">
+    <span class="mediaButton" id="mediaViewerClose">&times;</span>
+    <div class="media-containers">
         <div class="media-container">
             <div class="media-object-container">
                 <img class="media-thumb" src="/thumb/jpeg.jpg">
