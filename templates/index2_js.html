@@ -91,7 +91,7 @@
 }
 
 /* Media viewer buttons */
-.mediaButton {
+.media-button {
     position: absolute;
     color: #f1f1f1;
     font-size: 80px;
@@ -100,8 +100,8 @@
     z-index: 2; /* Sit on top */
 }
 
-.mediaButton:hover,
-.mediaButton:focus {
+.media-button:hover,
+.media-button:focus {
     color: #bbb;
     text-decoration: none;
     cursor: pointer;
@@ -110,6 +110,33 @@
 #mediaViewerClose {
     top: 15px;
     right: 35px;
+}
+
+/* Loader / spinner */
+.media-loader {
+    position: fixed;
+    z-index: 1; /* Sit on top */ 
+    top: 50%;
+    left: 50%;
+    margin-top: -25px;  /* half of height */
+    margin-left: -25px; /* half of height */
+    border: 10px solid transparent;
+    border-radius: 50%;
+    border-top: 10px solid white;
+    width: 50px;
+    height: 50px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+}
+
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 </style>
@@ -249,6 +276,7 @@ function openMediaViewer(index = 0) {
             nextMedia();
         }
     }
+    mediaViewLoaderCheck(); // Cyclic check if spinner should be shown
 }
 
 function closeMediaViewer() {
@@ -265,10 +293,8 @@ function loadMediaThumb(index) {
     var mediaFile = mediaFiles[index];
 
     // Don't load thumb if the media object is already loaded
-    if (mediaObject.getAttribute('src') != "") {
-        if ((mediaFile.Type == "video" && mediaObject.readyState == 4) || 
-           (mediaFile.Type == "image" && mediaObject.complete))
-            return; // No need for thumb
+    if (mediaLoadedComplete(index)) {
+        return; // No need for thumb
     }
 
     var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
@@ -279,6 +305,22 @@ function loadMediaThumb(index) {
 
     thumb.setAttribute('src',"thumb/" + mediaFile.Name);
     thumb.style.display = "block";
+}
+
+// Returns true if media on index has completely loaded
+function mediaLoadedComplete(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return false; // Invalid index
+    }
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaFile = mediaFiles[index];
+    if (mediaObject.getAttribute('src') != "") {
+        if ((mediaFile.Type == "video" && mediaObject.readyState == 4) || 
+           (mediaFile.Type == "image" && mediaObject.complete))
+            return true; // Media is complete
+    }
+    return false;
 }
 
 function loadMedia(index) {
@@ -318,6 +360,24 @@ function nextMedia(iPrev = mediaIndex) {
         mediaIndex++;
     }
     animateSlide(iPrev, mediaIndex); 
+}
+
+// Run the media loader while media viewer is visible AND the
+// current media object has not been loaded.
+function mediaViewLoaderCheck() {
+    var mediaLoader = document.getElementById("mediaLoader");
+    if (mediaViewer.style.display == "none") {
+        mediaLoader.style.display = "none";
+        return;
+    }
+    if (mediaLoadedComplete(mediaIndex)) {
+        mediaLoader.style.display = "none";
+    } else {
+        mediaLoader.style.display = "block";    
+    }
+
+    // Schedule next check
+    setTimeout(mediaViewLoaderCheck, 500);
 }
 
 var x0 = null; // Last mouse/touch x position
@@ -366,7 +426,6 @@ function move(e) {
 
   }
 }
-
 
 function unify(e) { 
     return e.changedTouches ? e.changedTouches[0] : e 
@@ -434,7 +493,8 @@ that shall be invisible
 ------------------------------------------------------------------------------->
 
 <div class="media-viewer">
-    <span class="mediaButton" id="mediaViewerClose">&times;</span>
+    <span class="media-button" id="mediaViewerClose">&times;</span>
+    <div class="media-loader" id="mediaLoader"></div>
     <div class="media-containers"><!--
         <div class="media-container">
             <div class="media-object-container">
