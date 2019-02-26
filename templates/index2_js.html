@@ -61,6 +61,7 @@
     border-radius: 25px;
     position: absolute; /* Stay in place in container */
     z-index: 2; /* Sit on top */
+    display: none; /* Hide by default */
 }
 
 .media-caption {
@@ -117,7 +118,47 @@
 
 
 window.onload = function() {
-    setupMediaViewer();
+    var m = [];
+
+    var i=0;
+    m[i] = {};
+    m[i].Type = "image";
+    m[i].Name = "screenshot_browser.jpg";
+    m[i].Path = "screenshot_browser.jpg";
+    
+    i++;
+    m[i] = {};
+    m[i].Type = "image";
+    m[i].Name = "jpeg.jpg";
+    m[i].Path = "jpeg.jpg";
+    
+    i++;
+    m[i] = {};
+    m[i].Type = "image";
+    m[i].Name = "jpeg_rotated.jpg";
+    m[i].Path = "jpeg_rotated.jpg";
+    
+    i++;
+    m[i] = {};
+    m[i].Type = "video";
+    m[i].Name = "video.mp4";
+    m[i].Path = "video.mp4";
+
+    
+    i++;
+    m[i] = {};
+    m[i].Type = "image";
+    m[i].Name = "png.png";
+    m[i].Path = "png.png";
+
+
+    setupMediaViewer(m);
+    loadMediaThumb(1);
+    loadMediaThumb(2);
+    loadMediaThumb(3);
+    loadMedia(2);
+    loadMedia(3);
+    //loadMedia(1);
     openMediaViewer();
 }
 
@@ -127,32 +168,72 @@ window.onload = function() {
 
 // Media Viewer Globals
 var mediaIndex = 0;
-var nbrOfMedia = 0;
+var mediaFiles = [];
 var mediaViewer = null;
 var mediaContainers = null;
+var setupDone = false;
 
 // Always call first. Call everytime new media has been loaded.
-function setupMediaViewer() {
+function setupMediaViewer(files) {
+    mediaFiles = files;
     mediaViewer = document.getElementsByClassName("media-viewer")[0];
     mediaContainers = document.getElementsByClassName("media-containers")[0];
 
-    nbrOfMedia = mediaContainers.children.length;
-    mediaContainers.style.setProperty('--n', nbrOfMedia);
+    // Remove all old files
+    while (mediaContainers.firstChild) {
+        mediaContainers.removeChild(mediaContainers.firstChild);
+    }
 
-    mediaContainers.addEventListener('mousemove', drag, false);
-    mediaContainers.addEventListener('touchmove', drag, false);
+    // Add new files
+    for (i=0 ; i < mediaFiles.length ; i++) {
+        var file = mediaFiles[i];
+        var mediaTag;
+        if (file.Type == "video") {
+            mediaTag = "<video controls";
+        } else {
+            mediaTag = "<img";
+        }
+        // Create the media container. For now define the thumb or
+        // image src/URL. We only load the data when needed of 
+        // performance reasons
+        var containerTxt =
+"<div class='media-container'> \
+    <div class='media-object-container'> \
+        <img class='media-thumb' src=''> \
+        " + mediaTag + " class='media-object' src=''> \
+    </div> \
+    <div class='media-caption'>" + file.Name + "</div> \
+</div>"
+        mediaContainers.insertAdjacentHTML( 'beforeend', containerTxt);
+    }
 
-    mediaContainers.addEventListener('mousedown', lock, false);
-    mediaContainers.addEventListener('touchstart', lock, false);
+    mediaContainers.style.setProperty('--n', mediaFiles.length);
 
-    mediaContainers.addEventListener('mouseup', move, false);
-    mediaContainers.addEventListener('touchend', move, false);
+    // Below is only required to run once
+    if (setupDone == false) {
+        mediaContainers.addEventListener('mousemove', drag, false);
+        mediaContainers.addEventListener('touchmove', drag, false);
 
-    document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
+        mediaContainers.addEventListener('mousedown', lock, false);
+        mediaContainers.addEventListener('touchstart', lock, false);
+
+        mediaContainers.addEventListener('mouseup', move, false);
+        mediaContainers.addEventListener('touchend', move, false);
+
+        document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
+
+        setupDone = true;
+    }
 }
 
 // Be sure to call setupMediaViewer prior this function.
-function openMediaViewer() {
+// Index is the selected media
+function openMediaViewer(index = 0) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    mediaIndex = index;
+    mediaContainers.style.setProperty('--i', mediaIndex);
     mediaViewer.style.display = "block";
     document.onkeydown = function(e) {
         e = e || window.event;
@@ -175,6 +256,52 @@ function closeMediaViewer() {
     document.onkeydown = null; // Disable arrow keys
 }
 
+function loadMediaThumb(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaFile = mediaFiles[index];
+
+    // Don't load thumb if the media object is already loaded
+    if (mediaObject.getAttribute('src') != "") {
+        if ((mediaFile.Type == "video" && mediaObject.readyState == 4) || 
+           (mediaFile.Type == "image" && mediaObject.complete))
+            return; // No need for thumb
+    }
+
+    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+
+    // Don't load thumb if the thumb is already loaded
+    if (thumb.getAttribute('src') != "")
+        return; // Thumb already loaded
+
+    thumb.setAttribute('src',"thumb/" + mediaFile.Name);
+    thumb.style.display = "block";
+}
+
+function loadMedia(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    if (mediaObject.getAttribute('src') != "") 
+        return; // Media object already loaded
+
+    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+    var mediaFile = mediaFiles[index];
+    mediaObject.setAttribute('src',"media/" + mediaFile.Name);
+
+    // Hide thumb when media object has been completely loaded
+    if (mediaFile.Type == "video") {
+        mediaObject.oncanplay = function() { thumb.style.display = "none"; };
+    } else {
+        mediaObject.addEventListener("load", function() { thumb.style.display = "none"; });
+    }
+}
+
 // iPrev is the previous i value for smooth animation.
 // iPrev is optional (default is previous i)
 function prevMedia(iPrev = mediaIndex) {
@@ -187,7 +314,7 @@ function prevMedia(iPrev = mediaIndex) {
 // iPrev is the previous i value for smooth animation.
 // iPrev is optional (default is previous i)
 function nextMedia(iPrev = mediaIndex) {
-    if (mediaIndex < (nbrOfMedia - 1)) {
+    if (mediaIndex < (mediaFiles.length - 1)) {
         mediaIndex++;
     }
     animateSlide(iPrev, mediaIndex); 
@@ -247,7 +374,7 @@ function unify(e) {
 
 var animationRequestID = null; // Animation frame request id
 
-
+// Animate drag left and right
 function animateSlide(iFrom, iTo, startTime = null) {
 
     if (animationRequestID != null && startTime == null) {
@@ -308,7 +435,7 @@ that shall be invisible
 
 <div class="media-viewer">
     <span class="mediaButton" id="mediaViewerClose">&times;</span>
-    <div class="media-containers">
+    <div class="media-containers"><!--
         <div class="media-container">
             <div class="media-object-container">
                 <img class="media-thumb" src="/thumb/jpeg.jpg">
@@ -342,7 +469,7 @@ that shall be invisible
                 <img class="media-object" src="/media/jpeg_rotated.jpg">
             </div>
             <div class="media-caption">/media/jpeg_rotated.jpg</div>
-        </div>
+        </div>-->
     </div>
 </div>
 </body>
