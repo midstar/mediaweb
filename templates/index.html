@@ -1,536 +1,751 @@
 <html>
-  <head>
-    <title>MediaWEB</title>
-    <link rel="icon" type="image/png" href="/logo.png">
-    <style>
+<head>
+<title>MediaWEB</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<style>
 
-    /***************************************/
-    /* Style for navigator                 */
-    #navigator {
-        /*margin-left: 20px;*/
-        overflow: hidden;
-        background-color: white;
-        position: fixed; /* Set the navbar to fixed position */
-        top: 0; /* Position the navbar at the top of the page */
-        width: 100%; /* Full width */
-    }
+/******************************************************************************
+* Navigator styles below
+******************************************************************************/
 
-    #navigator a {
-        color: blue; 
-        text-decoration: none;
-    }
+#navigator {
+    /*margin-left: 20px;*/
+    overflow: hidden;
+    background-color: white;
+    position: fixed; /* Set the navbar to fixed position */
+    top: 0; /* Position the navbar at the top of the page */
+    width: 100%; /* Full width */
+}
 
-    /***************************************/
-    /* Style for items                     */
+#navigator a {
+    color: blue; 
+    text-decoration: none;
+}
 
-    .item {
-        width: 160px;
-        height: 190px;
-        margin-top: 5px;
-        margin-left: 10px;
-        margin-right: 10px;
-        margin-bottom: 10px;/*
-        border-style: solid;
-        border-color: #A30003;
-        border-width: 1px;
-        border-radius:3px 3px 0px 0px;*/
-        display:inline-block;
-        overflow: hidden;
-    }
-    .thumb {
-        padding-top: 5px;
-        padding-left: 5px;
-        padding-right: 5px;
-        padding-bottom: 5px;   
-    }
-    .thumb img {
-        margin-left: auto;
-        margin-right: auto;
-        display: block;
-        width:128px; 
-        height:128px;   
-        border-radius: 10px;
-    }
-    .thumb:hover img {
-        transform: scale(1.1);
-        cursor: pointer;
-    }
-    .name {
-        text-align: center;
-    }
+/******************************************************************************
+* Media / file browser styles below
+******************************************************************************/
 
+.item {
+    width: 160px;
+    height: 190px;
+    margin-top: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    display:inline-block;
+    overflow: hidden;
+}
+.thumb {
+    padding-top: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;   
+}
+.thumb img {
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width:128px; 
+    height:128px;   
+    border-radius: 10px;
+}
+.thumb:hover img {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+.name {
+    text-align: center;
+}
 
-    /***************************************/
-    /* Style for media viewer modal        */
+/******************************************************************************
+* Loader/spinner CSS Below
+******************************************************************************/
 
-    /* The Modal (background) */
-    .modal {
-        /*border-style: solid; 
-        border-width: 5x 5px 5px 5px;
-        border-color: purple;*/
-        display: none; /* Hidden by default */
-        position: fixed; /* Stay in place */
-        z-index: 1; /* Sit on top */
-        padding-top: 30px; /* Location of the box */
-        left: 0;
-        top: 0;
-        width: 100%; /* Full width */
-        height: 100%; /* Full height */
-        overflow: auto; /* Enable scroll if needed */
-        background-color: rgb(0,0,0); /* Fallback color */
-        background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
-    }
+/* Loader / spinner */
+.loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-top: -25px;  /* half of height */
+    margin-left: -25px; /* half of height */
+    border: 10px solid transparent;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+}
 
-    /* Modal Content (image/video) */
-    .modal-content {
-        /*border-style: solid;
-        border-width: 1px 1px 1px 1px;
-        border-color: red;*/
-        margin: auto;
-        display: block;
-        max-width: 90%;
-        max-height: 90%
-        /*max-width: 700px;*/
-    }
+#itemsLoader {
+    border-top: 10px solid darkgray;
+    z-index: 1; /* Sit on top of items but below media-viewer */ 
+}
 
-    /* Caption of Modal Image */
-    #caption {
-        /*border-style: solid;
-        border-width: 1px 1px 1px 1px;
-        border-color: blue;*/
-        margin: auto;
-        display: block;
-        width: 80%;
-        max-width: 700px;
-        text-align: center;
-        color: #ccc;
-        padding: 10px 0;
-        max-height: 10%;
-    }
+#mediaLoader {
+    border-top: 10px solid white;
+    z-index: 4; /* Sit on top of media-viewer and media-thumb */ 
+}
 
+@-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+}
 
-    /* 100% Image Width on Smaller Screens */
-    @media only screen and (max-width: 700px){
-        .modal-content {
-            width: 100%;
-        }
-    }   
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 
-    /* Add Animation */
-    .modal-content, #caption {  
-        -webkit-animation-name: zoom;
-        -webkit-animation-duration: 0.6s;
-        animation-name: zoom;
-        animation-duration: 0.6s;
-    }
+/******************************************************************************
+* Media Viewer CSS Below
+******************************************************************************/
 
-    @-webkit-keyframes zoom {
-        from {-webkit-transform:scale(0)} 
-        to {-webkit-transform:scale(1)}
-    }
+.media-viewer {
+    position: fixed; 
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    z-index: 2; /* Sit on top */
+    overflow-x: hidden;
+    overflow-y: hidden;
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.9); /* Black w/ opacity */
+    display: none; /* Hidden by default */
+}
 
-    @keyframes zoom {
-        from {transform:scale(0)} 
-        to {transform:scale(1)}
-    }
+.media-containers {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%; /* For backup only */
+    --n: 0; /* Number of images - updated with javascript */
+    width: calc(var(--n)*100%); /* Make fit all containers */
+    transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
+}
 
-    /* Media viewer buttons */
-    .mediaButton {
-        position: absolute;
-        color: #f1f1f1;
-        font-size: 80px;
-        font-weight: bold;
-        transition: 0.3s;
-    }
+.media-container {
+    min-height: 100%; /* needed so Firefox doesn't make img shrink to fit */
+    height: 100%; /* can't take this out either as it breaks Chrome */
+    width: 100%; /* can't take this out either as it breaks Chrome */
+    width: calc(100%/var(--n)); /* Make each container fit the screen */
+}
 
-    .mediaButton:hover,
-    .mediaButton:focus {
-        color: #bbb;
-        text-decoration: none;
-        cursor: pointer;
-    }
+.media-object-container {
+    width: 100%;
+    height: calc(100% - 35px);
+    text-align: center; /* center content inside div */
+    position: relative;
+}
 
-    #mediaViewerClose {
-        top: 15px;
-        right: 35px;
-    }
+.media-object {
+    max-width: 100%;
+    max-height: 100%;
+    display: inline-block;
+    position: relative;
+    top: 50%; /* Center horizontally part 1/2 */
+    transform: translateY(-50%); /* Center horizontally part 2/2 */
+}
 
-    #mediaViewerPrev {
-        top: 30%;
-        left: 35px;
-    }
+.media-thumb {
+    width: 256px;
+    height: 256px;
+    top: 20px;
+    left: 20px;
+    border-radius: 25px;
+    position: absolute; /* Stay in place in container */
+    z-index: 3; /* Sit on top */
+    display: none; /* Hide by default */
+}
 
-     #mediaViewerNext {
-        top: 30%;
-        right: 35px;
-    }    
+.media-caption {
+    width: 100%;
+    height: 30px;
+    margin-top: 5px;
+    color: white;
+    text-align: center; /* center content inside div */
+}
 
-    /* Loader / spinner */
-    .loader {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        margin-top: -25px;  /* half of height */
-        margin-left: -25px; /* half of height */
-        border: 10px solid #bcbcbc;
-        border-radius: 50%;
-        border-top: 10px solid #707070;
-        border-bottom: 10px solid #707070;
-        width: 50px;
-        height: 50px;
-        -webkit-animation: spin 1s linear infinite;
-        animation: spin 1s linear infinite;
-    }
+/* Add Animation (when opening) */
+.media-viewer {  
+    -webkit-animation-name: zoom;
+    -webkit-animation-duration: 0.6s;
+    animation-name: zoom;
+    animation-duration: 0.6s;
+}
 
-    #mediaLoader {
-       z-index: 1; /* Sit on top */ 
-    }
+@-webkit-keyframes zoom {
+    from {-webkit-transform:scale(0)} 
+    to {-webkit-transform:scale(1)}
+}
 
-    @-webkit-keyframes spin {
-        0% { -webkit-transform: rotate(0deg); }
-        100% { -webkit-transform: rotate(360deg); }
-    }
+@keyframes zoom {
+    from {transform:scale(0)} 
+    to {transform:scale(1)}
+}
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    </style>
-    <script>
+/* Media viewer buttons */
+.media-button {
+    position: absolute;
+    color: #f1f1f1;
+    font-size: 80px;
+    font-weight: bold;
+    transition: 0.3s;
+    z-index: 3; /* Sit on top */
+}
 
+.media-button:hover,
+.media-button:focus {
+    color: #bbb;
+    text-decoration: none;
+    cursor: pointer;
+}
 
+#mediaViewerClose {
+    top: 15px;
+    right: 35px;
+}
 
-    window.onload = function() {
+</style>
 
-        /* Setup close of file dialog */
-        var span = document.getElementById("mediaViewerClose");
-        span.onclick = closeFileDialog
+<script>
 
-        /* Setup onload for images in media viewer (close loader/spinner) */
-        var img = document.getElementById("mediaViewerImg");
-        img.addEventListener("load", hideMediaLoader)
+window.onload = function() {
 
-        /* Check for URL search parameters */
-        var path = ""
-        const params = new URLSearchParams(window.location.search);
-        if (params.has("path")) {
-            path = params.get("path");
-        } 
+    // Check for URL search parameters
+    var path = ""
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("path")) {
+        path = params.get("path");
+    } 
 
-        updateNavigator(path);
+    updateNavigator(path);
 
-        loadJSON("folder/" + path, onNewFiles, onError);
+    loadJSON("folder/" + path, onNewFiles, onError);
 
-    }
+}
 
-    function updateNavigator(path) {
-        var partsTmp = path.split("/");
-        var parts = [];
-        // Copy all non empty parts (split might add empty elements)
-        for (var i = 0 ; i < partsTmp.length ; i++) {
-            if (partsTmp[i].trim().length > 0) {
-                parts.push(partsTmp[i]);
-            }
-        }
-
-        /* No navigator on top level */
-        if (parts.length > 0) {
-            var navigator = document.getElementById("navigator")
-            var links = "<a href='?path='>top</a>"
-            var url = "";
-            for (var i = 0 ; i < parts.length ; i++) {
-                part = parts[i];
-                url += "/" + part;
-                if (i == (parts.length - 1)) {
-                    // Last element is no link
-                    links += " / " + part
-                } else {
-                    links += " / <a href='?path=" + url + "'>" + part + "</a>"
-                }
-            }
-            navigator.insertAdjacentHTML("beforeend", links);
-        }
-
-    }
-
-    /* Set location. Will update URL and reload page. */
-    function setLocation(path) {
-        const params = new URLSearchParams(window.location.search);
-        params.set("path", path)
-        window.location.search = params.toString();   
-    }
-
-    function closeFileDialog() {
-        var modal = document.getElementById('mediaViewer');
-        modal.style.display = "none";
-        // Disable arrow keys
-        document.onkeydown = null;
-    }
-
-    function showItemsLoader() {
-        var loader = document.getElementById("itemsLoader");
-        loader.style.display = "block"; 
-    }
-
-    function hideItemsLoader() {
-        var loader = document.getElementById("itemsLoader");
-        loader.style.display = "none"; 
-    }
-
-    function showMediaLoader() {
-        var loader = document.getElementById("mediaLoader");
-        loader.style.display = "block"; 
-    }
-
-    function hideMediaLoader() {
-        var loader = document.getElementById("mediaLoader");
-        loader.style.display = "none"; 
-    }
-
-
-    /* index refers to the file index in global globalFiles array */
-    function openFileDialog(index) {
-        var file = globalFiles[index];
-        var mediaUrl = "media/" + file.Path;
-        var caption = file.Name;
-
-        
-        var modalImg = document.getElementById("mediaViewerImg");
-        var modalVideo = document.getElementById("mediaViewerVideo");
-        if (file.Type == "image") {
-            // This is an image
-            modalImg.src = mediaUrl;
-            modalVideo.style.display = "none"; // Hide video
-            modalImg.style.display = "block"; // Show image
-    
-            showMediaLoader() // Show loader / spinner
-
-        } else if (file.Type == "video") {
-            // This is a video
-            modalVideo.src = mediaUrl;
-            modalImg.style.display = "none"; // Hide image
-            modalVideo.style.display = "block"; // Show video
-    
-            hideMediaLoader() // Hide loader / spinner
-        } else {
-            alert("Unsupported file: " + file.Type);
-            hideMediaLoader() // Hide loader / spinner
-        }
-
-        // Set the caption
-        var captionText = document.getElementById("caption");
-        captionText.innerHTML = caption;
-
-        // Figure out which previous media is
-        var prev = index;
-        do {
-            prev--;
-            if (prev < 0) {
-                // Wrap
-                prev = globalFiles.length - 1;
-            }
-        } while (globalFiles[prev].Type == "folder")
-
-        if (globalFiles[prev].Type == "image") {
-            // Cache image
-            preload("media/" + globalFiles[prev].Path);
-        } 
-
-        var prevButton = document.getElementById("mediaViewerPrev");
-        prevButton.onclick = function() { 
-            openFileDialog(prev);
-        }
-
-        // Figure out which next media is
-        var next = index;
-        do {
-            next++;
-            if (next >= globalFiles.length) {
-                // Wrap
-                next = 0;
-            }
-        } while (globalFiles[next].Type == "folder")
-
-        if (globalFiles[next].Type == "image") {
-            // Cache image
-            preload("media/" + globalFiles[next].Path);
-        } 
-
-        var nextButton = document.getElementById("mediaViewerNext");
-        nextButton.onclick = function() { 
-            openFileDialog(next);
-        }
-
-        // Enable left and right arrow keys on keyboard
-        enableArrowKeys(prevButton.onclick, nextButton.onclick, closeFileDialog);
-
-        // Display the modal
-        var modal = document.getElementById('mediaViewer');
-        modal.style.display = "block";
-
-    }
-
-    function enableArrowKeys(leftFunction, rightFunction, escFunction) {
-        document.onkeydown = function(e) {
-            e = e || window.event;
-            if (e.keyCode == '27') {
-                // escape
-                escFunction();
-            } else if (e.keyCode == '37') {
-                // left arrow
-                leftFunction();
-            }
-            else if (e.keyCode == '39') {
-                // right arrow
-                rightFunction();
-            }
+function updateNavigator(path) {
+    var partsTmp = path.split("/");
+    var parts = [];
+    // Copy all non empty parts (split might add empty elements)
+    for (var i = 0 ; i < partsTmp.length ; i++) {
+        if (partsTmp[i].trim().length > 0) {
+            parts.push(partsTmp[i]);
         }
     }
 
-    function onNewFiles(files) {
-
-        /* Remove old file items */
-        var items = document.getElementById('items');
-        while (items.firstChild) {
-            items.removeChild(items.firstChild);
-        }
-
-        /* Update the global files */
-        globalFiles = files;
-
-        /* Add folders first (on top) */
-        for (var i=0; i < files.length; i++) {
-            var file = files[i];
-            if (file.Type == "folder") {
-                addFileItem(file.Type, file.Name, file.Path, i);
-            }
-        }
-
-        /* Then add all other items */
-        for (var i=0; i < files.length; i++) {
-            var file = files[i];
-            if (file.Type != "folder") {
-                addFileItem(file.Type, file.Name, file.Path, i);
-            }
-        }
-
-        /* Start cyclic check if items are loaded */
-        checkIfAllThumbsLoaded();
-    }
-
-    function addFileItem(type, name, path, index) {
-        var itemTxt =
-"<div class='item'> \
-    <div class='thumb'> \
-       <img class='thumbImage' src='thumb/" + path + "' alt='" + type +"'> \
-   </div> \
-   <div class='name'> \
-       " + name + " \
-   </div> \
-<div>";
-        var items = document.getElementById("items")
-        items.insertAdjacentHTML( 'beforeend', itemTxt );
-
-        // Add click event to the thumb div
-        var itemDiv = items.lastChild; // The newly created item
-        var thumb = itemDiv.getElementsByClassName("thumb")[0];
-        thumb.onclick = function() {
-            if (type == "image" || type == "video") {
-                openFileDialog(index);
-            } else if (type == "folder") {
-                setLocation(path);
-            }
-        }
-    }
-
-    // Close the itemsLoader if all items (thumbs) are loaded.
-    // If not it calls itself after a certain time (i.e.
-    // polls the items regulary)
-    function checkIfAllThumbsLoaded() {
-        var thumbs = document.getElementsByClassName("thumbImage");
-        for (var i=0; i < thumbs.length; i++) {
-            var thumb = thumbs[i];
-            if (!thumb.complete) {
-                // At least one thumb has not been loaded
-
-                // Show spinner
-                showItemsLoader();
-
-                // Check again after 0.5 seconds
-                setTimeout(checkIfAllThumbsLoaded, 500)
-                return
-            }
-        }
-        // All thumbs loaded. Close the spinner
-        hideItemsLoader();
-    }
-
-    function onError(error) {
-        alert(error);
-    }
-
-    function loadJSON(filePath, success, error)
-    {
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function()
-        {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    if (success)
-                        success(JSON.parse(xhr.responseText));
+    // No navigator on top level 
+    if (parts.length > 0) {
+        var navigator = document.getElementById("navigator")
+        var links = "<a href='?path='>top</a>"
+        var url = "";
+        for (var i = 0 ; i < parts.length ; i++) {
+            part = parts[i];
+            url += "/" + part;
+            if (i == (parts.length - 1)) {
+                // Last element is no link
+                links += " / " + part
             } else {
-                if (error)
-                    error(xhr.responseText + "\n\nMake sure you have updated the mediapath \nproperty in mediaweb.conf correctly!");
-                }
+                links += " / <a href='?path=" + url + "'>" + part + "</a>"
             }
-        };
-        xhr.open("GET", filePath, true);
-        xhr.send();
+        }
+        navigator.insertAdjacentHTML("beforeend", links);
     }
 
+}
 
-    // Function for caching images (to reduce loading times)
-    var cachedImages = new Array()
-    var cachedImagesIndex = 0;
-    function preload(imageUrl) {
-        cachedImages[cachedImagesIndex] = new Image()
-        cachedImages[cachedImagesIndex].src = imageUrl
-        cachedImagesIndex++
-        // Store maximum 2 images in cache
-        if (cachedImagesIndex == 2) {
-            cachedImagesIndex = 0;
+// Set location. Will update URL and reload page
+function setLocation(path) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("path", path)
+    window.location.search = params.toString();   
+}
+
+function showItemsLoader() {
+    var loader = document.getElementById("itemsLoader");
+    loader.style.display = "block"; 
+}
+
+function hideItemsLoader() {
+    var loader = document.getElementById("itemsLoader");
+    loader.style.display = "none"; 
+}
+
+function onNewFiles(files) {
+
+    // Remove old file items 
+    var items = document.getElementById('items');
+    while (items.firstChild) {
+        items.removeChild(items.firstChild);
+    }
+
+    // Add folders first (on top) 
+    for (var i=0; i < files.length; i++) {
+        var file = files[i];
+        if (file.Type == "folder") {
+            addFileItem(file.Type, file.Name, file.Path, i);
         }
     }
 
-    </script>
-  </head>
-  <body>
+    // Then add all other items also add the media files to its
+    // own array since it will be used by the Media Viewer
+    var filesMediaSubset = [];
+    var j = 0; // Index in filesMediaSubset
+    for (var i=0; i < files.length; i++) {
+        var file = files[i];
+        if (file.Type != "folder") {
+            filesMediaSubset[j] = file;
+            addFileItem(file.Type, file.Name, file.Path, j);
+            j++;
+        }
+    }
 
-  <!-- Directory navigator -->
-  <div id="navigator">
-  </div>
-  
-  <div id="items">
-  <!-- File items goes here -->
-  </div>
+    // Start cyclic check if items are loaded 
+    checkIfAllThumbsLoaded();
 
-  <!-- Loader for the items --> 
-  <div class="loader" id="itemsLoader"></div>
+    // Setup Media Viewer
+    setupMediaViewer(filesMediaSubset);
+}
 
-  <!-- The Media Viewer -->
-  <div id="mediaViewer" class="modal">
+function addFileItem(type, name, path, index) {
+    var itemTxt =
+"<div class='item'> \
+<div class='thumb'> \
+    <img class='items-thumb-image' src='thumb/" + path + "' alt='" + type +"'> \
+</div> \
+<div class='name'> \
+    " + name + " \
+</div> \
+<div>";
+    var items = document.getElementById("items")
+    items.insertAdjacentHTML( 'beforeend', itemTxt );
+
+    // Add click event to the thumb div
+    var itemDiv = items.lastChild; // The newly created item
+    var thumb = itemDiv.getElementsByClassName("thumb")[0];
+    thumb.onclick = function() {
+        if (type == "image" || type == "video") {
+            openMediaViewer(index);
+        } else if (type == "folder") {
+            setLocation(path);
+        }
+    }
+}
+
+// Close the itemsLoader if all items (thumbs) are loaded.
+// If not it calls itself after a certain time (i.e.
+// polls the items regulary)
+function checkIfAllThumbsLoaded() {
+    var thumbs = document.getElementsByClassName("items-thumb-image");
+    for (var i=0; i < thumbs.length; i++) {
+        var thumb = thumbs[i];
+        if (!thumb.complete) {
+            // At least one thumb has not been loaded
+
+            // Show spinner
+            showItemsLoader();
+
+            // Check again after 0.5 seconds
+            setTimeout(checkIfAllThumbsLoaded, 500)
+            return
+        }
+    }
+    // All thumbs loaded. Close the spinner
+    hideItemsLoader();
+}
+
+function onError(error) {
+    alert(error);
+}
+
+function loadJSON(filePath, success, error)
+{
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function()
+    {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                if (success)
+                    success(JSON.parse(xhr.responseText));
+        } else {
+            if (error)
+                error(xhr.responseText + "\n\nMake sure you have updated the mediapath \nproperty in mediaweb.conf correctly!");
+            }
+        }
+    };
+    xhr.open("GET", filePath, true);
+    xhr.send();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Media Viewer Javascript Below
+///////////////////////////////////////////////////////////////////////////////
+
+// Media Viewer Globals
+var mediaIndex = 0;
+var mediaFiles = [];
+var mediaViewer = null;
+var mediaContainers = null;
+var setupDone = false;
+
+// Always call first. Call everytime new media has been loaded.
+function setupMediaViewer(files) {
+    mediaFiles = files;
+    mediaViewer = document.getElementsByClassName("media-viewer")[0];
+    mediaContainers = document.getElementsByClassName("media-containers")[0];
+
+    // Remove all old files
+    while (mediaContainers.firstChild) {
+        mediaContainers.removeChild(mediaContainers.firstChild);
+    }
+
+    // Add new files
+    for (i=0 ; i < mediaFiles.length ; i++) {
+        var file = mediaFiles[i];
+        var mediaTag;
+        if (file.Type == "video") {
+            mediaTag = "<video controls";
+        } else {
+            mediaTag = "<img";
+        }
+        // Create the media container. For now define the thumb or
+        // image src/URL. We only load the data when needed of 
+        // performance reasons
+        var containerTxt =
+"<div class='media-container'> \
+    <div class='media-object-container'> \
+        <img class='media-thumb' src=''> \
+        " + mediaTag + " class='media-object' src=''> \
+    </div> \
+    <div class='media-caption'>" + file.Name + "</div> \
+</div>"
+        mediaContainers.insertAdjacentHTML( 'beforeend', containerTxt);
+    }
+
+    mediaContainers.style.setProperty('--n', mediaFiles.length);
+
+    // Below is only required to run once
+    if (setupDone == false) {
+        mediaContainers.addEventListener('mousemove', drag, false);
+        mediaContainers.addEventListener('touchmove', drag, false);
+
+        mediaContainers.addEventListener('mousedown', lock, false);
+        mediaContainers.addEventListener('touchstart', lock, false);
+
+        mediaContainers.addEventListener('mouseup', move, false);
+        mediaContainers.addEventListener('touchend', move, false);
+
+        document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
+
+        setupDone = true;
+    }
+}
+
+// Be sure to call setupMediaViewer prior this function.
+// Index is the selected media
+function openMediaViewer(index = 0) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    mediaIndex = index;
+    mediaContainers.style.setProperty('--i', mediaIndex);
+    mediaViewer.style.display = "block";
+    document.onkeydown = function(e) {
+        e = e || window.event;
+        if (e.keyCode == '27') {
+            // escape
+            closeMediaViewer();
+        } else if (e.keyCode == '37') {
+            // left arrow
+            prevMedia();
+        }
+        else if (e.keyCode == '39') {
+            // right arrow
+            nextMedia();
+        }
+    }
+    mediaViewLoaderCheck(); // Cyclic check if spinner should be shown
+
+    // Load thumb and media for the selected index
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
+}
+
+function closeMediaViewer() {
+    mediaViewer.style.display = "none";
+    document.onkeydown = null; // Disable arrow keys
+}
+
+function loadMediaThumb(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaFile = mediaFiles[index];
+
+    // Don't load thumb if the media object is already loaded
+    if (isMediaLoadComplete(index)) {
+        return; // No need for thumb
+    }
+
+    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+
+    // Don't load thumb if the thumb is already loaded
+    if (thumb.getAttribute('src') != "")
+        return; // Thumb already loaded
+
+    thumb.setAttribute('src',"thumb/" + mediaFile.Path);
+    thumb.style.display = "block";
+}
+
+// Returns true if media on index has completely loaded
+function isMediaLoadComplete(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return false; // Invalid index
+    }
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaFile = mediaFiles[index];
+    if (mediaObject.getAttribute('src') != "") {
+        if ((mediaFile.Type == "video" && mediaObject.readyState == 4) || 
+           (mediaFile.Type == "image" && mediaObject.complete))
+            return true; // Media is complete
+    }
+    return false;
+}
+
+function loadMedia(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    console.log("load media: " + index);
+
+    var mediaContainer = mediaContainers.children[index];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    if (mediaObject.getAttribute('src') != "") 
+        return; // Media object already loaded
+
+    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+    var mediaFile = mediaFiles[index];
+    mediaObject.setAttribute('src',"media/" + mediaFile.Path);
+
+    // Hide thumb when media object has been completely loaded
+    if (mediaFile.Type == "video") {
+        mediaObject.oncanplay = mediaLoadedCompleteCallback.bind(this, index, thumb);
+    } else {
+        mediaObject.addEventListener("load", mediaLoadedCompleteCallback.bind(this, index, thumb));
+    }
+}
+
+// This callback will run when the media object has been completely loaded.
+// It will also load the media for the up to 5 containers before and after
+// current selected media index. However, it will only load the first
+// non loaded media. It prioritizes closest first, and next has more
+// priority compared to previous.
+// Thumbs are handled similarily but all thumbs will be loaded, i.e.
+// don't wait for first thumb to be loaded.
+function mediaLoadedCompleteCallback(index, thumbObject) {
+    thumbObject.style.display = "none"; // Hide the thumb
+
+    console.log("complete: " + index);
+
+    if (mediaViewer.style.display == "none") {
+        // Don't prefetch if Media Viewer is closed
+        return;
+    }
+
+    var prevIndex = mediaIndex - 1;
+    var nextIndex = mediaIndex + 1;
+    var loadInProgress = false;
+    for (i=0 ; i < 5; i++) {
+        if (nextIndex < mediaFiles.length) {
+            loadMediaThumb(nextIndex)
+            if (!loadInProgress && !isMediaLoadComplete(nextIndex)) {
+                loadMedia(nextIndex);
+                loadInProgress = true;
+            }
+        }
+        if (prevIndex >= 0) {
+            loadMediaThumb(prevIndex)
+            if (!loadInProgress && !isMediaLoadComplete(prevIndex)) {
+                loadMedia(prevIndex);
+                loadInProgress = true;
+            }
+        }
+        prevIndex--;
+        nextIndex++;
+    }
+}
+
+// iPrev is the previous i value for smooth animation.
+// iPrev is optional (default is previous i)
+function prevMedia(iPrev = mediaIndex) {
+    if (mediaIndex > 0) {
+        mediaIndex--;  
+    }
+    animateSlide(iPrev, mediaIndex); 
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
+}
+
+// iPrev is the previous i value for smooth animation.
+// iPrev is optional (default is previous i)
+function nextMedia(iPrev = mediaIndex) {
+    if (mediaIndex < (mediaFiles.length - 1)) {
+        mediaIndex++;
+    }
+    animateSlide(iPrev, mediaIndex); 
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
+}
+
+// Run the media loader while media viewer is visible AND the
+// current media object has not been loaded.
+function mediaViewLoaderCheck() {
+    var mediaLoader = document.getElementById("mediaLoader");
+    if (mediaViewer.style.display == "none") {
+        mediaLoader.style.display = "none";
+        return;
+    }
+    if (isMediaLoadComplete(mediaIndex)) {
+        mediaLoader.style.display = "none";
+    } else {
+        mediaLoader.style.display = "block";    
+    }
+
+    // Schedule next check
+    setTimeout(mediaViewLoaderCheck, 500);
+}
+
+var x0 = null; // Last mouse/touch x position
+var locked = false; // Mouse is down
+
+// Called on mouse/touch down 
+function lock(e) { 
+    x0 = unify(e).clientX; // Store start x position
+    locked = true;
+}
+
+
+// Called on mouse/touch drag
+function drag(e) { 
+    e.preventDefault();
+    if(locked)  {
+        // Move container with mouse/touch x direction
+        let dx = unify(e).clientX - x0;
+        w = window.innerWidth;
+        let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
+        mediaContainers.style.setProperty('--i', mediaIndex - f);
+    }
+}
+
+// Called on mouse/touch up 
+function move(e) {
+  if(locked) {
+    let dx = unify(e).clientX - x0;
+    w = window.innerWidth;
+    let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
+
+    let iIni = mediaIndex - f;
+    if (Math.abs(f) > 0.1) { // At least 10% drag
+        if (dx < 0) {
+            nextMedia(iIni);
+        } else {
+            prevMedia(iIni);
+        }
+    } else {
+        // Move back to original position
+        animateSlide(iIni, mediaIndex);
+    }
+
+    x0 = null;
+    locked = false;
+
+  }
+}
+
+function unify(e) { 
+    return e.changedTouches ? e.changedTouches[0] : e 
+}
+
+var animationRequestID = null; // Animation frame request id
+
+// Animate drag left and right
+function animateSlide(iFrom, iTo, startTime = null) {
+
+    if (animationRequestID != null && startTime == null) {
+        // Another animation is in progress. Cancel that animation
+        // and continue with the new one.
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
+    }
+
+    if (iFrom == iTo) {
+        // No animation required
+        mediaContainers.style.setProperty('--i', iTo);
+        return;
+    }
+
+    if (startTime == null) {
+        // First frame - don't update anything now
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, Date.now()));
+        return;
+    }
+
+    const iRate = 0.004; // Increase of i per ms. 0.004 = 0.25 s for a full move
+    var iDelta = (Date.now() - startTime) * iRate;
+    var iNext;
+    if (iTo > iFrom) {
+        iNext = Math.min(iTo, iFrom + iDelta);
+    } else {
+        // iFrom > iTo
+        iNext = Math.max(iTo, iFrom - iDelta);
+    } 
+
+    mediaContainers.style.setProperty('--i', iNext);
+
+    if (iNext == iTo) {
+        // We are done
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
+    } else {
+        // Call for next animation
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, startTime))
+    }
+}
+
+
+</script>
+</head>
+
+<body>
+
+<!-- Directory navigator -->
+<div id="navigator">
+</div>
+
+<div id="items">
+<!-- File items goes here -->
+</div>
+
+<!-- Loader for the items --> 
+<div class="loader" id="itemsLoader"></div>
+
+<!------------------------------------------------------------------------------
+- Media Viewer HTML Below
+------------------------------------------------------------------------------->
+
+<div class="media-viewer">
+    <span class="media-button" id="mediaViewerClose">&times;</span>
     <div class="loader" id="mediaLoader"></div>
-    <span class="mediaButton close" id="mediaViewerClose">&times;</span>
-    <span class="mediaButton" id="mediaViewerPrev">&lsaquo;</span>
-    <span class="mediaButton" id="mediaViewerNext">&rsaquo;</span>
-    <!-- For images -->
-    <img  id="mediaViewerImg" class="modal-content" style="display: none;">
-    <!-- For videos -->
-    <video controls id="mediaViewerVideo" class="modal-content" style="display: none;"></video>
-    <!-- Common caption -->
-    <div id="caption"></div>
-
-  </div>
+    <div class="media-containers">
+        <!-- containers go here -->
+    </div>
+</div>
 
   </body>
 </html>
