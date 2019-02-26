@@ -2,6 +2,10 @@
 <head>
 <style>
 
+/******************************************************************************
+* Media Viewer CSS Below
+******************************************************************************/
+
 .media-viewer {
     position: fixed; 
     width: 100%;
@@ -117,6 +121,9 @@ window.onload = function() {
     openMediaViewer();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Media Viewer Javascript Below
+///////////////////////////////////////////////////////////////////////////////
 
 // Media Viewer Globals
 var mediaIndex = 0;
@@ -124,7 +131,7 @@ var nbrOfMedia = 0;
 var mediaViewer = null;
 var mediaContainers = null;
 
-// Only call once
+// Always call first. Call everytime new media has been loaded.
 function setupMediaViewer() {
     mediaViewer = document.getElementsByClassName("media-viewer")[0];
     mediaContainers = document.getElementsByClassName("media-containers")[0];
@@ -294,6 +301,10 @@ this is some stuff in the background
 that shall be invisible
 </p>
 <button onclick="openMediaViewer();">open media viewer</button>
+
+<!------------------------------------------------------------------------------
+- Media Viewer HTML Below
+------------------------------------------------------------------------------->
 
 <div class="media-viewer">
     <span class="mediaButton" id="mediaViewerClose">&times;</span>
