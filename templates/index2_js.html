@@ -21,7 +21,7 @@
     align-items: center;
     height: 100%;
     width: 100%; /* For backup only */
-    --n: 3; /* Number of images - updated with javascript */
+    --n: 0; /* Number of images - updated with javascript */
     width: calc(var(--n)*100%); /* Make fit all containers */
     transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
 }
@@ -47,7 +47,6 @@
     position: relative;
     top: 50%; /* Center horizontally part 1/2 */
     transform: translateY(-50%); /* Center horizontally part 2/2 */
-    pointer-events: none; /* So that mouse events can be captured */
 }
 
 .media-thumb {
@@ -121,7 +120,7 @@ window.onload = function() {
 
 // Media Viewer Globals
 var mediaIndex = 0;
-var nbrOfMedia = 3;
+var nbrOfMedia = 0;
 var mediaViewer = null;
 var mediaContainers = null;
 
@@ -130,6 +129,7 @@ function setupMediaViewer() {
     mediaViewer = document.getElementsByClassName("media-viewer")[0];
     mediaContainers = document.getElementsByClassName("media-containers")[0];
 
+    nbrOfMedia = mediaContainers.children.length;
     mediaContainers.style.setProperty('--n', nbrOfMedia);
 
     mediaContainers.addEventListener('mousemove', drag, false);
@@ -318,13 +318,20 @@ that shall be invisible
                 <img class="media-object" src="/media/screenshot_browser.jpg">
             </div>
             <div class="media-caption">/media/screenshot_browser.jpg</div>
-        </div><!--
+        </div>
+        <div class="media-container">
+            <div class="media-object-container">
+                <img class="media-thumb" src="/thumb/video.mp4">
+                <video controls class="media-object" src="/media/video.mp4">
+            </div>
+            <div class="media-caption">/media/video.mp4</div>
+        </div>
         <div class="media-container">
             <div class="media-object-container">
                 <img class="media-object" src="/media/jpeg_rotated.jpg">
             </div>
             <div class="media-caption">/media/jpeg_rotated.jpg</div>
-        </div>-->
+        </div>
     </div>
 </div>
 </body>
