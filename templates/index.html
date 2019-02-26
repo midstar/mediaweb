@@ -522,7 +522,7 @@ function loadMedia(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return; // Invalid index
     }
-    console.log("load media: " + index);
+    //console.log("load media: " + index);
 
     var mediaContainer = mediaContainers.children[index];
     var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
@@ -551,7 +551,7 @@ function loadMedia(index) {
 function mediaLoadedCompleteCallback(index, thumbObject) {
     thumbObject.style.display = "none"; // Hide the thumb
 
-    console.log("complete: " + index);
+    //console.log("complete: " + index);
 
     if (mediaViewer.style.display == "none") {
         // Don't prefetch if Media Viewer is closed
