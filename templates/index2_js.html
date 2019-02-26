@@ -297,7 +297,7 @@ function loadMediaThumb(index) {
     var mediaFile = mediaFiles[index];
 
     // Don't load thumb if the media object is already loaded
-    if (mediaLoadedComplete(index)) {
+    if (isMediaLoadComplete(index)) {
         return; // No need for thumb
     }
 
@@ -312,7 +312,7 @@ function loadMediaThumb(index) {
 }
 
 // Returns true if media on index has completely loaded
-function mediaLoadedComplete(index) {
+function isMediaLoadComplete(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return false; // Invalid index
     }
@@ -331,6 +331,8 @@ function loadMedia(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return; // Invalid index
     }
+    console.log("load media: " + index);
+
     var mediaContainer = mediaContainers.children[index];
     var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
     if (mediaObject.getAttribute('src') != "") 
@@ -342,9 +344,49 @@ function loadMedia(index) {
 
     // Hide thumb when media object has been completely loaded
     if (mediaFile.Type == "video") {
-        mediaObject.oncanplay = function() { thumb.style.display = "none"; };
+        mediaObject.oncanplay = mediaLoadedCompleteCallback.bind(this, index, thumb);
     } else {
-        mediaObject.addEventListener("load", function() { thumb.style.display = "none"; });
+        mediaObject.addEventListener("load", mediaLoadedCompleteCallback.bind(this, index, thumb));
+    }
+}
+
+// This callback will run when the media object has been completely loaded.
+// It will also load the media for the up to 5 containers before and after
+// current selected media index. However, it will only load the first
+// non loaded media. It prioritizes closest first, and next has more
+// priority compared to previous.
+// Thumbs are handled similarily but all thumbs will be loaded, i.e.
+// don't wait for first thumb to be loaded.
+function mediaLoadedCompleteCallback(index, thumbObject) {
+    thumbObject.style.display = "none"; // Hide the thumb
+
+    console.log("complete: " + index);
+
+    if (mediaViewer.style.display == "none") {
+        // Don't prefetch if Media Viewer is closed
+        return;
+    }
+
+    var prevIndex = mediaIndex - 1;
+    var nextIndex = mediaIndex + 1;
+    var loadInProgress = false;
+    for (i=0 ; i < 5; i++) {
+        if (nextIndex < mediaFiles.length) {
+            loadMediaThumb(nextIndex)
+            if (!loadInProgress && !isMediaLoadComplete(nextIndex)) {
+                loadMedia(nextIndex);
+                loadInProgress = true;
+            }
+        }
+        if (prevIndex >= 0) {
+            loadMediaThumb(prevIndex)
+            if (!loadInProgress && !isMediaLoadComplete(prevIndex)) {
+                loadMedia(prevIndex);
+                loadInProgress = true;
+            }
+        }
+        prevIndex--;
+        nextIndex++;
     }
 }
 
@@ -378,7 +420,7 @@ function mediaViewLoaderCheck() {
         mediaLoader.style.display = "none";
         return;
     }
-    if (mediaLoadedComplete(mediaIndex)) {
+    if (isMediaLoadComplete(mediaIndex)) {
         mediaLoader.style.display = "none";
     } else {
         mediaLoader.style.display = "block";    
