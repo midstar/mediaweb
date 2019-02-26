@@ -14,17 +14,45 @@
     background-color: white;
     position: fixed; /* Set the navbar to fixed position */
     top: 0; /* Position the navbar at the top of the page */
+    padding-top: 5px;
+    padding-bottom: 5px;
     width: 100%; /* Full width */
+    /*min-height: 30px;*/
+    font-size: 15px;
+    z-index: 1; /* Sit on top */
 }
 
 #navigator a {
-    color: blue; 
+    display:inline-block;
+    color: white; 
+    font-weight: bold;
     text-decoration: none;
+    background-color: #8391a8;
+    padding: 5px 5px 5px 5px;
+    border-radius: 3px;
+}
+
+@media (min-resolution: 250dpi) {
+    /* This is a high resolution device (such as a mobile) */
+    #navigator {
+        font-size: 30px;
+    }    
 }
 
 /******************************************************************************
 * Media / file browser styles below
 ******************************************************************************/
+
+.items {
+    margin-top: 40px; /* To not hit navigator */
+}
+
+@media (min-resolution: 250dpi) {
+    /* This is a high resolution device (such as a mobile) */
+    .items {
+        margin-top: 60px;
+    }    
+}
 
 .item {
     width: 160px;
@@ -239,7 +267,7 @@ function updateNavigator(path) {
     // No navigator on top level 
     if (parts.length > 0) {
         var navigator = document.getElementById("navigator")
-        var links = "<a href='?path='>top</a>"
+        var links = "<a href='?path='>&#8962;</a>"
         var url = "";
         for (var i = 0 ; i < parts.length ; i++) {
             part = parts[i];
@@ -728,7 +756,7 @@ function animateSlide(iFrom, iTo, startTime = null) {
 <div id="navigator">
 </div>
 
-<div id="items">
+<div class="items" id="items">
 <!-- File items goes here -->
 </div>
 
