@@ -23,14 +23,22 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 
 ## Screenshots
 
+Browse your media:
+
 ![browser](testmedia/screenshot_browser.jpg)
+
+View your images and play your videos:
 
 ![viewer](testmedia/screenshot_viewer.jpg)
 
+Swipe (mouse or mobile touch) to switch between images/videos:
+
+![viewer](testmedia/screenshot_viewer_swipe.jpg)
+
 ## Features
 
-* Simple WEB GUI for viewing your images and videos
-* Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed.
+* Simple WEB GUI for viewing your images and videos both on your PC and on your mobile phone
+* Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed
 * Automatic rotation JPEG images when needed (based on EXIF information)
 * Optional authentication with username and password
 
@@ -76,6 +84,7 @@ To uninstall MediaWEB run:
     cd ~/mediaweb
     sudo sh service.sh uninstall
 
+Also, checkout the [FAQ](FAQ.md).
 
 ## Download and install on Windows (64bit)
 
@@ -87,6 +96,8 @@ To modify changes just edit mediaweb.conf in the installation directory and rest
 service in task manager.
 
 You need to install [ffmpeg](https://www.ffmpeg.org/) separately and put ffmpeg into your PATH to get video thumbnail support.
+
+Also, checkout the [FAQ](FAQ.md).
 
 ## Build from source (any platform)
 

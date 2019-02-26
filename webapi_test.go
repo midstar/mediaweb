@@ -93,7 +93,7 @@ func startserver(t *testing.T) {
 func waitserver(t *testing.T) {
 	t.Helper()
 	client := http.Client{Timeout: 100 * time.Millisecond}
-	maxTries := 10
+	maxTries := 50
 	for i := 0; i < maxTries; i++ {
 		_, err := client.Get(fmt.Sprintf("%s", baseURL))
 		if err == nil {
