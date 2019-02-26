@@ -180,11 +180,11 @@ window.onload = function() {
 
 
     setupMediaViewer(m);
-    loadMediaThumb(1);
+    /*loadMediaThumb(1);
     loadMediaThumb(2);
     loadMediaThumb(3);
     loadMedia(2);
-    loadMedia(3);
+    loadMedia(3);*/
     //loadMedia(1);
     openMediaViewer();
 }
@@ -277,6 +277,10 @@ function openMediaViewer(index = 0) {
         }
     }
     mediaViewLoaderCheck(); // Cyclic check if spinner should be shown
+
+    // Load thumb and media for the selected index
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
 }
 
 function closeMediaViewer() {
@@ -351,6 +355,8 @@ function prevMedia(iPrev = mediaIndex) {
         mediaIndex--;  
     }
     animateSlide(iPrev, mediaIndex); 
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
 }
 
 // iPrev is the previous i value for smooth animation.
@@ -360,6 +366,8 @@ function nextMedia(iPrev = mediaIndex) {
         mediaIndex++;
     }
     animateSlide(iPrev, mediaIndex); 
+    loadMediaThumb(mediaIndex);
+    loadMedia(mediaIndex);
 }
 
 // Run the media loader while media viewer is visible AND the
