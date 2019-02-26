@@ -32,10 +32,17 @@
     border-radius: 3px;
 }
 
-@media (min-resolution: 250dpi) {
-    /* This is a high resolution device (such as a mobile) */
+@media (min-resolution: 250dpi) and (orientation : portrait)  {
+    /* Mobile device in portrait mode  */
     #navigator {
-        font-size: 30px;
+        font-size: 40px;
+    }    
+}
+
+@media (min-resolution: 250dpi) and (orientation : landscape)  {
+    /* Mobile device in landscape mode  */
+    #navigator {
+        font-size: 20px;
     }    
 }
 
@@ -47,10 +54,17 @@
     margin-top: 40px; /* To not hit navigator */
 }
 
-@media (min-resolution: 250dpi) {
-    /* This is a high resolution device (such as a mobile) */
+@media (min-resolution: 250dpi) and (orientation : portrait) {
+    /* Mobile device in portrait mode */
     .items {
-        margin-top: 60px;
+        margin-top:70px;
+    }    
+}
+
+@media (min-resolution: 250dpi) and (orientation : landscape) {
+    /* Mobile device in landscape mode */
+    .items {
+        margin-top:45px;
     }    
 }
 
@@ -189,10 +203,19 @@
 
 .media-caption {
     width: 100%;
-    height: 30px;
-    margin-top: 5px;
+    height: 35px;
+    font-size: 15px;
+    margin-top: 10px;
     color: white;
     text-align: center; /* center content inside div */
+}
+
+@media (min-resolution: 250dpi) and (orientation : portrait) {
+    /* Mobile device in portrait mode */
+    .media-caption {
+        font-size: 25px;
+        margin-top: 5px;
+    }    
 }
 
 /* Add Animation (when opening) */
@@ -217,10 +240,24 @@
 .media-button {
     position: absolute;
     color: #f1f1f1;
-    font-size: 80px;
+    font-size: 40px;
     font-weight: bold;
     transition: 0.3s;
     z-index: 3; /* Sit on top */
+}
+
+@media (min-resolution: 250dpi) and (orientation : portrait) {
+    /* Mobile device in portrait mode */
+    .media-button {
+        font-size: 120px;
+    }    
+}
+
+@media (min-resolution: 250dpi) and (orientation : landscape) {
+    /* Mobile device in landscape mode */
+    .media-button {
+        font-size:55px;
+    }    
 }
 
 .media-button:hover,
@@ -233,6 +270,20 @@
 #mediaViewerClose {
     top: 15px;
     right: 35px;
+}
+
+@media (min-resolution: 250dpi) and (orientation : portrait)  {
+    /* This is a high resolution device (such as a mobile) */
+    #na vigator{
+        font-size: 40px;
+    }    
+}
+
+@media (min-resolution: 250dpi) and (orientation : landscape)  {
+    /* This is a high resolution device (such as a mobile) */
+    #navigator {
+        font-size: 20px;
+    }    
 }
 
 </style>

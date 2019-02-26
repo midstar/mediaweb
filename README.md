@@ -31,6 +31,10 @@ View your images and play your videos:
 
 ![viewer](testmedia/screenshot_viewer.jpg)
 
+Swipe (mouse or mobile touch) to switch between images/videos:
+
+![viewer](testmedia/screenshot_viewer_swipe.jpg)
+
 ## Features
 
 * Simple WEB GUI for viewing your images and videos both on your PC and on your mobile phone
