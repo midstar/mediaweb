@@ -9,6 +9,7 @@ func mainCommon() *WebAPI {
 	s := loadSettings(findConfFile())
 	llog.SetLevel(s.logLevel)
 	if s.logFile != "" {
+		llog.Info("Logging will continue in file %s", s.logFile)
 		llog.SetFile(s.logFile, 1024) // 1 MB logs
 	}
 	llog.Info("Version: %s", applicationVersion)

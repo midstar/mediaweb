@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/disintegration/imaging"
 	packr "github.com/gobuffalo/packr/v2"
@@ -371,6 +372,7 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 		if err != nil {
 			// No thumb exist. Create it
 			llog.Trace("Creating new thumbnail for %s", relativeFilePath)
+			startTime := time.Now().UnixNano()
 			fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 			if err != nil {
 				return err
@@ -383,6 +385,9 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 			if err != nil {
 				return err
 			}
+			deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
+			llog.Trace("Thumbnail done for %s (conversion time: %d ms)",
+				relativeFilePath, deltaTime)
 			thumbFile, err = os.Open(thumbFileName)
 			if err != nil {
 				return err
