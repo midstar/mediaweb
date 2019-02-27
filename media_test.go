@@ -347,6 +347,8 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	tGenerateVideoThumbnail(t, media, "testmedia/video.mp4", tmpSpace+"/video_thumbnail.jpg")
 
 	// Test some invalid
-	err := media.generateImageThumbnail("nonexisting.mp4", "dont_matter.jpg")
+	err := media.generateVideoThumbnail("nonexisting.mp4", tmp+"dont_matter.jpg")
+	assertExpectErr(t, "", err)
+	err = media.generateVideoThumbnail("png.png", tmp+"dont_matter_png.jpg")
 	assertExpectErr(t, "", err)
 }
