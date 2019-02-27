@@ -37,6 +37,7 @@ func getHTMLAuthenticate(t *testing.T, path, user, pass string, expectFail bool)
 	t.Helper()
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", baseURL, path), nil)
+	assertExpectNoErr(t, "", err)
 	req.SetBasicAuth(user, pass)
 	resp, err := client.Do(req)
 	assertExpectNoErr(t, "", err)

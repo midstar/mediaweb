@@ -348,6 +348,43 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 	return err
 }
 
+// generateTumbnail generates a thumbnail for an image or video
+// and returns the file name of the thumbnail. If a thumbnail already
+// exist the file name will be returned.
+func (m *Media) generateTumbnail(relativeFilePath string) (string, error) {
+	thumbFileName, err := m.thumbnailPath(relativeFilePath)
+	if err != nil {
+		llog.Error("%s", err)
+		return "", err
+	}
+	_, err = os.Stat(thumbFileName) // Check if file exist
+	if err == nil {
+		return thumbFileName, nil // Thumb already generated
+	}
+
+	// No thumb exist. Create it
+	llog.Info("Creating new thumbnail for %s", relativeFilePath)
+	startTime := time.Now().UnixNano()
+	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Error("%s", err)
+		return thumbFileName, err
+	}
+	if m.isVideo(fullMediaPath) {
+		err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
+	} else {
+		err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
+	}
+	if err != nil {
+		llog.Error("%s", err)
+		return thumbFileName, err
+	}
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
+	llog.Info("Thumbnail done for %s (conversion time: %d ms)",
+		relativeFilePath, deltaTime)
+	return thumbFileName, nil
+}
+
 // writeThumbnail writes thumbnail for media to w.
 //
 // It has following sequence/priority:
@@ -359,44 +396,31 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 	if !m.isImage(relativeFilePath) && !m.isVideo(relativeFilePath) {
 		return fmt.Errorf("not a supported media type")
 	}
-	err := m.writeEXIFThumbnail(w, relativeFilePath)
-	if err != nil && m.enableThumbCache {
-		err = nil
-
-		// No EXIF, check thumb cache
-		thumbFileName, err := m.thumbnailPath(relativeFilePath)
-		if err != nil {
-			return err
-		}
-		thumbFile, err := os.Open(thumbFileName)
-		if err != nil {
-			// No thumb exist. Create it
-			llog.Trace("Creating new thumbnail for %s", relativeFilePath)
-			startTime := time.Now().UnixNano()
-			fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
-			if err != nil {
-				return err
-			}
-			if m.isVideo(fullMediaPath) {
-				err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
-			} else {
-				err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
-			}
-			if err != nil {
-				return err
-			}
-			deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
-			llog.Trace("Thumbnail done for %s (conversion time: %d ms)",
-				relativeFilePath, deltaTime)
-			thumbFile, err = os.Open(thumbFileName)
-			if err != nil {
-				return err
-			}
-		}
-		defer thumbFile.Close()
-		_, err = io.Copy(w, thumbFile)
+	if m.writeEXIFThumbnail(w, relativeFilePath) == nil {
+		return nil
 	}
-	return err
+	if !m.enableThumbCache {
+		return fmt.Errorf("Thumbnail cache disabled")
+	}
+
+	// No EXIF, check thumb cache (and generate if necessary)
+	thumbFileName, err := m.generateTumbnail(relativeFilePath)
+	if err != nil {
+		return err // Logging handled in generateTumbnail
+	}
+
+	thumbFile, err := os.Open(thumbFileName)
+	if err != nil {
+		return err
+	}
+	defer thumbFile.Close()
+
+	_, err = io.Copy(w, thumbFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // For testing purposes
@@ -499,10 +523,8 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	cmd.Stderr = &stderr
 	err = cmd.Run()
 	if err != nil {
-		errorStr := fmt.Sprintf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
+		return fmt.Errorf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
-		llog.Error(errorStr)
-		return fmt.Errorf(errorStr)
 	}
-	return err
+	return nil
 }
