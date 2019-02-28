@@ -177,7 +177,12 @@ func (m *Media) isJPEG(pathAndFile string) bool {
 	return true
 }
 
-func (m *Media) extractEXIF(fullFilePath string) *exif.Exif {
+func (m *Media) extractEXIF(relativeFilePath string) *exif.Exif {
+	fullFilePath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Info("Unable to get full media path for %s\n", relativeFilePath)
+		return nil
+	}
 	if !m.isJPEG(fullFilePath) {
 		return nil // Only JPEG has EXIF
 	}
@@ -204,12 +209,7 @@ func (m *Media) isRotationNeeded(relativeFilePath string) bool {
 	if m.autoRotate == false {
 		return false
 	}
-	fullPath, err := m.getFullMediaPath(relativeFilePath)
-	if err != nil {
-		llog.Info("Unable to get full media path for %s\n", relativeFilePath)
-		return false
-	}
-	ex := m.extractEXIF(fullPath)
+	ex := m.extractEXIF(relativeFilePath)
 	if ex == nil {
 		return false // No EXIF info exist
 	}
@@ -250,17 +250,13 @@ func (m *Media) rotateAndWrite(w io.Writer, relativeFilePath string) error {
 // and rotates it when needed (based on the EXIF orientation tag).
 // Returns err if no thumbnail exist.
 func (m *Media) writeEXIFThumbnail(w io.Writer, relativeFilePath string) error {
-	fullPath, err := m.getFullMediaPath(relativeFilePath)
-	if err != nil {
-		return err
-	}
-	ex := m.extractEXIF(fullPath)
+	ex := m.extractEXIF(relativeFilePath)
 	if ex == nil {
-		return fmt.Errorf("No EXIF info for %s", fullPath)
+		return fmt.Errorf("No EXIF info for %s", relativeFilePath)
 	}
 	thumbBytes, err := ex.JpegThumbnail()
 	if err != nil {
-		return fmt.Errorf("No EXIF thumbnail for %s", fullPath)
+		return fmt.Errorf("No EXIF thumbnail for %s", relativeFilePath)
 	}
 	orientTag, _ := ex.Get(exif.Orientation)
 	if orientTag == nil {
@@ -273,7 +269,7 @@ func (m *Media) writeEXIFThumbnail(w io.Writer, relativeFilePath string) error {
 		// Rotation is needed
 		img, err := imaging.Decode(bytes.NewReader(thumbBytes))
 		if err != nil {
-			llog.Warn("Unable to decode EXIF thumbnail for %s", fullPath)
+			llog.Warn("Unable to decode EXIF thumbnail for %s", relativeFilePath)
 			w.Write(thumbBytes)
 			return nil
 		}
@@ -529,19 +525,64 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	return nil
 }
 
+// ThumbnailStatistics statistics results from generateThumbnails
+type ThumbnailStatistics struct {
+	NbrOfFolders       int
+	NbrOfImages        int
+	NbrOfVideos        int
+	NbrOfExif          int
+	NbrOfFailedFolders int // I.e. unable to list contents of folder
+	NbrOfFailedImages  int
+	NbrOfFailedVideos  int
+}
+
 // generateThumbnails recursively goes through all files relativePath
 // and its subdirectories and generates thumbnails for these. If
 // relativePath is "" it means generate for all files.
-func (m *Media) generateThumbnails(relativePath string) {
+func (m *Media) generateThumbnails(relativePath string) *ThumbnailStatistics {
+	stat := ThumbnailStatistics{}
 	files, err := m.getFiles(relativePath)
 	if err != nil {
-		return
+		stat.NbrOfFailedFolders = 1
+		return &stat
 	}
 	for _, file := range files {
 		if file.Type == "folder" {
-			m.generateThumbnails(file.Path) // Recursive
+			stat.NbrOfFolders++
+			newStat := m.generateThumbnails(file.Path) // Recursive
+			stat.NbrOfFolders += newStat.NbrOfFolders
+			stat.NbrOfImages += newStat.NbrOfImages
+			stat.NbrOfVideos += newStat.NbrOfVideos
+			stat.NbrOfExif += newStat.NbrOfExif
+			stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
+			stat.NbrOfFailedImages += newStat.NbrOfFailedImages
+			stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
 		} else {
-			m.generateThumbnail(file.Path)
+			if file.Type == "image" {
+				stat.NbrOfImages++
+			} else if file.Type == "video" {
+				stat.NbrOfVideos++
+			}
+			// Check if file has EXIF thumbnail
+			ex := m.extractEXIF(file.Path)
+			if ex != nil {
+				_, err := ex.JpegThumbnail()
+				if err == nil {
+					// Media has EXIF thumbnail
+					stat.NbrOfExif++
+					continue // Next file
+				}
+			}
+			// Generate new thumbnail
+			_, err = m.generateThumbnail(file.Path)
+			if err != nil {
+				if file.Type == "image" {
+					stat.NbrOfFailedImages++
+				} else if file.Type == "video" {
+					stat.NbrOfFailedVideos++
+				}
+			}
 		}
 	}
+	return &stat
 }

@@ -149,6 +149,10 @@ install_service() {
     echo "# Thumbnail cache is on by default" >> $CONFIG
     echo "#enablethumbcache = off" >> $CONFIG
     echo >> $CONFIG
+    echo "# Generate thumbs on startup is by default off. Uncomment" >> $CONFIG
+    echo "# below to generate thumbs every time Media WEB startup." >> $CONFIG
+    echo "#genthumbsonstartup = on" >> $CONFIG
+    echo >> $CONFIG
     echo "#autorotate = off" >> $CONFIG
     echo >> $CONFIG
     echo "logfile = /var/log/mediaweb.log" >> $CONFIG

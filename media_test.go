@@ -258,10 +258,10 @@ func tWriteThumbnail(t *testing.T, media *Media, inFileName, outFileName string,
 }
 
 func TestWriteThumbnail(t *testing.T) {
-	os.MkdirAll("tmpcache/TestWriteThumbnail", os.ModePerm) // If already exist no problem
-	os.RemoveAll("tmpcache/TestWriteThumbnail/*")
-	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModePerm) // If already exist no problem
-	os.RemoveAll("tmpout/TestWriteThumbnail/*")
+	os.RemoveAll("tmpcache/TestWriteThumbnail")
+	os.MkdirAll("tmpcache/TestWriteThumbnail", os.ModePerm)
+	os.RemoveAll("tmpout/TestWriteThumbnail")
+	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModePerm)
 
 	box := packr.New("templates", "./templates")
 	media := createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", true, true)
@@ -361,8 +361,26 @@ func TestGenerateThumbnails(t *testing.T) {
 
 	box := packr.New("templates", "./templates")
 	media := createMedia(box, "testmedia", cache, true, true)
-	media.generateThumbnails("")
+	stat := media.generateThumbnails("")
+	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
+	assertEqualsInt(t, "", 18, stat.NbrOfImages)
+	assertEqualsInt(t, "", 1, stat.NbrOfVideos)
+	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImages)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedVideos)
 
 	// Check that thumbnails where generated
-	assertFileExist(t, "", filepath.Join(cache, "_screenshot_browser.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+
+	// Check that thumbnails where not generated for EXIF images
+	assertFileNotExist(t, "", filepath.Join(cache, "_jpeg.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_jpeg_rotated.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_180deg.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_mirror.jpg"))
+
 }
