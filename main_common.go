@@ -16,7 +16,8 @@ func mainCommon() *WebAPI {
 	llog.Info("Build time: %s", applicationBuildTime)
 	llog.Info("Git hash: %s", applicationGitHash)
 	box := packr.New("templates", "./templates")
-	media := createMedia(box, s.mediaPath, s.thumbPath, s.enableThumbCache, s.autoRotate)
+	media := createMedia(box, s.mediaPath, s.thumbPath,
+		s.enableThumbCache, s.genThumbsOnStartup, s.autoRotate)
 	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)
 	return webAPI
 }

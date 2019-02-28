@@ -23,11 +23,12 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath        string     // Top level path for media files
-	thumbPath        string     // Top level path for thumbnails
-	enableThumbCache bool       // Generate thumbnails
-	autoRotate       bool       // Rotate JPEG files when needed
-	box              *packr.Box // For icons
+	mediaPath          string     // Top level path for media files
+	thumbPath          string     // Top level path for thumbnails
+	enableThumbCache   bool       // Generate thumbnails
+	autoRotate         bool       // Rotate JPEG files when needed
+	box                *packr.Box // For icons
+	thumbGenInProgress bool       // True if thumbnail generation in progress
 }
 
 // File represents a folder or any other file
@@ -39,7 +40,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumbCache bool, autoRotate bool) *Media {
+func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -56,11 +57,15 @@ func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumb
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
 	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
-		thumbPath:        filepath.ToSlash(filepath.Clean(thumbPath)),
-		enableThumbCache: enableThumbCache,
-		autoRotate:       autoRotate,
-		box:              box}
+		thumbPath:          filepath.ToSlash(filepath.Clean(thumbPath)),
+		enableThumbCache:   enableThumbCache,
+		autoRotate:         autoRotate,
+		box:                box,
+		thumbGenInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
+	if enableThumbCache && genThumbsOnStartup {
+		go media.generateAllThumbnails()
+	}
 	return media
 }
 
@@ -523,6 +528,28 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
 	}
 	return nil
+}
+
+// generateAllThumbnails goes through all files in the media path
+// and generates thumbnails for these
+func (m *Media) generateAllThumbnails() {
+	m.thumbGenInProgress = true
+	llog.Info("Generating all thumbnails")
+	startTime := time.Now().UnixNano()
+	stat := m.generateThumbnails("")
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
+	minutes := int(deltaTime / 60)
+	seconds := int(deltaTime) - minutes*60
+	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
+  Number of folders: %d
+  Number of images: %d
+  Number of vidos: %d
+  Number of images with embedded EXIF: %d
+  Number of failed folders: %d
+  Number of failed images: %d
+  Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
+	m.thumbGenInProgress = false
 }
 
 // ThumbnailStatistics statistics results from generateThumbnails
