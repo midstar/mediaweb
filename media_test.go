@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -351,4 +352,17 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	assertExpectErr(t, "", err)
 	err = media.generateVideoThumbnail("png.png", tmp+"dont_matter_png.jpg")
 	assertExpectErr(t, "", err)
+}
+
+func TestGenerateThumbnails(t *testing.T) {
+	cache := "tmpcache/TestGenerateThumbnails"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := packr.New("templates", "./templates")
+	media := createMedia(box, "testmedia", cache, true, true)
+	media.generateThumbnails("")
+
+	// Check that thumbnails where generated
+	assertFileExist(t, "", filepath.Join(cache, "_screenshot_browser.jpg"))
 }

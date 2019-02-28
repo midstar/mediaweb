@@ -351,7 +351,7 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 // generateTumbnail generates a thumbnail for an image or video
 // and returns the file name of the thumbnail. If a thumbnail already
 // exist the file name will be returned.
-func (m *Media) generateTumbnail(relativeFilePath string) (string, error) {
+func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	thumbFileName, err := m.thumbnailPath(relativeFilePath)
 	if err != nil {
 		llog.Error("%s", err)
@@ -404,9 +404,9 @@ func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
 	}
 
 	// No EXIF, check thumb cache (and generate if necessary)
-	thumbFileName, err := m.generateTumbnail(relativeFilePath)
+	thumbFileName, err := m.generateThumbnail(relativeFilePath)
 	if err != nil {
-		return err // Logging handled in generateTumbnail
+		return err // Logging handled in generateThumbnail
 	}
 
 	thumbFile, err := os.Open(thumbFileName)
@@ -527,4 +527,21 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
 	}
 	return nil
+}
+
+// generateThumbnails recursively goes through all files relativePath
+// and its subdirectories and generates thumbnails for these. If
+// relativePath is "" it means generate for all files.
+func (m *Media) generateThumbnails(relativePath string) {
+	files, err := m.getFiles(relativePath)
+	if err != nil {
+		return
+	}
+	for _, file := range files {
+		if file.Type == "folder" {
+			m.generateThumbnails(file.Path) // Recursive
+		} else {
+			m.generateThumbnail(file.Path)
+		}
+	}
 }
