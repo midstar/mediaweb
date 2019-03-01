@@ -4,7 +4,7 @@
 - [Is MediaWEB secure?](#is-mediaweb-secure)
 - [How do I view my media?](#how-do-i-view-my-media)
 - [Why are the Video thumbnails not generated?](#why-are-the-video-thumbnails-not-generated)
-- [Why does it take so long time to load images the first time?](#why-does-it-take-so-long-time-to-load-images-the first time)
+- [Why does it take so long time to load images the first time?](#why-does-it-take-so-long-time-to-load-images-the-first-time)
 
 
 ## Why use MediaWEB and not any other similar software?
