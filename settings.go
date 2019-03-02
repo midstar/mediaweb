@@ -10,15 +10,16 @@ import (
 )
 
 type settings struct {
-	port             int        // Network port
-	mediaPath        string     // Top level path for media files
-	thumbPath        string     // Top level path for thumbnails
-	enableThumbCache bool       // Generate thumbnails
-	autoRotate       bool       // Rotate JPEG files when needed
-	logLevel         llog.Level // Logging level
-	logFile          string     // Log file ("" means stderr)
-	userName         string     // User name ("" means no authentication)
-	password         string     // Password
+	port               int        // Network port
+	mediaPath          string     // Top level path for media files
+	thumbPath          string     // Top level path for thumbnails
+	enableThumbCache   bool       // Generate thumbnails
+	genThumbsOnStartup bool       // Generate all thumbnails on startup
+	autoRotate         bool       // Rotate JPEG files when needed
+	logLevel           llog.Level // Logging level
+	logFile            string     // Log file ("" means stderr)
+	userName           string     // User name ("" means no authentication)
+	password           string     // Password
 }
 
 // defaultConfPath holds configuration file paths in priority order
@@ -88,6 +89,14 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.enableThumbCache = enableThumbCache
+
+	// Load genthumbsonstartup (OPTIONAL)
+	// Default: false
+	genThumbsOnStartup, err := config.GetBool("genthumbsonstartup", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genThumbsOnStartup = genThumbsOnStartup
 
 	// Load autoRotate (OPTIONAL)
 	// Default: true

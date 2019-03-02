@@ -68,9 +68,15 @@ func assertEqualsSlice(t *testing.T, message string, expected []uint32, actual [
 func assertFileExist(t *testing.T, message string, name string) {
 	t.Helper()
 	if _, err := os.Stat(name); err != nil {
-		if os.IsNotExist(err) {
-			debug.PrintStack()
-			t.Fatalf("%s : %s", message, err)
-		}
+		debug.PrintStack()
+		t.Fatalf("%s : %s", message, err)
+	}
+}
+
+func assertFileNotExist(t *testing.T, message string, name string) {
+	t.Helper()
+	if _, err := os.Stat(name); err == nil {
+		debug.PrintStack()
+		t.Fatalf("%s : %s exist but shall not", message, name)
 	}
 }

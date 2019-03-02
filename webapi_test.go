@@ -37,6 +37,7 @@ func getHTMLAuthenticate(t *testing.T, path, user, pass string, expectFail bool)
 	t.Helper()
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/%s", baseURL, path), nil)
+	assertExpectNoErr(t, "", err)
 	req.SetBasicAuth(user, pass)
 	resp, err := client.Do(req)
 	assertExpectNoErr(t, "", err)
@@ -216,7 +217,7 @@ func TestGetThumbnail(t *testing.T) {
 
 func TestGetThumbnailNoCache(t *testing.T) {
 	box := packr.New("templates", "./templates")
-	media := createMedia(box, "testmedia", "", false, true)
+	media := createMedia(box, "testmedia", "", false, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -257,7 +258,7 @@ func TestInvalidPath(t *testing.T) {
 
 func TestAuthentication(t *testing.T) {
 	box := packr.New("templates", "./templates")
-	media := createMedia(box, "testmedia", "", true, true)
+	media := createMedia(box, "testmedia", "", true, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)
