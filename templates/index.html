@@ -164,7 +164,15 @@
     width: 100%; /* For backup only */
     --n: 0; /* Number of images - updated with javascript */
     width: calc(var(--n)*100%); /* Make fit all containers */
-    transform: translate(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
+    -webkit-transform: translateX(calc(var(--i, 0)/var(--n)*-100%)); /* Select container */
+   -moz-transform: translateX(calc(var(--i, 0)/var(--n)*-100%)); 
+   -ms-transform: translateX(calc(var(--i, 0)/var(--n)*-100%)); 
+   -o-transform: translateX(calc(var(--i, 0)/var(--n)*-100%)); 
+   transform: translateX(calc(var(--i, 0)/var(--n)*-100%)); 
+   -webkit-backface-visibility: hidden;
+   -moz-backface-visibility: hidden;
+   -ms-backface-visibility: hidden;
+   backface-visibility: hidden;
 }
 
 .media-container {
@@ -601,6 +609,7 @@ function loadMedia(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return; // Invalid index
     }
+
     //console.log("load media: " + index);
 
     var mediaContainer = mediaContainers.children[index];
@@ -640,6 +649,7 @@ function mediaLoadedCompleteCallback(index, thumbObject) {
     var prevIndex = mediaIndex - 1;
     var nextIndex = mediaIndex + 1;
     var loadInProgress = false;
+
     for (i=0 ; i < 5; i++) {
         if (nextIndex < mediaFiles.length) {
             loadMediaThumb(nextIndex)
