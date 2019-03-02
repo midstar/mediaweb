@@ -368,13 +368,17 @@ func TestGenerateThumbnails(t *testing.T) {
 	assertEqualsInt(t, "", 10, stat.NbrOfExif)
 	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
 	assertEqualsInt(t, "", 1, stat.NbrOfFailedImages)
-	assertEqualsInt(t, "", 1, stat.NbrOfFailedVideos)
+	if media.videoThumbnailSupport() {
+		assertEqualsInt(t, "", 1, stat.NbrOfFailedVideos)
+		assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
+	} else {
+		assertEqualsInt(t, "", 2, stat.NbrOfFailedVideos)
+	}
 
 	// Check that thumbnails where generated
 	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
-	assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
 	// Check that thumbnails where not generated for EXIF images
@@ -405,7 +409,6 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
-	assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
 	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
 	// Check that thumbnails where not generated for EXIF images
@@ -414,6 +417,9 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_180deg.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_mirror.jpg"))
 
+	if media.videoThumbnailSupport() {
+		assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
+	}
 }
 
 func TestGenerateNoThumbnails(t *testing.T) {
