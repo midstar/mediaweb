@@ -184,7 +184,7 @@
 
 .media-object-container {
     width: 100%;
-    height: calc(100% - 35px);
+    height: calc(100% - 20px);
     text-align: center; /* center content inside div */
     position: relative;
 }
@@ -211,9 +211,9 @@
 
 .media-caption {
     width: 100%;
-    height: 35px;
-    font-size: 15px;
-    margin-top: 10px;
+    height: 20px;
+    font-size: 14px;
+    margin-top: 2px;
     color: white;
     text-align: center; /* center content inside div */
 }
@@ -221,9 +221,14 @@
 @media (min-resolution: 250dpi) and (orientation : portrait) {
     /* Mobile device in portrait mode */
     .media-caption {
-        font-size: 25px;
-        margin-top: 5px;
+        height: 30px;
+        font-size: 26px;
+        margin-top: 2px;
     }    
+    .media-object-container {
+        height: calc(100% - 30px);
+    }
+
 }
 
 /* Add Animation (when opening) */
