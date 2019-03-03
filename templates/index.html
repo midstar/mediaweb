@@ -605,8 +605,17 @@ function updateURL(index=mediaIndex) {
     }
     var mediaFile = mediaFiles[index];
     const params = new URLSearchParams(window.location.search);
-    params.set("file", mediaFile.Name);
-    history.pushState({},mediaFile.Name,"?" + params.toString());
+    if (params.has("file")) {
+        if (params.get("file") != mediaFile.Name) {
+            // Replace current history
+            params.set("file", mediaFile.Name);
+            history.replaceState({},mediaFile.Name,"?" + params.toString());
+        }
+    } else {
+        // Create new history
+        params.set("file", mediaFile.Name);
+        history.pushState({},mediaFile.Name,"?" + params.toString());
+    }
 }
 
 function loadMediaThumb(index) {
