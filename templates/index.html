@@ -413,7 +413,7 @@ function onNewFiles(files) {
                 // File found - launch media viewer
                 openMediaViewer(index);
             } else {
-                console.log("File " + fileName + " does not exist");
+                alert("Sorry!\n\nFile '" + fileName + "' does not exist in this path.\n\nMaybe it was removed?");
             }
         }
     } 
