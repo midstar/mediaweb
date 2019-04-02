@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/disintegration/imaging"
 	packr "github.com/gobuffalo/packr/v2"
 )
 
@@ -240,6 +242,40 @@ func TestGenerateImageThumbnail(t *testing.T) {
 
 	err = media.generateImageThumbnail("testmedia/invalid.jpg", "dont_matter.jpg")
 	assertExpectErr(t, "", err)
+}
+
+func tGenerateImageThumbnailFilter(t *testing.T, media *Media, inFileName, outFileName string, filter imaging.ResampleFilter) {
+	t.Helper()
+	os.Remove(outFileName)
+	oldFilter := media.filter
+	media.filter = filter
+	RestartTimer()
+	err := media.generateImageThumbnail(inFileName, outFileName)
+	LogTime(t, outFileName+": ")
+	media.filter = oldFilter // Rest to default
+	assertExpectNoErr(t, "", err)
+	assertFileExist(t, "", outFileName)
+}
+
+func TestGenerateImageThumbnailPerformance(t *testing.T) {
+	tmpout := "tmpout/TestGenerateImageThumbnailDifferentFilters"
+	os.MkdirAll(tmpout, os.ModePerm) // If already exist no problem
+
+	box := packr.New("templates", "./templates")
+	media := createMedia(box, "", "", true, false, true)
+
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "Lanczos.jpg"), imaging.Lanczos)
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "CatmullRom.jpg"), imaging.CatmullRom)
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "MitchellNetravali.jpg"), imaging.MitchellNetravali)
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "Linear.jpg"), imaging.Linear)
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "Box.jpg"), imaging.Box)
+	tGenerateImageThumbnailFilter(t, media, "testmedia/jpeg_rotated.jpg",
+		path.Join(tmpout, "NearestNeighbor.jpg"), imaging.NearestNeighbor)
 }
 
 func tWriteThumbnail(t *testing.T, media *Media, inFileName, outFileName string, failExpected bool) {

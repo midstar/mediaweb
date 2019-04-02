@@ -23,12 +23,13 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath          string     // Top level path for media files
-	thumbPath          string     // Top level path for thumbnails
-	enableThumbCache   bool       // Generate thumbnails
-	autoRotate         bool       // Rotate JPEG files when needed
-	box                *packr.Box // For icons
-	thumbGenInProgress bool       // True if thumbnail generation in progress
+	mediaPath          string                 // Top level path for media files
+	thumbPath          string                 // Top level path for thumbnails
+	enableThumbCache   bool                   // Generate thumbnails
+	autoRotate         bool                   // Rotate JPEG files when needed
+	box                *packr.Box             // For icons
+	thumbGenInProgress bool                   // True if thumbnail generation in progress
+	filter             imaging.ResampleFilter // Filter used for generating thumbnails
 }
 
 // File represents a folder or any other file
@@ -61,7 +62,8 @@ func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumb
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
 		box:                box,
-		thumbGenInProgress: false}
+		thumbGenInProgress: false,
+		filter:             imaging.Lanczos}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
@@ -329,7 +331,7 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, m.filter)
 
 	// Create subdirectories if needed
 	directory := filepath.Dir(fullThumbPath)
@@ -452,7 +454,7 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open screenshot image %s. Reason: %s", screenShot, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, m.filter)
 
 	// Add small video icon i upper right corner to indicate that this is
 	// a video
@@ -487,7 +489,7 @@ func (m *Media) getVideoIcon() (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Lanczos)
+	videoIcon = imaging.Resize(videoIcon, 90, 90, m.filter)
 	return videoIcon, nil
 }
 
