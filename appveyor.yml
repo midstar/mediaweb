@@ -12,7 +12,7 @@ skip_tags: true
 
 version: 1.0.0.{build}
 
-stack: go 1.11
+stack: go 1.12
 
 install:
   # Windows
