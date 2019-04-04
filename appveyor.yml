@@ -12,12 +12,11 @@ skip_tags: true
 
 version: 1.0.0.{build}
 
-stack: go 1.12
+stack: go 1.10
 
 install:
   # Windows
   - cmd: set PATH=%GOPATH%\bin;%PATH%
-  - cmd: set GO111MODULE=on
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
 
   # Linux
