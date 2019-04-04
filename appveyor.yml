@@ -17,6 +17,7 @@ stack: go 1.11
 install:
   # Windows
   - cmd: set PATH=%GOPATH%\bin;%PATH%
+  - cmd: set GO111MODULE=on
   - cmd: '%GOPATH%\src\github.com\midstar\mediaweb\scripts\install_deps.bat'
 
   # Linux
