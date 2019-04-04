@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	packr "github.com/gobuffalo/packr/v2"
+	"github.com/GeertJohan/go.rice"
 	"github.com/midstar/llog"
 )
 
@@ -18,13 +18,13 @@ type WebAPI struct {
 	server       *http.Server
 	templatePath string // Path to the templates
 	media        *Media
-	box          *packr.Box
+	box          *rice.Box
 	userName     string // User name ("" means no authentication)
 	password     string // Password
 }
 
 // CreateWebAPI creates a new Web API instance
-func CreateWebAPI(port int, templatePath string, media *Media, box *packr.Box, userName, password string) *WebAPI {
+func CreateWebAPI(port int, templatePath string, media *Media, box *rice.Box, userName, password string) *WebAPI {
 	portStr := fmt.Sprintf(":%d", port)
 	server := &http.Server{Addr: portStr}
 	webAPI := &WebAPI{
@@ -105,7 +105,7 @@ func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
 		// Default is index page
 		fileName = "index.html"
 	}
-	bytes, err := wa.box.Find(fileName)
+	bytes, err := wa.box.Bytes(fileName)
 	if err != nil || len(bytes) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "Unable to find: %s!", fileName)
@@ -168,20 +168,20 @@ func (wa *WebAPI) serveHTTPThumbnail(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		w.Header().Set("Content-Type", "image/jpeg")
 	} else {
-		// No thumbnail. Use the default 
+		// No thumbnail. Use the default
 		w.Header().Set("Content-Type", "image/png")
 		fileType := wa.media.getFileType(relativePath)
 		if fileType == "image" {
-			iconImage, _ := wa.box.Find("icon_image.png")
+			iconImage, _ := wa.box.Bytes("icon_image.png")
 			w.Write(iconImage)
 			//http.ServeFile(w, r, wa.templatePath+"/icon_image.png")
 		} else if fileType == "video" {
-			iconVideo, _ := wa.box.Find("icon_video.png")
+			iconVideo, _ := wa.box.Bytes("icon_video.png")
 			w.Write(iconVideo)
 			//http.ServeFile(w, r, wa.templatePath+"/icon_video.png")
 		} else {
 			// Folder
-			iconFolder, _ := wa.box.Find("icon_folder.png")
+			iconFolder, _ := wa.box.Bytes("icon_folder.png")
 			w.Write(iconFolder)
 			//http.ServeFile(w, r, wa.templatePath+"/icon_folder.png")
 		}

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	packr "github.com/gobuffalo/packr/v2"
+	rice "github.com/GeertJohan/go.rice"
 )
 
 var baseURL = "http://localhost:9834"
@@ -216,7 +216,7 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func TestGetThumbnailNoCache(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "", false, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
@@ -257,7 +257,7 @@ func TestInvalidPath(t *testing.T) {
 }
 
 func TestAuthentication(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "", true, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
