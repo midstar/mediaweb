@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	packr "github.com/gobuffalo/packr/v2"
+	rice "github.com/GeertJohan/go.rice"
 )
 
 type timerType struct {
@@ -30,7 +30,7 @@ func LogTime(t *testing.T, whatWasMeasured string) {
 }
 
 func TestGetFiles(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 	files, err := media.getFiles("")
 	assertExpectNoErr(t, "", err)
@@ -38,7 +38,7 @@ func TestGetFiles(t *testing.T) {
 }
 
 func TestGetFilesInvalid(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 	files, err := media.getFiles("invalidfolder")
 	assertExpectErr(t, "invalid path shall give errors", err)
@@ -46,7 +46,7 @@ func TestGetFilesInvalid(t *testing.T) {
 }
 
 func TestGetFilesHacker(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 	files, err := media.getFiles("../..")
 	assertExpectErr(t, "hacker path shall give errors", err)
@@ -54,7 +54,7 @@ func TestGetFilesHacker(t *testing.T) {
 }
 
 func TestIsRotationNeeded(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 
 	rotationNeeded := media.isRotationNeeded("exif_rotate/180deg.jpg")
@@ -104,7 +104,7 @@ func TestRotateAndWrite(t *testing.T) {
 	outFileName := "tmpout/TestRotateAndWrite/jpeg_rotated_fixed.jpg"
 	os.MkdirAll("tmpout/TestRotateAndWrite", os.ModePerm) // If already exist no problem
 	os.Remove(outFileName)
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 	outFile, err := os.Create(outFileName)
 	assertExpectNoErr(t, "unable to create out", err)
@@ -134,7 +134,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 
 func TestWriteEXIFThumbnail(t *testing.T) {
 	os.MkdirAll("tmpout/TestWriteEXIFThumbnail", os.ModePerm) // If already exist no problem
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", ".", true, false, true)
 
 	tEXIFThumbnail(t, media, "normal.jpg")
@@ -159,7 +159,7 @@ func TestWriteEXIFThumbnail(t *testing.T) {
 
 func TestFullPath(t *testing.T) {
 	// Root path
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, ".", ".", true, false, true)
 	p, err := media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
@@ -188,7 +188,7 @@ func TestFullPath(t *testing.T) {
 }
 
 func TestThumbnailPath(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "/c/mediapath", "/d/thumbpath", true, false, true)
 
 	thumbPath, err := media.thumbnailPath("myimage.jpg")
@@ -224,7 +224,7 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 func TestGenerateImageThumbnail(t *testing.T) {
 	os.MkdirAll("tmpout/TestGenerateImageThumbnail", os.ModePerm) // If already exist no problem
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "", "", true, false, true)
 
 	tGenerateImageThumbnail(t, media, "testmedia/jpeg.jpg", "tmpout/TestGenerateImageThumbnail/jpeg_thumbnail.jpg")
@@ -263,7 +263,7 @@ func TestWriteThumbnail(t *testing.T) {
 	os.RemoveAll("tmpout/TestWriteThumbnail")
 	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModePerm)
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", true, false, true)
 
 	// JPEG with embedded EXIF
@@ -304,7 +304,7 @@ func TestVideoThumbnailSupport(t *testing.T) {
 		ffmpegCmd = origCmd
 	}()
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "", "", true, false, true)
 
 	t.Logf("ffmpeg supported: %v", media.videoThumbnailSupport())
@@ -333,7 +333,7 @@ func tGenerateVideoThumbnail(t *testing.T, media *Media, inFileName, outFileName
 }
 
 func TestGenerateVideoThumbnail(t *testing.T) {
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "", "", true, false, true)
 	if !media.videoThumbnailSupport() {
 		t.Skip("ffmpeg not installed skipping test")
@@ -359,7 +359,7 @@ func TestGenerateThumbnails(t *testing.T) {
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, true)
 	stat := media.generateThumbnails("")
 	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
@@ -394,7 +394,7 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, true, true)
 
 	for i := 0; i < 300; i++ {
@@ -427,7 +427,7 @@ func TestGenerateNoThumbnails(t *testing.T) {
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, true)
 
 	assertFalse(t, "", media.thumbGenInProgress)

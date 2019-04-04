@@ -1,7 +1,7 @@
 package main
 
 import (
-	packr "github.com/gobuffalo/packr/v2"
+	"github.com/GeertJohan/go.rice"
 	"github.com/midstar/llog"
 )
 
@@ -15,7 +15,7 @@ func mainCommon() *WebAPI {
 	llog.Info("Version: %s", applicationVersion)
 	llog.Info("Build time: %s", applicationBuildTime)
 	llog.Info("Git hash: %s", applicationGitHash)
-	box := packr.New("templates", "./templates")
+	box := rice.MustFindBox("templates")
 	media := createMedia(box, s.mediaPath, s.thumbPath,
 		s.enableThumbCache, s.genThumbsOnStartup, s.autoRotate)
 	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)

@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GeertJohan/go.rice"
 	"github.com/disintegration/imaging"
-	packr "github.com/gobuffalo/packr/v2"
 	"github.com/midstar/llog"
 	"github.com/rwcarlsen/goexif/exif"
 )
@@ -23,12 +23,12 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 
 // Media represents the media including its base path
 type Media struct {
-	mediaPath          string     // Top level path for media files
-	thumbPath          string     // Top level path for thumbnails
-	enableThumbCache   bool       // Generate thumbnails
-	autoRotate         bool       // Rotate JPEG files when needed
-	box                *packr.Box // For icons
-	thumbGenInProgress bool       // True if thumbnail generation in progress
+	mediaPath          string    // Top level path for media files
+	thumbPath          string    // Top level path for thumbnails
+	enableThumbCache   bool      // Generate thumbnails
+	autoRotate         bool      // Rotate JPEG files when needed
+	box                *rice.Box // For icons
+	thumbGenInProgress bool      // True if thumbnail generation in progress
 }
 
 // File represents a folder or any other file
@@ -40,7 +40,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *packr.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, autoRotate bool) *Media {
+func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -482,7 +482,7 @@ func (m *Media) getVideoIcon() (image.Image, error) {
 		return videoIcon, nil
 	}
 	var err error
-	videoIconBytes, _ := m.box.Find("icon_video.png")
+	videoIconBytes, _ := m.box.Bytes("icon_video.png")
 	videoIcon, err = imaging.Decode(bytes.NewReader(videoIconBytes))
 	if err != nil {
 		return nil, err

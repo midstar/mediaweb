@@ -3,9 +3,7 @@ debug*
 tmpout
 tmpcache
 screenshottemp
-main-packr.go
-a_main-packr.go
-packrd
+rice-box.go
 mediaweb
 mediaweb.exe
 mediaweb.log
