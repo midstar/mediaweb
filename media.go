@@ -29,6 +29,7 @@ type Media struct {
 	autoRotate         bool      // Rotate JPEG files when needed
 	box                *rice.Box // For icons
 	thumbGenInProgress bool      // True if thumbnail generation in progress
+	stopWatcherChan    chan bool // Set to true to stop the Watcher go-routine
 }
 
 // File represents a folder or any other file
@@ -61,10 +62,15 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
 		box:                box,
-		thumbGenInProgress: false}
+		thumbGenInProgress: false,
+		stopWatcherChan:    make(chan bool)}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
+	}
+	if enableThumbCache {
+		// TODO add check for folder watcher enabled
+		go media.startWatcher()
 	}
 	return media
 }
