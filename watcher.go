@@ -1,11 +1,16 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/midstar/llog"
 )
 
-// stopWatcher stops the folder watcher go-routine if it is running.
+// stopWatcher stops the media watcher go-routine if it is running.
 // It is perfectly ok to call this function even if the watcher is
 // not running.
 func (m Media) stopWatcher() {
@@ -15,35 +20,73 @@ func (m Media) stopWatcher() {
 // startWatcher identifies all folders within the mediaPath including
 // subfolders and starts the folder watcher go routine.
 func (m *Media) startWatcher() {
-	llog.Info("Starting folder watcher")
+	llog.Info("Starting media watcher")
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		llog.Panic("%s", err)
+		llog.Error("Unable to watch for new media since: %s", err)
+		return
 	}
 
-	go m.folderWatcher(watcher)
+	go m.mediaWatcher(watcher)
 
-	err = watcher.Add("tmpout")
-	if err != nil {
-		llog.Panic("%s", err)
-	}
+	m.watchFolder(watcher, m.mediaPath) // TODO put back
 }
 
-func (m *Media) folderWatcher(watcher *fsnotify.Watcher) {
+// watchFolder with watch the provided folder including its
+// sub folders (i.e. recursively).
+// The error return value is just for test purposes.
+func (m *Media) watchFolder(watcher *fsnotify.Watcher, path string) error {
+	err := watcher.Add(path)
+	if err != nil {
+		llog.Error("Watch folder %s error: %s", path, err)
+	}
+	// Go through its subfolders and watch these
+	fileInfos, err := ioutil.ReadDir(path)
+	if err != nil {
+		errMsg := fmt.Sprintf("Reading folder %s error: %s", path, err)
+		llog.Error(errMsg)
+		return fmt.Errorf(errMsg)
+	}
+
+	for _, fileInfo := range fileInfos {
+		if fileInfo.IsDir() {
+			m.watchFolder(watcher, filepath.Join(path, fileInfo.Name()))
+		}
+	}
+	return nil
+}
+
+// mediaWatcher contains the loop that watches the file events.
+// Call stopWatcher to exit.
+// The Write event is fired of several reasons and there might
+// be multiple Write events for one operation. Therefore we
+// ignore this event. Basically this means that if the media
+// is modified we won't detect it.
+func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 	for {
 		select {
 		case event, ok := <-watcher.Events:
-			if !ok {
-				return
+			if ok {
+				llog.Info("Watcher event: %s", event) // TODO change to llog.Debug
+				if m.isImage(event.Name) || m.isVideo(event.Name) {
+					if event.Op&fsnotify.Rename == fsnotify.Rename ||
+						event.Op&fsnotify.Remove == fsnotify.Remove {
+						// Remove thumbnail if it exist
+						thumbPath, err := m.thumbnailPath(event.Name)
+						if err == nil {
+							llog.Info("Removing thumbnail if it exist: %s", thumbPath)
+							os.Remove(thumbPath)
+						}
+					}
+				}
 			}
-			llog.Info("event: %s", event)
 		case err, ok := <-watcher.Errors:
-			if !ok {
-				return
+			if ok {
+				llog.Error("Watcher error: %s", err)
 			}
-			llog.Info("error: %s", err)
 		case <-m.stopWatcherChan:
-			llog.Info("Folder watcher stopped intentionally")
+			llog.Info("Shutting down media watcher")
+			watcher.Close()
 			return
 		}
 	}

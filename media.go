@@ -110,12 +110,12 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 	if err != nil {
 		return files, err
 	}
-	fileInfo, err := ioutil.ReadDir(fullPath)
+	fileInfos, err := ioutil.ReadDir(fullPath)
 	if err != nil {
 		return files, err
 	}
 
-	for _, fileInfo := range fileInfo {
+	for _, fileInfo := range fileInfos {
 		fileType := ""
 		if fileInfo.IsDir() {
 			fileType = "folder"
