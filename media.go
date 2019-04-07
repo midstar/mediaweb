@@ -41,7 +41,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, autoRotate bool) *Media {
+func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, startWatcher, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -68,8 +68,7 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
 	}
-	if enableThumbCache {
-		// TODO add check for folder watcher enabled
+	if enableThumbCache && startWatcher {
 		go media.startWatcher()
 	}
 	return media

@@ -17,7 +17,7 @@ func mainCommon() *WebAPI {
 	llog.Info("Git hash: %s", applicationGitHash)
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, s.mediaPath, s.thumbPath,
-		s.enableThumbCache, s.genThumbsOnStartup, s.autoRotate)
+		s.enableThumbCache, s.genThumbsOnStartup, s.genThumbsOnAdd, s.autoRotate)
 	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)
 	return webAPI
 }

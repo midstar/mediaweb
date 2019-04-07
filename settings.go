@@ -15,6 +15,7 @@ type settings struct {
 	thumbPath          string     // Top level path for thumbnails
 	enableThumbCache   bool       // Generate thumbnails
 	genThumbsOnStartup bool       // Generate all thumbnails on startup
+	genThumbsOnAdd     bool       // Generate thumbnails when file added (start watcher)
 	autoRotate         bool       // Rotate JPEG files when needed
 	logLevel           llog.Level // Logging level
 	logFile            string     // Log file ("" means stderr)
@@ -97,6 +98,14 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.genThumbsOnStartup = genThumbsOnStartup
+
+	// Load genthumbsonadd(OPTIONAL)
+	// Default: true
+	genThumbsOnAdd, err := config.GetBool("genthumbsonadd", true)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genThumbsOnAdd = genThumbsOnAdd
 
 	// Load autoRotate (OPTIONAL)
 	// Default: true
