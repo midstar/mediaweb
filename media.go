@@ -335,7 +335,7 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Box)
 
 	// Create subdirectories if needed
 	directory := filepath.Dir(fullThumbPath)
@@ -458,7 +458,7 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open screenshot image %s. Reason: %s", screenShot, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Box)
 
 	// Add small video icon i upper right corner to indicate that this is
 	// a video
@@ -493,7 +493,7 @@ func (m *Media) getVideoIcon() (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Lanczos)
+	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Box)
 	return videoIcon, nil
 }
 
