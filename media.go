@@ -80,7 +80,7 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 // get files that are not within configured base path.
 //
 // Always returning front slashes / as path separator
-func (m *Media) getFullPath(basePath string, relativePath string) (string, error) {
+func (m *Media) getFullPath(basePath, relativePath string) (string, error) {
 	fullPath := filepath.ToSlash(filepath.Join(basePath, relativePath))
 	diffPath, err := filepath.Rel(basePath, fullPath)
 	diffPath = filepath.ToSlash(diffPath)
@@ -100,6 +100,29 @@ func (m *Media) getFullMediaPath(relativePath string) (string, error) {
 // thumb path + relative path.
 func (m *Media) getFullThumbPath(relativePath string) (string, error) {
 	return m.getFullPath(m.thumbPath, relativePath)
+}
+
+// getRelativePath returns the relative path from an absolute base
+// path and a full path path. Returns error if the base path is
+// not in the full path.
+//
+// Always returning front slashes / as path separator
+func (m *Media) getRelativePath(basePath, fullPath string) (string, error) {
+	relativePath, err := filepath.Rel(basePath, fullPath)
+	if err == nil {
+		relativePathSlash := filepath.ToSlash(relativePath)
+		if strings.HasPrefix(relativePathSlash, "../") {
+			return "", fmt.Errorf("%s is not a sub-path of %s", fullPath, basePath)
+		}
+		return relativePathSlash, nil
+	}
+	return "", err
+}
+
+// getRelativeMediaPath returns the relative media path of the provided path, i.e:
+// full path - media path.
+func (m *Media) getRelativeMediaPath(fullPath string) (string, error) {
+	return m.getRelativePath(m.mediaPath, fullPath)
 }
 
 // getFiles returns a slice of File's sorted on file name

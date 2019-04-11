@@ -187,6 +187,69 @@ func TestFullPath(t *testing.T) {
 	assertExpectErr(t, "hackers shall not be allowed", err)
 }
 
+func TestRelativePath(t *testing.T) {
+	// Root path
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", ".", true, false, false, true)
+
+	result, err := media.getRelativePath("", "")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", ".", result)
+
+	result, err = media.getRelativePath("", "directory")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "directory", result)
+
+	// Unix slashes
+	result, err = media.getRelativePath("", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir1/dir2/dir3", result)
+
+	result, err = media.getRelativePath("dir1", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir2/dir3", result)
+
+	result, err = media.getRelativePath("dir1/", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir2/dir3", result)
+
+	result, err = media.getRelativePath("dir1/dir2", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir3", result)
+
+	result, err = media.getRelativePath("dir1/dir2/", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir3", result)
+
+	result, err = media.getRelativePath("dir1/dir2/dir3", "dir1/dir2/dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", ".", result)
+
+	// Windows slashes
+	result, err = media.getRelativePath("", "dir1\\dir2\\dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir1/dir2/dir3", result)
+
+	result, err = media.getRelativePath("dir1\\", "dir1\\dir2\\dir3")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir2/dir3", result)
+
+	// Errors
+	result, err = media.getRelativePath("another", "directory")
+	assertExpectErr(t, "", err)
+
+	result, err = media.getRelativePath("/a", "b")
+	assertExpectErr(t, "", err)
+
+	// getRelativeMediaPath
+	result, err = media.getRelativeMediaPath("testmedia/dir1/dir2")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "dir1/dir2", result)
+
+	result, err = media.getRelativeMediaPath("another/dir1/dir2")
+	assertExpectErr(t, "", err)
+}
+
 func TestThumbnailPath(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "/c/mediapath", "/d/thumbpath", true, false, false, true)

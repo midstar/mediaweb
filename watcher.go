@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/midstar/llog"
@@ -68,14 +69,21 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 		case event, ok := <-watcher.Events:
 			if ok {
 				llog.Info("Watcher event: %s", event) // TODO change to llog.Debug
-				if m.isImage(event.Name) || m.isVideo(event.Name) {
-					if event.Op&fsnotify.Rename == fsnotify.Rename ||
-						event.Op&fsnotify.Remove == fsnotify.Remove {
-						// Remove thumbnail if it exist
-						thumbPath, err := m.thumbnailPath(event.Name)
-						if err == nil {
-							llog.Info("Removing thumbnail if it exist: %s", thumbPath)
-							os.Remove(thumbPath)
+				path, err := m.getRelativeMediaPath(event.Name)
+				if err == nil {
+					if m.isImage(event.Name) || m.isVideo(event.Name) {
+						if event.Op&fsnotify.Rename == fsnotify.Rename ||
+							event.Op&fsnotify.Remove == fsnotify.Remove {
+							// Remove thumbnail if it exist
+							thumbPath, err := m.thumbnailPath(path)
+							if err == nil {
+								llog.Info("Removing thumbnail if it exist: %s", thumbPath)
+								os.Remove(thumbPath)
+							}
+						} else if event.Op&fsnotify.Create == fsnotify.Create {
+							// Create thumbnail
+							time.Sleep(500 * time.Millisecond)
+							m.generateThumbnail(path)
 						}
 					}
 				}
