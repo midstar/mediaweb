@@ -19,10 +19,10 @@ func copyFile(t *testing.T, sourceFile, destinationFile string) {
 	assertExpectNoErr(t, "", err)
 }
 
-// assertFileCreated checks if a file is created within 50 seconds or fails.
+// assertFileCreated checks if a file is created within 10 seconds or fails.
 func assertFileCreated(t *testing.T, message string, name string) {
 	t.Helper()
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 100; i++ {
 		if _, err := os.Stat(name); err == nil {
 			return // File found
 		}
@@ -31,10 +31,10 @@ func assertFileCreated(t *testing.T, message string, name string) {
 	t.Fatalf("File %s not created. %s", name, message)
 }
 
-// assertFileRemoved check if a file is removed within 50 seconds or fails.
+// assertFileRemoved check if a file is removed within 10 seconds or fails.
 func assertFileRemoved(t *testing.T, message string, name string) {
 	t.Helper()
-	for i := 0; i < 500; i++ {
+	for i := 0; i < 100; i++ {
 		if _, err := os.Stat(name); err != nil {
 			return // File removed
 		}
@@ -43,17 +43,18 @@ func assertFileRemoved(t *testing.T, message string, name string) {
 	t.Fatalf("File %s was never removed. %s", name, message)
 }
 
-func TestStartWatcher(t *testing.T) {
-	mediaPath := "tmpout/TestStartWatcher"
+func TestWatcherImages(t *testing.T) {
+	mediaPath := "tmpout/TestWatcherImages"
 	os.RemoveAll(mediaPath)
 	os.MkdirAll(mediaPath, os.ModePerm)
 
-	cache := "tmpcache/TestStartWatcher"
+	cache := "tmpcache/TestWatcherImages"
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, mediaPath, cache, true, false, true, true)
+	defer media.stopWatcher()
 
 	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
 
@@ -72,19 +73,80 @@ func TestStartWatcher(t *testing.T) {
 	// Add many files
 	copyFile(t, "templates/icon_image.png", mediaPath+"/icon_image.png")
 	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/no_exif.jpg")
-	copyFile(t, "testmedia/video.mp4", mediaPath+"/video.mp4")
 	copyFile(t, "testmedia/gif.gif", mediaPath+"/gif.gif")
 	copyFile(t, "testmedia/tiff.tiff", mediaPath+"/tiff.tiff")
 
 	// Verify that thumbnails where created
 	assertFileCreated(t, "", cache+"/_icon_image.jpg")
 	assertFileCreated(t, "", cache+"/_no_exif.jpg")
-	assertFileCreated(t, "", cache+"/_video.jpg")
 	assertFileCreated(t, "", cache+"/_gif.jpg")
 	assertFileCreated(t, "", cache+"/_tiff.jpg")
 
-	media.stopWatcher()
 }
+
+func TestWatcherSubfolder(t *testing.T) {
+	mediaPath := "tmpout/TestWatcherSubfolder"
+	os.RemoveAll(mediaPath)
+	os.MkdirAll(mediaPath, os.ModePerm)
+
+	cache := "tmpcache/TestWatcherSubfolder"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, mediaPath, cache, true, false, true, true)
+	defer media.stopWatcher()
+
+	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
+
+	// Add a subdirectory with files
+	os.MkdirAll(mediaPath+"/subdir", os.ModePerm)
+	time.Sleep(500 * time.Millisecond) // Wait for subfolder to be watched
+	copyFile(t, "templates/icon_image.png", mediaPath+"/subdir/icon_image.png")
+	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/subdir/no_exif.jpg")
+	copyFile(t, "testmedia/gif.gif", mediaPath+"/subdir/gif.gif")
+	copyFile(t, "testmedia/tiff.tiff", mediaPath+"/subdir/tiff.tiff")
+
+	// Verify that thumbnails where created for subdirectory
+	assertFileCreated(t, "", cache+"/subdir/_icon_image.jpg")
+	assertFileCreated(t, "", cache+"/subdir/_no_exif.jpg")
+	assertFileCreated(t, "", cache+"/subdir/_gif.jpg")
+	assertFileCreated(t, "", cache+"/subdir/_tiff.jpg")
+
+	// Add a subdirectory of the subdiretory
+	os.MkdirAll(mediaPath+"/subdir/submore", os.ModePerm)
+	time.Sleep(500 * time.Millisecond) // Wait for subfolder to be watched
+	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/subdir/submore/no_exif.jpg")
+	assertFileCreated(t, "", cache+"/subdir/submore/_no_exif.jpg")
+}
+
+func TestWatcherVideo(t *testing.T) {
+	mediaPath := "tmpout/TestWatcherVideo"
+	os.RemoveAll(mediaPath)
+	os.MkdirAll(mediaPath, os.ModePerm)
+
+	cache := "tmpcache/TestWatcherVideo"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, mediaPath, cache, true, false, true, true)
+	defer media.stopWatcher()
+
+	if !media.videoThumbnailSupport() {
+		t.Skip("ffmpeg not installed skipping test")
+		return
+	}
+
+	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
+
+	// Add a new video file
+	copyFile(t, "testmedia/video.mp4", mediaPath+"/video.mp4")
+
+	// Verify that thumbnail was created
+	assertFileCreated(t, "", cache+"/_video.jpg")
+}
+
 func TestWatchFolder(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	// Don't start the watcher, so that we can test its internal

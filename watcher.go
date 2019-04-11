@@ -59,10 +59,22 @@ func (m *Media) watchFolder(watcher *fsnotify.Watcher, path string) error {
 
 // mediaWatcher contains the loop that watches the file events.
 // Call stopWatcher to exit.
+//
+// Limitation 1:
 // The Write event is fired of several reasons and there might
 // be multiple Write events for one operation. Therefore we
 // ignore this event. Basically this means that if the media
 // is modified we won't detect it.
+//
+// Limitation 2:
+// If a subfolder is created we probably won't detect the first
+// file(s) created in that folder, since the create file events
+// of the first files will be generated after we have been able
+// to watch the event.
+//
+// Limitation 3:
+// If a directory is removed we will not remove the thumbnails
+// generated in that directory
 func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 	for {
 		select {
@@ -84,6 +96,12 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 							// Create thumbnail
 							time.Sleep(500 * time.Millisecond)
 							m.generateThumbnail(path)
+						}
+					} else if event.Op&fsnotify.Create == fsnotify.Create {
+						// Check if it was a diretory that was created
+						if _, err := ioutil.ReadDir(event.Name); err == nil {
+							llog.Info("Watching new folder %s", event.Name)
+							m.watchFolder(watcher, event.Name)
 						}
 					}
 				}
