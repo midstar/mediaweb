@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/midstar/llog"
@@ -80,7 +79,7 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 		select {
 		case event, ok := <-watcher.Events:
 			if ok {
-				llog.Info("Watcher event: %s", event) // TODO change to llog.Debug
+				llog.Debug("Watcher event: %s", event) // TODO change to llog.Debug
 				path, err := m.getRelativeMediaPath(event.Name)
 				if err == nil {
 					if m.isImage(event.Name) || m.isVideo(event.Name) {
@@ -94,7 +93,7 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 							}
 						} else if event.Op&fsnotify.Create == fsnotify.Create {
 							// Create thumbnail
-							time.Sleep(500 * time.Millisecond)
+							//time.Sleep(500 * time.Millisecond)
 							m.generateThumbnail(path)
 						}
 					} else if event.Op&fsnotify.Create == fsnotify.Create {

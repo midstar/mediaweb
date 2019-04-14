@@ -164,7 +164,7 @@ func TestWatchFolder(t *testing.T) {
 	// Test some invalid
 	err = media.watchFolder(watcher, "dontexist")
 	assertExpectErr(t, "", err)
-	err = media.watchFolder(watcher, "testmedia/dontexit")
+	err = media.watchFolder(watcher, "testmedia/dontexist")
 	assertExpectErr(t, "", err)
 	err = media.watchFolder(watcher, "testmedia/jpeg.jpg")
 	assertExpectErr(t, "", err)
