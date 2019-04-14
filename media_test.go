@@ -225,14 +225,16 @@ func TestRelativePath(t *testing.T) {
 	assertExpectNoErr(t, "", err)
 	assertEqualsStr(t, "", ".", result)
 
-	// Windows slashes
-	result, err = media.getRelativePath("", "dir1\\dir2\\dir3")
-	assertExpectNoErr(t, "", err)
-	assertEqualsStr(t, "", "dir1/dir2/dir3", result)
+	// Windows slashes - this will only work on windows
+	if os.PathSeparator == '\\' {
+		result, err = media.getRelativePath("", "dir1\\dir2\\dir3")
+		assertExpectNoErr(t, "", err)
+		assertEqualsStr(t, "", "dir1/dir2/dir3", result)
 
-	result, err = media.getRelativePath("dir1\\", "dir1\\dir2\\dir3")
-	assertExpectNoErr(t, "", err)
-	assertEqualsStr(t, "", "dir2/dir3", result)
+		result, err = media.getRelativePath("dir1\\", "dir1\\dir2\\dir3")
+		assertExpectNoErr(t, "", err)
+		assertEqualsStr(t, "", "dir2/dir3", result)
+	}
 
 	// Errors
 	result, err = media.getRelativePath("another", "directory")
