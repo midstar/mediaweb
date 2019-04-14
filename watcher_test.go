@@ -3,6 +3,8 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -16,6 +18,25 @@ func copyFile(t *testing.T, sourceFile, destinationFile string) {
 	assertExpectNoErr(t, "", err)
 
 	err = ioutil.WriteFile(destinationFile, input, 0644)
+	assertExpectNoErr(t, "", err)
+}
+
+// copyFileSlow will keep the file open for a while to keep
+// the file lock
+func copyFileSlow(t *testing.T, sourceFile, destinationFile string) {
+	t.Helper()
+	cpCmd := "cmd"
+	cpArgs := []string{
+		"/C",
+		"start",
+		"/B",
+		"cmd",
+		"/C",
+		"copy",
+		filepath.FromSlash(sourceFile),
+		filepath.FromSlash(destinationFile)}
+	cmd := exec.Command(cpCmd, cpArgs...)
+	err := cmd.Run()
 	assertExpectNoErr(t, "", err)
 }
 
@@ -75,6 +96,35 @@ func TestWatcherImages(t *testing.T) {
 	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/no_exif.jpg")
 	copyFile(t, "testmedia/gif.gif", mediaPath+"/gif.gif")
 	copyFile(t, "testmedia/tiff.tiff", mediaPath+"/tiff.tiff")
+
+	// Verify that thumbnails where created
+	assertFileCreated(t, "", cache+"/_icon_image.jpg")
+	assertFileCreated(t, "", cache+"/_no_exif.jpg")
+	assertFileCreated(t, "", cache+"/_gif.jpg")
+	assertFileCreated(t, "", cache+"/_tiff.jpg")
+
+}
+
+func TestWatcherFileLocked(t *testing.T) {
+	mediaPath := "tmpout/TestWatcherFileLocked"
+	os.RemoveAll(mediaPath)
+	os.MkdirAll(mediaPath, os.ModePerm)
+
+	cache := "tmpcache/TestWatcherFileLocked"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, mediaPath, cache, true, false, true, true)
+	defer media.stopWatcher()
+
+	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
+
+	// Add many files
+	copyFileSlow(t, "templates/icon_image.png", mediaPath+"/icon_image.png")
+	copyFileSlow(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/no_exif.jpg")
+	copyFileSlow(t, "testmedia/gif.gif", mediaPath+"/gif.gif")
+	copyFileSlow(t, "testmedia/tiff.tiff", mediaPath+"/tiff.tiff")
 
 	// Verify that thumbnails where created
 	assertFileCreated(t, "", cache+"/_icon_image.jpg")

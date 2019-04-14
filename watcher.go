@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/midstar/llog"
@@ -93,7 +94,7 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 							}
 						} else if event.Op&fsnotify.Create == fsnotify.Create {
 							// Create thumbnail
-							//time.Sleep(500 * time.Millisecond)
+							waitFileReady(event.Name)
 							m.generateThumbnail(path)
 						}
 					} else if event.Op&fsnotify.Create == fsnotify.Create {
@@ -107,7 +108,7 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 			}
 		case err, ok := <-watcher.Errors:
 			if ok {
-				llog.Error("Watcher error: %s", err)
+				llog.Warn("Watcher error: %s", err)
 			}
 		case <-m.stopWatcherChan:
 			llog.Info("Shutting down media watcher")
@@ -115,4 +116,36 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 			return
 		}
 	}
+}
+
+// waitFileReady tries to figure out if the file is ready to process
+// by checking for following:
+// 1 - File is possible to open (i.e. is not locked by another process)
+// 2 - File is not growing (i.e. it is not written by another process)
+// Times out after 5 seconds.
+func waitFileReady(fileName string) error {
+	for i := 0; i < 50; i++ {
+		time.Sleep(100 * time.Millisecond)
+		file, err := os.Open(fileName)
+		if err != nil {
+			// File is probably locked
+			llog.Info("File %s is locked - test again", fileName)
+			continue
+		}
+		// Check if file is growing
+		stat, _ := file.Stat()
+		sizeBefore := stat.Size()
+		time.Sleep(100 * time.Millisecond)
+		stat, _ = file.Stat()
+		sizeAfter := stat.Size()
+		file.Close()
+		if sizeBefore == sizeAfter {
+			// File did not grow. All ok
+			return nil
+		}
+
+	}
+	reason := fmt.Sprintf("File '%s' locked for more than 5 seconds", fileName)
+	llog.Warn(reason)
+	return fmt.Errorf(reason)
 }
