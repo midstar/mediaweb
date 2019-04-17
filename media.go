@@ -564,7 +564,7 @@ func (m *Media) generateAllThumbnails() {
 	m.thumbGenInProgress = true
 	llog.Info("Generating all thumbnails")
 	startTime := time.Now().UnixNano()
-	stat := m.generateThumbnails("")
+	stat := m.generateThumbnails("", true)
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
 	minutes := int(deltaTime / 60)
 	seconds := int(deltaTime) - minutes*60
@@ -591,10 +591,10 @@ type ThumbnailStatistics struct {
 	NbrOfFailedVideos  int
 }
 
-// generateThumbnails recursively goes through all files relativePath
-// and its subdirectories and generates thumbnails for these. If
-// relativePath is "" it means generate for all files.
-func (m *Media) generateThumbnails(relativePath string) *ThumbnailStatistics {
+// generateThumbnails recursively (optional) goes through all files
+// relativePath and its subdirectories and generates thumbnails for
+// these. If relativePath is "" it means generate for all files.
+func (m *Media) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
 	stat := ThumbnailStatistics{}
 	files, err := m.getFiles(relativePath)
 	if err != nil {
@@ -603,15 +603,17 @@ func (m *Media) generateThumbnails(relativePath string) *ThumbnailStatistics {
 	}
 	for _, file := range files {
 		if file.Type == "folder" {
-			stat.NbrOfFolders++
-			newStat := m.generateThumbnails(file.Path) // Recursive
-			stat.NbrOfFolders += newStat.NbrOfFolders
-			stat.NbrOfImages += newStat.NbrOfImages
-			stat.NbrOfVideos += newStat.NbrOfVideos
-			stat.NbrOfExif += newStat.NbrOfExif
-			stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
-			stat.NbrOfFailedImages += newStat.NbrOfFailedImages
-			stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+			if recursive {
+				stat.NbrOfFolders++
+				newStat := m.generateThumbnails(file.Path, true) // Recursive
+				stat.NbrOfFolders += newStat.NbrOfFolders
+				stat.NbrOfImages += newStat.NbrOfImages
+				stat.NbrOfVideos += newStat.NbrOfVideos
+				stat.NbrOfExif += newStat.NbrOfExif
+				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
+				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
+				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+			}
 		} else {
 			if file.Type == "image" {
 				stat.NbrOfImages++
