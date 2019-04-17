@@ -37,6 +37,10 @@ func createUpdater(media mediaInterface) *Updater {
 		media: media}
 }
 
+func (u *Updater) startUpdater() {
+	go u.updaterThread()
+}
+
 func (u *Updater) stopUpdater() {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()

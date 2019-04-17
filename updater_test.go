@@ -8,7 +8,10 @@ import (
 type mediaMock struct {
 }
 
+var lastPathGenerated string
+
 func (m *mediaMock) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
+	lastPathGenerated = relativePath
 	return nil
 }
 
@@ -65,4 +68,28 @@ func TestNextDirectoryToUpdate(t *testing.T) {
 	assertEqualsInt(t, "", 2, len(u.directories))
 	_, hasItem := u.directories["dir1"]
 	assertFalse(t, "", hasItem)
+}
+
+func TestUpdaterThread(t *testing.T) {
+	u := createUpdater(&mediaMock{})
+	u.minTimeSinceChangeSec = 1 // 5 -> 1 sec to reduce test time
+	lastPathGenerated = ""
+
+	// Start the thread
+	u.startUpdater()
+
+	// A a directory
+	u.markDirectoryAsUpdated("dir1")
+	time.Sleep(10 * time.Millisecond)
+
+	// Nothing should be updated now
+	assertEqualsStr(t, "", "", lastPathGenerated)
+
+	// Wait for next update
+	time.Sleep(2000 * time.Millisecond)
+	assertEqualsStr(t, "", "dir1", lastPathGenerated)
+
+	u.stopUpdater()
+	time.Sleep(1500 * time.Millisecond)
+
 }
