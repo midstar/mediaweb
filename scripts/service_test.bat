@@ -3,8 +3,8 @@ REM Test of service.bat - both installation and uninstallation
 
 pushd %GOPATH%\src\github.com\midstar\mediaweb\
 
-REM Move files to a temporary folder to secure that packr 
-REM (embedded resources) works as expected
+REM Move files to a temporary folder to secure that  
+REM embedded resources works as expected
 if not exist "tmpout" mkdir "tmpout" || exit \b 1
 mkdir tmpout\servicetest
 copy mediaweb.exe tmpout\servicetest\mediaweb.exe  || exit \b 1

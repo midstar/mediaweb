@@ -29,6 +29,7 @@ type Media struct {
 	autoRotate         bool      // Rotate JPEG files when needed
 	box                *rice.Box // For icons
 	thumbGenInProgress bool      // True if thumbnail generation in progress
+	watcher            *Watcher  // The media watcher
 }
 
 // File represents a folder or any other file
@@ -40,7 +41,7 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, autoRotate bool) *Media {
+func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, startWatcher, autoRotate bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -66,6 +67,10 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
 	}
+	if enableThumbCache && startWatcher {
+		media.watcher = createWatcher(media)
+		go media.watcher.startWatcher()
+	}
 	return media
 }
 
@@ -75,7 +80,7 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 // get files that are not within configured base path.
 //
 // Always returning front slashes / as path separator
-func (m *Media) getFullPath(basePath string, relativePath string) (string, error) {
+func (m *Media) getFullPath(basePath, relativePath string) (string, error) {
 	fullPath := filepath.ToSlash(filepath.Join(basePath, relativePath))
 	diffPath, err := filepath.Rel(basePath, fullPath)
 	diffPath = filepath.ToSlash(diffPath)
@@ -97,6 +102,29 @@ func (m *Media) getFullThumbPath(relativePath string) (string, error) {
 	return m.getFullPath(m.thumbPath, relativePath)
 }
 
+// getRelativePath returns the relative path from an absolute base
+// path and a full path path. Returns error if the base path is
+// not in the full path.
+//
+// Always returning front slashes / as path separator
+func (m *Media) getRelativePath(basePath, fullPath string) (string, error) {
+	relativePath, err := filepath.Rel(basePath, fullPath)
+	if err == nil {
+		relativePathSlash := filepath.ToSlash(relativePath)
+		if strings.HasPrefix(relativePathSlash, "../") {
+			return "", fmt.Errorf("%s is not a sub-path of %s", fullPath, basePath)
+		}
+		return relativePathSlash, nil
+	}
+	return "", err
+}
+
+// getRelativeMediaPath returns the relative media path of the provided path, i.e:
+// full path - media path.
+func (m *Media) getRelativeMediaPath(fullPath string) (string, error) {
+	return m.getRelativePath(m.mediaPath, fullPath)
+}
+
 // getFiles returns a slice of File's sorted on file name
 func (m *Media) getFiles(relativePath string) ([]File, error) {
 	//var files []File
@@ -105,12 +133,12 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 	if err != nil {
 		return files, err
 	}
-	fileInfo, err := ioutil.ReadDir(fullPath)
+	fileInfos, err := ioutil.ReadDir(fullPath)
 	if err != nil {
 		return files, err
 	}
 
-	for _, fileInfo := range fileInfo {
+	for _, fileInfo := range fileInfos {
 		fileType := ""
 		if fileInfo.IsDir() {
 			fileType = "folder"
@@ -329,7 +357,7 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Box)
 
 	// Create subdirectories if needed
 	directory := filepath.Dir(fullThumbPath)
@@ -452,7 +480,7 @@ func (m *Media) generateVideoThumbnail(fullMediaPath, fullThumbPath string) erro
 	if err != nil {
 		return fmt.Errorf("Unable to open screenshot image %s. Reason: %s", screenShot, err)
 	}
-	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Lanczos)
+	thumbImg := imaging.Thumbnail(img, 256, 256, imaging.Box)
 
 	// Add small video icon i upper right corner to indicate that this is
 	// a video
@@ -487,7 +515,7 @@ func (m *Media) getVideoIcon() (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Lanczos)
+	videoIcon = imaging.Resize(videoIcon, 90, 90, imaging.Box)
 	return videoIcon, nil
 }
 
@@ -533,10 +561,9 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 // generateAllThumbnails goes through all files in the media path
 // and generates thumbnails for these
 func (m *Media) generateAllThumbnails() {
-	m.thumbGenInProgress = true
 	llog.Info("Generating all thumbnails")
 	startTime := time.Now().UnixNano()
-	stat := m.generateThumbnails("")
+	stat := m.generateThumbnails("", true)
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
 	minutes := int(deltaTime / 60)
 	seconds := int(deltaTime) - minutes*60
@@ -549,7 +576,6 @@ func (m *Media) generateAllThumbnails() {
   Number of failed images: %d
   Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
 		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
-	m.thumbGenInProgress = false
 }
 
 // ThumbnailStatistics statistics results from generateThumbnails
@@ -563,10 +589,18 @@ type ThumbnailStatistics struct {
 	NbrOfFailedVideos  int
 }
 
-// generateThumbnails recursively goes through all files relativePath
-// and its subdirectories and generates thumbnails for these. If
-// relativePath is "" it means generate for all files.
-func (m *Media) generateThumbnails(relativePath string) *ThumbnailStatistics {
+func (m *Media) isThumbGenInProgress() bool {
+	return m.thumbGenInProgress
+}
+
+// generateThumbnails recursively (optional) goes through all files
+// relativePath and its subdirectories and generates thumbnails for
+// these. If relativePath is "" it means generate for all files.
+func (m *Media) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
+	prevProgress := m.thumbGenInProgress
+	m.thumbGenInProgress = true
+	defer func() { m.thumbGenInProgress = prevProgress }()
+
 	stat := ThumbnailStatistics{}
 	files, err := m.getFiles(relativePath)
 	if err != nil {
@@ -575,15 +609,17 @@ func (m *Media) generateThumbnails(relativePath string) *ThumbnailStatistics {
 	}
 	for _, file := range files {
 		if file.Type == "folder" {
-			stat.NbrOfFolders++
-			newStat := m.generateThumbnails(file.Path) // Recursive
-			stat.NbrOfFolders += newStat.NbrOfFolders
-			stat.NbrOfImages += newStat.NbrOfImages
-			stat.NbrOfVideos += newStat.NbrOfVideos
-			stat.NbrOfExif += newStat.NbrOfExif
-			stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
-			stat.NbrOfFailedImages += newStat.NbrOfFailedImages
-			stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+			if recursive {
+				stat.NbrOfFolders++
+				newStat := m.generateThumbnails(file.Path, true) // Recursive
+				stat.NbrOfFolders += newStat.NbrOfFolders
+				stat.NbrOfImages += newStat.NbrOfImages
+				stat.NbrOfVideos += newStat.NbrOfVideos
+				stat.NbrOfExif += newStat.NbrOfExif
+				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
+				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
+				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+			}
 		} else {
 			if file.Type == "image" {
 				stat.NbrOfImages++

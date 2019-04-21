@@ -1,8 +1,8 @@
 # Test of service.sh - both installation and uninstallation
 cd $GOPATH/src/github.com/midstar/mediaweb/
 
-# Move files to a temporary folder to secure that packr 
-# (embedded resources) works as expected
+# Move files to a temporary folder to secure that
+# embedded resources works as expected
 mkdir -p tmpout
 mkdir -p tmpout/servicetest
 cp mediaweb tmpout/servicetest/mediaweb

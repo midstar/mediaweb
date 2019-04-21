@@ -49,6 +49,7 @@ func (wa *WebAPI) Start() chan bool {
 			// cannot panic, because this probably is an intentional close
 			llog.Info("WebAPI: ListenAndServe() shutdown reason: %s", err)
 		}
+		// TODO fix this wa.media.stopWatcher() // Stop the folder watcher (if it is running)
 		done <- true // Signal that http server has stopped
 	}()
 	return done
@@ -87,6 +88,8 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wa.serveHTTPMedia(w, r)
 	} else if head == "thumb" && r.Method == "GET" {
 		wa.serveHTTPThumbnail(w, r)
+	} else if head == "isThumbGenInProgress" && r.Method == "GET" {
+		toJSON(w, wa.media.isThumbGenInProgress())
 	} else if r.Method == "GET" {
 		r.URL.Path = originalURL
 		wa.serveHTTPStatic(w, r)

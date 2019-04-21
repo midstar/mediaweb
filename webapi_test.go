@@ -217,7 +217,7 @@ func TestGetThumbnail(t *testing.T) {
 
 func TestGetThumbnailNoCache(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", false, false, true)
+	media := createMedia(box, "testmedia", "", false, false, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -258,7 +258,7 @@ func TestInvalidPath(t *testing.T) {
 
 func TestAuthentication(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", true, false, true)
+	media := createMedia(box, "testmedia", "", true, false, false, true)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)
@@ -286,5 +286,23 @@ func TestAuthentication(t *testing.T) {
 	if !strings.Contains(index, "<title>MediaWEB</title>") {
 		t.Fatal("Index html title missing")
 	}
+
+}
+
+func TestIsThumbGenInProgress(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "", false, false, false, true)
+	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI.Start()
+	waitserver(t)
+	defer shutdown(t)
+
+	var isThumbGenInProgress bool
+	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
+	assertFalse(t, "", isThumbGenInProgress)
+
+	media.thumbGenInProgress = true
+	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
+	assertTrue(t, "", isThumbGenInProgress)
 
 }

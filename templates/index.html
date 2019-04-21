@@ -140,6 +140,26 @@
 }
 
 /******************************************************************************
+* Thumbnail in progress warning CSS Below
+******************************************************************************/
+#warning{
+    font-size: 30px;
+    color: red;
+    position: absolute;
+    z-index: 1; /* Sit on top */
+    top: 1px;
+    right: 20px;
+    display: none; /* Hidden by default */
+}
+
+#warning:hover,
+#warning:focus {
+    color: #F1948A;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/******************************************************************************
 * Media Viewer CSS Below
 ******************************************************************************/
 
@@ -312,11 +332,33 @@ window.onload = function() {
         path = params.get("path");
     } 
 
+    document.getElementById("warning").onclick = warningClick;
+    updateWarning();
+
     updateNavigator(path);
 
     loadJSON("folder/" + path, onNewFiles, onError);
 
 }
+
+function warningClick() {
+    alert('Thumbnail generation in progress\nResponse might be slow');
+}
+
+function updateWarning() {
+   loadJSON("isThumbGenInProgress", onIsThumbGenInProgress, onError); 
+}
+
+function onIsThumbGenInProgress(isThumbGenInProgress) {
+    warning = document.getElementById("warning");
+    if (isThumbGenInProgress) {
+        warning.style.display = "block";
+    } else {
+        warning.style.display = "none";
+    }
+    setTimeout(updateWarning, 5000); // Update warning every 5 second
+}
+
 
 function updateNavigator(path) {
     var partsTmp = path.split("/");
@@ -882,6 +924,9 @@ function animateSlide(iFrom, iTo, startTime = null) {
 
 <!-- Loader for the items --> 
 <div class="loader" id="itemsLoader"></div>
+
+<!-- Thumbnail in progress warning -->
+<div id="warning">&#9888;</div>
 
 <!------------------------------------------------------------------------------
 - Media Viewer HTML Below

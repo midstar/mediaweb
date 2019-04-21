@@ -153,6 +153,11 @@ install_service() {
     echo "# below to generate thumbs every time Media WEB startup." >> $CONFIG
     echo "#genthumbsonstartup = on" >> $CONFIG
     echo >> $CONFIG
+    echo "# Watch media path for updates is by default on." >> $CONFIG
+    echo "# Uncomment below to don't generate new thumbs for files" >> $CONFIG
+    echo "# that are added in the media path" >> $CONFIG
+    echo "#genthumbsonadd = off" >> $CONFIG
+    echo >> $CONFIG
     echo "#autorotate = off" >> $CONFIG
     echo >> $CONFIG
     echo "logfile = /var/log/mediaweb.log" >> $CONFIG

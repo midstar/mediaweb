@@ -25,6 +25,7 @@ mediapath = Y:\pictures`
 	assertEqualsStr(t, "thumbPath", filepath.Join(os.TempDir(), "mediaweb"), s.thumbPath)
 	assertEqualsBool(t, "enablethumbCache", true, s.enableThumbCache)
 	assertEqualsBool(t, "genthumbsonstartup", false, s.genThumbsOnStartup)
+	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
 	assertEqualsInt(t, "logLevel", int(llog.LvlInfo), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "", s.logFile)
@@ -41,6 +42,7 @@ mediapath = /media/usb/pictures
 thumbpath = /tmp/thumb
 enablethumbcache = off
 genthumbsonstartup = on
+genthumbsonadd = off
 autorotate = false
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
@@ -58,6 +60,7 @@ password = A!#_q7*+
 	assertEqualsStr(t, "thumbPath", "/tmp/thumb", s.thumbPath)
 	assertEqualsBool(t, "enableThumbCache", false, s.enableThumbCache)
 	assertEqualsBool(t, "genthumbsonstartup", true, s.genThumbsOnStartup)
+	assertEqualsBool(t, "genthumbsonadd", false, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", false, s.autoRotate)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
@@ -74,6 +77,7 @@ mediapath = /media/usb/pictures
 thumbpath = /tmp/thumb
 enablethumbcache = 33
 genthumbsonstartup = -1
+genthumbsonadd = 5.5
 autorotate = invalid
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
@@ -93,6 +97,7 @@ logfile = /tmp/log/mediaweb.log
 	// Should be default on invalid values
 	assertEqualsBool(t, "enablethumbCache", true, s.enableThumbCache)
 	assertEqualsBool(t, "genthumbsonstartup", false, s.genThumbsOnStartup)
+	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
 
 }
