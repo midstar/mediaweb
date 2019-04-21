@@ -49,8 +49,8 @@ func (wa *WebAPI) Start() chan bool {
 			// cannot panic, because this probably is an intentional close
 			llog.Info("WebAPI: ListenAndServe() shutdown reason: %s", err)
 		}
-		wa.media.stopWatcher() // Stop the folder watcher (if it is running)
-		done <- true           // Signal that http server has stopped
+		// TODO fix this wa.media.stopWatcher() // Stop the folder watcher (if it is running)
+		done <- true // Signal that http server has stopped
 	}()
 	return done
 }

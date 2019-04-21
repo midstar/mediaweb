@@ -89,7 +89,6 @@ func TestUpdaterThread(t *testing.T) {
 	time.Sleep(2000 * time.Millisecond)
 	assertEqualsStr(t, "", "dir1", lastPathGenerated)
 
-	u.stopUpdater()
-	time.Sleep(1500 * time.Millisecond)
+	u.stopUpdaterAndWait()
 
 }

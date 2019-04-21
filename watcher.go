@@ -3,40 +3,67 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/midstar/llog"
 )
 
+// Watcher represents the watcher type
+type Watcher struct {
+	media           *Media
+	updater         *Updater
+	stopWatcherChan chan bool // Set to true to stop the watcher go-routine
+	done            chan bool // Set to true when watcher go-routine has stopped
+}
+
+func createWatcher(media *Media) *Watcher {
+	return &Watcher{
+		media:           media,
+		updater:         createUpdater(media),
+		stopWatcherChan: make(chan bool),
+		done:            make(chan bool)}
+}
+
 // stopWatcher stops the media watcher go-routine if it is running.
 // It is perfectly ok to call this function even if the watcher is
 // not running.
-func (m Media) stopWatcher() {
-	m.stopWatcherChan <- true
+// Also stops the updater go-routine.
+// Returns the Watcher done channel and the Updater done channel
+func (w *Watcher) stopWatcher() (chan bool, chan bool) {
+	updaterDone := w.updater.stopUpdater()
+	w.stopWatcherChan <- true
+	return w.done, updaterDone
+}
+
+// stopWatcherAndWait similar to stopUpdater but waits
+// for the watcher and updater go-routines to stop
+func (w *Watcher) stopWatcherAndWait() {
+	watcherDone, updaterDone := w.stopWatcher()
+	<-watcherDone
+	<-updaterDone
 }
 
 // startWatcher identifies all folders within the mediaPath including
 // subfolders and starts the folder watcher go routine.
-func (m *Media) startWatcher() {
+func (w *Watcher) startWatcher() {
 	llog.Info("Starting media watcher")
+	w.updater.startUpdater()
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		llog.Error("Unable to watch for new media since: %s", err)
 		return
 	}
 
-	go m.mediaWatcher(watcher)
+	go w.mediaWatcher(watcher)
 
-	m.watchFolder(watcher, m.mediaPath) // TODO put back
+	w.watchFolder(watcher, w.media.mediaPath)
 }
 
 // watchFolder with watch the provided folder including its
 // sub folders (i.e. recursively).
 // The error return value is just for test purposes.
-func (m *Media) watchFolder(watcher *fsnotify.Watcher, path string) error {
+func (w *Watcher) watchFolder(watcher *fsnotify.Watcher, path string) error {
 	err := watcher.Add(path)
 	if err != nil {
 		llog.Error("Watch folder %s error: %s", path, err)
@@ -51,7 +78,7 @@ func (m *Media) watchFolder(watcher *fsnotify.Watcher, path string) error {
 
 	for _, fileInfo := range fileInfos {
 		if fileInfo.IsDir() {
-			m.watchFolder(watcher, filepath.Join(path, fileInfo.Name()))
+			w.watchFolder(watcher, filepath.Join(path, fileInfo.Name()))
 		}
 	}
 	return nil
@@ -60,49 +87,33 @@ func (m *Media) watchFolder(watcher *fsnotify.Watcher, path string) error {
 // mediaWatcher contains the loop that watches the file events.
 // Call stopWatcher to exit.
 //
-// Limitation 1:
-// The Write event is fired of several reasons and there might
-// be multiple Write events for one operation. Therefore we
-// ignore this event. Basically this means that if the media
-// is modified we won't detect it.
-//
-// Limitation 2:
-// If a subfolder is created we probably won't detect the first
-// file(s) created in that folder, since the create file events
-// of the first files will be generated after we have been able
-// to watch the event.
-//
-// Limitation 3:
-// If a directory is removed we will not remove the thumbnails
-// generated in that directory
-func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
+// Note that we ignore rename and delete events, i.e. there
+// is no clean up.
+func (w *Watcher) mediaWatcher(watcher *fsnotify.Watcher) {
 	for {
 		select {
 		case event, ok := <-watcher.Events:
 			if ok {
-				llog.Debug("Watcher event: %s", event) // TODO change to llog.Debug
-				path, err := m.getRelativeMediaPath(event.Name)
+				llog.Debug("Watcher event: %s", event)
+				path := event.Name
+				// relativeMediaPath is always the last diretory, never a file
+				// (because we call getDir)
+				relativeMediaPath, err := w.media.getRelativeMediaPath(getDir(path))
 				if err == nil {
-					if m.isImage(event.Name) || m.isVideo(event.Name) {
-						if event.Op&fsnotify.Rename == fsnotify.Rename ||
-							event.Op&fsnotify.Remove == fsnotify.Remove {
-							// Remove thumbnail if it exist
-							thumbPath, err := m.thumbnailPath(path)
-							if err == nil {
-								llog.Info("Removing thumbnail if it exist: %s", thumbPath)
-								os.Remove(thumbPath)
-							}
-						} else if event.Op&fsnotify.Create == fsnotify.Create {
-							// Create thumbnail
-							waitFileReady(event.Name)
-							m.generateThumbnail(path)
+					if event.Op&fsnotify.Create == fsnotify.Create {
+						if isDir(path) {
+							// This is an new diretory
+							// Watch it
+							w.watchFolder(watcher, path)
 						}
-					} else if event.Op&fsnotify.Create == fsnotify.Create {
-						// Check if it was a diretory that was created
-						if _, err := ioutil.ReadDir(event.Name); err == nil {
-							llog.Info("Watching new folder %s", event.Name)
-							m.watchFolder(watcher, event.Name)
-						}
+						// Mark the directory as changed so that updater eventually
+						// will create the thumbnails
+						w.updater.markDirectoryAsUpdated(relativeMediaPath)
+					} else if event.Op&fsnotify.Write == fsnotify.Write {
+						// Tell updater that there is operations performed in the
+						// directory (i.e. wait for a while before generating the
+						// thumbnails)
+						w.updater.touchDirectory(relativeMediaPath)
 					}
 				}
 			}
@@ -110,42 +121,29 @@ func (m *Media) mediaWatcher(watcher *fsnotify.Watcher) {
 			if ok {
 				llog.Warn("Watcher error: %s", err)
 			}
-		case <-m.stopWatcherChan:
+		case <-w.stopWatcherChan:
 			llog.Info("Shutting down media watcher")
 			watcher.Close()
+			w.done <- true
 			return
 		}
 	}
 }
 
-// waitFileReady tries to figure out if the file is ready to process
-// by checking for following:
-// 1 - File is possible to open (i.e. is not locked by another process)
-// 2 - File is not growing (i.e. it is not written by another process)
-// Times out after 5 seconds.
-func waitFileReady(fileName string) error {
-	for i := 0; i < 50; i++ {
-		time.Sleep(100 * time.Millisecond)
-		file, err := os.Open(fileName)
-		if err != nil {
-			// File is probably locked
-			llog.Info("File %s is locked - test again", fileName)
-			continue
-		}
-		// Check if file is growing
-		stat, _ := file.Stat()
-		sizeBefore := stat.Size()
-		time.Sleep(100 * time.Millisecond)
-		stat, _ = file.Stat()
-		sizeAfter := stat.Size()
-		file.Close()
-		if sizeBefore == sizeAfter {
-			// File did not grow. All ok
-			return nil
-		}
+// isDir return true if the path is a directory
+func isDir(path string) bool {
+	_, err := ioutil.ReadDir(path)
+	return err == nil
+}
 
+// getDir removes the file (if such exist) from a path.
+// Always returns path with front slash separator
+func getDir(path string) string {
+	var result string
+	if isDir(path) {
+		result = path
+	} else {
+		result = filepath.Dir(path)
 	}
-	reason := fmt.Sprintf("File '%s' locked for more than 5 seconds", fileName)
-	llog.Warn(reason)
-	return fmt.Errorf(reason)
+	return filepath.ToSlash(result)
 }

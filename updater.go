@@ -24,7 +24,8 @@ type Updater struct {
 	directories           map[string]time.Time // Key: Path, Value: Last update
 	mutex                 sync.Mutex           // For thread safety
 	minTimeSinceChangeSec int                  // Minimum time since change of directory before update
-	exit                  bool                 // Flag to indicate that updater shall exit
+	stopUpdaterChan       chan bool            // Set to true to stop the updater go-routine
+	done                  chan bool            // Set to true when updater go-routine has stopped
 	media                 mediaInterface       // To run the actual thumbnail update
 }
 
@@ -33,26 +34,25 @@ func createUpdater(media mediaInterface) *Updater {
 		directories: make(map[string]time.Time),
 		mutex:       sync.Mutex{},
 		minTimeSinceChangeSec: 5, // Five seconds
-		exit:  false,
-		media: media}
+		stopUpdaterChan:       make(chan bool),
+		done:                  make(chan bool),
+		media:                 media}
 }
 
 func (u *Updater) startUpdater() {
+	llog.Info("Starting updater")
 	go u.updaterThread()
 }
 
-func (u *Updater) stopUpdater() {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-
-	u.exit = true
+func (u *Updater) stopUpdater() chan bool {
+	u.stopUpdaterChan <- true
+	return u.done
 }
 
-func (u *Updater) exitIsSet() bool {
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
-
-	return u.exit
+// stopUpdaterAndWait similar to stopUpdater but waits
+// for updater go-routine to stop
+func (u *Updater) stopUpdaterAndWait() {
+	<-u.stopUpdater()
 }
 
 // markDirectoryAsUpdated adds the directory for update if
@@ -110,14 +110,17 @@ func (u *Updater) nextDirectoryToUpdate() (string, bool) {
 
 func (u *Updater) updaterThread() {
 	for {
-		time.Sleep(1 * time.Second)
-		if u.exitIsSet() {
-			break
-		}
-		path, ok := u.nextDirectoryToUpdate()
-		if ok {
-			u.media.generateThumbnails(path, false)
+		select {
+		case <-time.After(1 * time.Second):
+			path, ok := u.nextDirectoryToUpdate()
+			if ok {
+				llog.Info("Updating thumbs in %s", path)
+				u.media.generateThumbnails(path, false)
+			}
+		case <-u.stopUpdaterChan:
+			llog.Info("Shutting down updater")
+			u.done <- true
+			return
 		}
 	}
-	llog.Info("Shutting down updater")
 }
