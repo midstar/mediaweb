@@ -40,6 +40,7 @@ Swipe (mouse or mobile touch) to switch between images/videos:
 * Simple WEB GUI for viewing your images and videos both on your PC and on your mobile phone
 * Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed
 * Automatic rotation JPEG images when needed (based on EXIF information)
+* Generate thumbnails on the fly, on start-up and/or when new files are added to the media directory
 * Optional authentication with username and password
 
 ## Download and install Linux

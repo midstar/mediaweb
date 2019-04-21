@@ -50,7 +50,7 @@ You can configure MediaWEB to pre-generate all the thumbnails (which has not bee
 
     genthumbsonstartup = on
 
-Also, MediaWEB can generate thumbnails as soon as files are added to the media directory by following configuraiton parameter:
+Also, MediaWEB can generate thumbnails as soon as files are added to the media directory by following configuration parameter:
 
     genthumbsonadd = on
 
