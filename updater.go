@@ -12,6 +12,7 @@ import (
 // interface is to be able to mock it during testing.
 type mediaInterface interface {
 	generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics
+	isThumbGenInProgress() bool
 }
 
 // directory represents one directory
@@ -112,10 +113,14 @@ func (u *Updater) updaterThread() {
 	for {
 		select {
 		case <-time.After(1 * time.Second):
-			path, ok := u.nextDirectoryToUpdate()
-			if ok {
-				llog.Info("Updating thumbs in %s", path)
-				u.media.generateThumbnails(path, false)
+			// If mediaweb is configured to update the thumbs on
+			// startup we don't want to conflict with this
+			if !u.media.isThumbGenInProgress() {
+				path, ok := u.nextDirectoryToUpdate()
+				if ok {
+					llog.Info("Updating thumbs in %s", path)
+					u.media.generateThumbnails(path, false)
+				}
 			}
 		case <-u.stopUpdaterChan:
 			llog.Info("Shutting down updater")

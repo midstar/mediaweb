@@ -15,6 +15,12 @@ func (m *mediaMock) generateThumbnails(relativePath string, recursive bool) *Thu
 	return nil
 }
 
+var isThumbGenInProgressResult = false
+
+func (m *mediaMock) isThumbGenInProgress() bool {
+	return isThumbGenInProgressResult
+}
+
 func TestUpdaterMarkAndTouch(t *testing.T) {
 	u := createUpdater(&mediaMock{})
 	t1 := time.Now()
@@ -88,6 +94,19 @@ func TestUpdaterThread(t *testing.T) {
 	// Wait for next update
 	time.Sleep(2000 * time.Millisecond)
 	assertEqualsStr(t, "", "dir1", lastPathGenerated)
+
+	// Don't allow updater to run since update is in progress
+	isThumbGenInProgressResult = true
+	u.markDirectoryAsUpdated("dir2")
+	time.Sleep(2000 * time.Millisecond)
+
+	// dir2 is not allowed to be updated
+	assertEqualsStr(t, "", "dir1", lastPathGenerated)
+
+	// Allow it now
+	isThumbGenInProgressResult = false
+	time.Sleep(2000 * time.Millisecond)
+	assertEqualsStr(t, "", "dir2", lastPathGenerated)
 
 	u.stopUpdaterAndWait()
 

@@ -561,7 +561,6 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 // generateAllThumbnails goes through all files in the media path
 // and generates thumbnails for these
 func (m *Media) generateAllThumbnails() {
-	m.thumbGenInProgress = true
 	llog.Info("Generating all thumbnails")
 	startTime := time.Now().UnixNano()
 	stat := m.generateThumbnails("", true)
@@ -577,7 +576,6 @@ func (m *Media) generateAllThumbnails() {
   Number of failed images: %d
   Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
 		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
-	m.thumbGenInProgress = false
 }
 
 // ThumbnailStatistics statistics results from generateThumbnails
@@ -591,10 +589,18 @@ type ThumbnailStatistics struct {
 	NbrOfFailedVideos  int
 }
 
+func (m *Media) isThumbGenInProgress() bool {
+	return m.thumbGenInProgress
+}
+
 // generateThumbnails recursively (optional) goes through all files
 // relativePath and its subdirectories and generates thumbnails for
 // these. If relativePath is "" it means generate for all files.
 func (m *Media) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
+	prevProgress := m.thumbGenInProgress
+	m.thumbGenInProgress = true
+	defer func() { m.thumbGenInProgress = prevProgress }()
+
 	stat := ThumbnailStatistics{}
 	files, err := m.getFiles(relativePath)
 	if err != nil {

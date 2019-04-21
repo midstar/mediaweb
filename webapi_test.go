@@ -288,3 +288,21 @@ func TestAuthentication(t *testing.T) {
 	}
 
 }
+
+func TestIsThumbGenInProgress(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "", false, false, false, true)
+	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI.Start()
+	waitserver(t)
+	defer shutdown(t)
+
+	var isThumbGenInProgress bool
+	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
+	assertFalse(t, "", isThumbGenInProgress)
+
+	media.thumbGenInProgress = true
+	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
+	assertTrue(t, "", isThumbGenInProgress)
+
+}

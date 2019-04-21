@@ -464,11 +464,11 @@ func TestGenerateAllThumbnails(t *testing.T) {
 
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
-		if media.thumbGenInProgress == false {
+		if !media.isThumbGenInProgress() {
 			break
 		}
 	}
-	assertFalse(t, "", media.thumbGenInProgress)
+	assertFalse(t, "", media.isThumbGenInProgress())
 
 	// Check that thumbnails where generated
 	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
@@ -495,9 +495,9 @@ func TestGenerateNoThumbnails(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, false, true)
 
-	assertFalse(t, "", media.thumbGenInProgress)
+	assertFalse(t, "", media.isThumbGenInProgress())
 	time.Sleep(100 * time.Millisecond)
-	assertFalse(t, "", media.thumbGenInProgress)
+	assertFalse(t, "", media.isThumbGenInProgress())
 
 	// Check that no thumbnails where generated
 	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
