@@ -587,14 +587,14 @@ function setupMediaViewer(files) {
 
     // Below is only required to run once
     if (setupDone == false) {
-        mediaContainers.addEventListener('mousemove', drag, false);
-        mediaContainers.addEventListener('touchmove', drag, false);
+        mediaContainers.addEventListener('mousemove', mouseOrTouchMove, false);
+        mediaContainers.addEventListener('touchmove', mouseOrTouchMove, false);
 
-        mediaContainers.addEventListener('mousedown', lock, false);
-        mediaContainers.addEventListener('touchstart', lock, false);
+        mediaContainers.addEventListener('mousedown', mouseOrTouchDown, false);
+        mediaContainers.addEventListener('touchstart', mouseOrTouchDown, false);
 
-        mediaContainers.addEventListener('mouseup', move, false);
-        mediaContainers.addEventListener('touchend', move, false);
+        mediaContainers.addEventListener('mouseup', mouseOrTouchUp, false);
+        mediaContainers.addEventListener('touchend', mouseOrTouchUp, false);
 
         document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
 
@@ -812,19 +812,39 @@ function mediaViewLoaderCheck() {
 }
 
 var x0 = null; // Last mouse/touch x position
-var locked = false; // Mouse is down
+var dist0 = null; // Initial distance between fingers in multitouch
+var dragging = false; // Mouse or one finger is down
+var zooming = false; // Two fingers are down
 
 // Called on mouse/touch down 
-function lock(e) { 
-    x0 = unify(e).clientX; // Store start x position
-    locked = true;
+function mouseOrTouchDown(e) { 
+    if (e instanceof TouchEvent) {
+        if (e.targetTouches.length == 2) {
+            // Multi finger touch, start zoom instead of drag
+            zooming = true;
+            dragging = false;
+            dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
+            return
+        }
+    }
+    if (!zooming) {
+        x0 = unify(e).clientX; // Store start x position
+        dragging = true;
+    }
 }
 
 
 // Called on mouse/touch drag
-function drag(e) { 
+function mouseOrTouchMove(e) { 
     e.preventDefault();
-    if(locked)  {
+    if(e instanceof TouchEvent && zooming) {
+        if (e.targetTouches.length == 2) {
+            // Zoom in or out (multi touch)
+            var dist = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
+            console.log("dist: " + dist + " " + Math.round(100*dist/dist0) + "%");
+        }
+    }
+    else if(dragging) {
         // Move container with mouse/touch x direction
         let dx = unify(e).clientX - x0;
         w = window.innerWidth;
@@ -834,8 +854,8 @@ function drag(e) {
 }
 
 // Called on mouse/touch up 
-function move(e) {
-  if(locked) {
+function mouseOrTouchUp(e) {
+  if(dragging) {
     let dx = unify(e).clientX - x0;
     w = window.innerWidth;
     let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
@@ -853,11 +873,19 @@ function move(e) {
     }
 
     x0 = null;
-    locked = false;
+    dragging = false;
 
   }
 }
 
+// Calculate distance between two fingers in touch
+function fingerDistance(finger1, finger2) {
+    var dX = Math.abs(finger1.pageX - finger2.pageX);
+    var dY = Math.abs(finger1.pageY - finger2.pageY);
+    return Math.sqrt(Math.pow(dX,2) + Math.pow(dY,2))
+}
+
+// Common for one finger touch and mouse
 function unify(e) { 
     return e.changedTouches ? e.changedTouches[0] : e 
 }
