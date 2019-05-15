@@ -126,7 +126,7 @@
 
 #mediaLoader {
     border-top: 10px solid white;
-    z-index: 4; /* Sit on top of media-viewer and media-thumb */ 
+    z-index: 5; /* Sit on top of media-viewer, media-zoom and media-thumb */ 
 }
 
 @-webkit-keyframes spin {
@@ -276,7 +276,7 @@
     font-size: 40px;
     font-weight: bold;
     transition: 0.3s;
-    z-index: 3; /* Sit on top */
+    z-index: 5; /* Sit on top */
 }
 
 @media (min-resolution: 250dpi) and (orientation : portrait) {
@@ -317,6 +317,26 @@
     #navigator {
         font-size: 20px;
     }    
+}
+
+.media-zoom-container {
+    max-width: 100%;
+    max-height: 100%;
+    display : none;
+    z-index: 5; /* Sit on top of containers but behind button/spinner */
+}
+
+.media-zoom-object {
+    /*max-width: 100%;
+    max-height: 100%;*/
+    --x: 0; /* Zoom X position - updated with javascript */
+    --y: 0; /* Zoom Y position - updated with javascript */
+    --z: 1; /* Zoom level - updated with javascript */
+    position: absolute;
+    transform-origin: 0px 0px;
+    transform:scale(var(--z)) translate(var(--x), var(--y));
+    top: 0px;
+    left: 0px; 
 }
 
 </style>
@@ -547,6 +567,8 @@ var mediaIndex = 0;
 var mediaFiles = [];
 var mediaViewer = null;
 var mediaContainers = null;
+var mediaZoomContainer = null;
+var mediaZoomObject = null;
 var setupDone = false;
 
 // Always call first. Call everytime new media has been loaded.
@@ -554,6 +576,8 @@ function setupMediaViewer(files) {
     mediaFiles = files;
     mediaViewer = document.getElementsByClassName("media-viewer")[0];
     mediaContainers = document.getElementsByClassName("media-containers")[0];
+    mediaZoomContainer = document.getElementsByClassName("media-zoom-container")[0];
+    mediaZoomObject = document.getElementsByClassName("media-zoom-object")[0];
 
     // Remove all old files
     while (mediaContainers.firstChild) {
@@ -596,6 +620,15 @@ function setupMediaViewer(files) {
         mediaContainers.addEventListener('mouseup', mouseOrTouchUp, false);
         mediaContainers.addEventListener('touchend', mouseOrTouchUp, false);
 
+        mediaZoomContainer.addEventListener('mousemove', zoomMouseOrTouchMove, false);
+        mediaZoomContainer.addEventListener('touchmove', zoomMouseOrTouchMove, false);
+
+        mediaZoomContainer.addEventListener('mousedown', zoomMouseOrTouchDown, false);
+        mediaZoomContainer.addEventListener('touchstart', zoomMouseOrTouchDown, false);
+
+        mediaZoomContainer.addEventListener('mouseup', zoomMouseOrTouchUp, false);
+        mediaZoomContainer.addEventListener('touchend', zoomMouseOrTouchUp, false);       
+
         document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
 
         setupDone = true;
@@ -608,6 +641,7 @@ function openMediaViewer(index = 0) {
     if (index < 0 || index >= mediaFiles.length) {
         return; // Invalid index
     }
+
     mediaIndex = index;
     mediaContainers.style.setProperty('--i', mediaIndex);
     updateURL(mediaIndex);
@@ -634,6 +668,7 @@ function openMediaViewer(index = 0) {
 }
 
 function closeMediaViewer() {
+    hideZoom();
     mediaViewer.style.display = "none";
     document.onkeydown = null; // Disable arrow keys
 
@@ -811,40 +846,53 @@ function mediaViewLoaderCheck() {
     setTimeout(mediaViewLoaderCheck, 500);
 }
 
+function showZoom() {
+    // Show the image to zoom
+    var mediaFile = mediaFiles[mediaIndex];
+    mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
+    mediaZoomContainer.style.display = "block";  
+
+    // Hide the media containers
+    mediaContainers.style.display = "none";  
+}
+
+function hideZoom() {
+    // Hide the image to zoom
+    mediaZoomContainer.style.display = "none";    
+
+    // Show the media containers
+    mediaContainers.style.display = "flex";   
+}
+
 var x0 = null; // Last mouse/touch x position
 var dist0 = null; // Initial distance between fingers in multitouch
+var z0 = null; // Initial zoom level when click
+var y0 = null; // Last mouse/touch y position
 var dragging = false; // Mouse or one finger is down
-var zooming = false; // Two fingers are down
 
 // Called on mouse/touch down 
 function mouseOrTouchDown(e) { 
     if (e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
             // Multi finger touch, start zoom instead of drag
-            zooming = true;
-            dragging = false;
+            showZoom();
+
             dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
+            z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
+            mediaZoomObject.style.setProperty('--x',-1*e.targetTouches[0].pageX + "px");
+            mediaZoomObject.style.setProperty('--y',-1*e.targetTouches[0].pageY + "px");
+            console.log("z0: " + z0);
             return
         }
     }
-    if (!zooming) {
-        x0 = unify(e).clientX; // Store start x position
-        dragging = true;
-    }
+    x0 = unify(e).clientX; // Store start x position
+    dragging = true;
 }
-
 
 // Called on mouse/touch drag
 function mouseOrTouchMove(e) { 
     e.preventDefault();
-    if(e instanceof TouchEvent && zooming) {
-        if (e.targetTouches.length == 2) {
-            // Zoom in or out (multi touch)
-            var dist = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
-            console.log("dist: " + dist + " " + Math.round(100*dist/dist0) + "%");
-        }
-    }
-    else if(dragging) {
+    if(dragging) {
         // Move container with mouse/touch x direction
         let dx = unify(e).clientX - x0;
         w = window.innerWidth;
@@ -878,11 +926,91 @@ function mouseOrTouchUp(e) {
   }
 }
 
+// Called on mouse/touch down on zoom image
+function zoomMouseOrTouchDown(e) { 
+    if (e instanceof TouchEvent) {
+        if (e.targetTouches.length == 2) {
+            // Multi finger touch, start zoom instead of drag
+            dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
+            z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
+            x0 = e.targetTouches[0].pageX;
+            y0 = e.targetTouches[0].pageY;
+            mediaZoomObject.style.setProperty('--x',-1*x0 + "px");
+            mediaZoomObject.style.setProperty('--y',-1*y0 + "px");
+            console.log("z0: " + z0);
+            return
+        }
+    }
+}
+
+// Called on mouse/touch drag on zoom image
+function zoomMouseOrTouchMove(e) { 
+    e.preventDefault();
+    if(e instanceof TouchEvent) {
+        if (e.targetTouches.length == 2) {
+            // Zoom in or out (multi touch)
+            var dist = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
+            var newScale = dist/dist0;
+            zoomImage(0,0, x0, y0, newScale);
+        }
+    }
+    else if(dragging) {
+        // Move container with mouse/touch x direction
+        let dx = unify(e).clientX - x0;
+        w = window.innerWidth;
+        let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
+        mediaContainers.style.setProperty('--i', mediaIndex - f);
+    }
+}
+
+// Called on mouse/touch up on zoom image
+function zoomMouseOrTouchUp(e) {
+  if(dragging) {
+    let dx = unify(e).clientX - x0;
+    w = window.innerWidth;
+    let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
+
+    let iIni = mediaIndex - f;
+    if (Math.abs(f) > 0.1) { // At least 10% drag
+        if (dx < 0) {
+            nextMedia(iIni);
+        } else {
+            prevMedia(iIni);
+        }
+    } else {
+        // Move back to original position
+        animateSlide(iIni, mediaIndex);
+    }
+
+    x0 = null;
+    dragging = false;
+
+  }
+}
+
+
 // Calculate distance between two fingers in touch
 function fingerDistance(finger1, finger2) {
     var dX = Math.abs(finger1.pageX - finger2.pageX);
     var dY = Math.abs(finger1.pageY - finger2.pageY);
     return Math.sqrt(Math.pow(dX,2) + Math.pow(dY,2))
+}
+
+// Center middle postion between two fingers in touch
+function fingerCenter(finger1, finger2) {
+
+}
+
+function zoomImage(offsetX, offsetY, centerX, centerY, scale) {
+    var newZ =  z0 * scale;
+    var newX =  x0 * scale;
+    var newY =  y0 * scale;
+
+    console.log("newZ : " + newZ);
+    mediaZoomObject.style.setProperty('--z',newZ);
+    mediaZoomObject.style.setProperty('--x',-1*newX + "px");
+    mediaZoomObject.style.setProperty('--y',-1*newY + "px");
+    console.log(mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
 }
 
 // Common for one finger touch and mouse
@@ -965,6 +1093,10 @@ function animateSlide(iFrom, iTo, startTime = null) {
     <div class="loader" id="mediaLoader"></div>
     <div class="media-containers">
         <!-- containers go here -->
+    </div>
+    <!-- Used while zooming --> 
+    <div class="media-zoom-container">
+        <img class='media-zoom-object' src=''>
     </div>
 </div>
 
