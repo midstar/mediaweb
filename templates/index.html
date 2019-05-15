@@ -869,6 +869,8 @@ var dist0 = null; // Initial distance between fingers in multitouch
 var z0 = null; // Initial zoom level when click
 var y0 = null; // Last mouse/touch y position
 var dragging = false; // Mouse or one finger is down
+var xOffset = 0;
+var yOffset = 0;
 
 // Called on mouse/touch down 
 function mouseOrTouchDown(e) { 
@@ -876,12 +878,15 @@ function mouseOrTouchDown(e) {
         if (e.targetTouches.length == 2) {
             // Multi finger touch, start zoom instead of drag
             showZoom();
-
+            zoomMouseOrTouchDown(e);
+            /*
             dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
             z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
-            mediaZoomObject.style.setProperty('--x',-1*e.targetTouches[0].pageX + "px");
-            mediaZoomObject.style.setProperty('--y',-1*e.targetTouches[0].pageY + "px");
-            console.log("z0: " + z0);
+            xOffset = -1*e.targetTouches[0].pageX;
+            yOffset = -1*e.targetTouches[0].pageY;
+            mediaZoomObject.style.setProperty('--x',xOffset + "px");
+            mediaZoomObject.style.setProperty('--y',yOffset + "px");
+            console.log("z0: " + z0);*/
             return
         }
     }
@@ -935,9 +940,6 @@ function zoomMouseOrTouchDown(e) {
             z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
             x0 = e.targetTouches[0].pageX;
             y0 = e.targetTouches[0].pageY;
-            mediaZoomObject.style.setProperty('--x',-1*x0 + "px");
-            mediaZoomObject.style.setProperty('--y',-1*y0 + "px");
-            console.log("z0: " + z0);
             return
         }
     }
@@ -951,7 +953,7 @@ function zoomMouseOrTouchMove(e) {
             // Zoom in or out (multi touch)
             var dist = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
             var newScale = dist/dist0;
-            zoomImage(0,0, x0, y0, newScale);
+            zoomImage(e.targetTouches[0].pageX, e.targetTouches[0].pageY, newScale);
         }
     }
     else if(dragging) {
@@ -1001,15 +1003,16 @@ function fingerCenter(finger1, finger2) {
 
 }
 
-function zoomImage(offsetX, offsetY, centerX, centerY, scale) {
+function zoomImage(centerX, centerY, scale) {
     var newZ =  z0 * scale;
-    var newX =  x0 * scale;
-    var newY =  y0 * scale;
 
     console.log("newZ : " + newZ);
     mediaZoomObject.style.setProperty('--z',newZ);
-    mediaZoomObject.style.setProperty('--x',-1*newX + "px");
-    mediaZoomObject.style.setProperty('--y',-1*newY + "px");
+    
+    xOffset =  -1 * x0 * scale;
+    yOffset =  -1 * y0 * scale;
+    mediaZoomObject.style.setProperty('--x',xOffset + "px");
+    mediaZoomObject.style.setProperty('--y',yOffset + "px");
     console.log(mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
 }
 
