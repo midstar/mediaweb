@@ -869,8 +869,8 @@ var dist0 = null; // Initial distance between fingers in multitouch
 var z0 = null; // Initial zoom level when click
 var y0 = null; // Last mouse/touch y position
 var dragging = false; // Mouse or one finger is down
-var xOffset = 0;
-var yOffset = 0;
+var xOffset = 0; // Last set xOffset
+var yOffset = 0; // Last set yOffset
 
 // Called on mouse/touch down 
 function mouseOrTouchDown(e) { 
@@ -938,10 +938,16 @@ function zoomMouseOrTouchDown(e) {
             // Multi finger touch, start zoom instead of drag
             dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
             z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
-            x0 = e.targetTouches[0].pageX;
-            y0 = e.targetTouches[0].pageY;
+            x0 = e.targetTouches[0].clientX;
+            y0 = e.targetTouches[0].clientY;
             return
         }
+    } else {
+        // TBD REMOVE BELOW
+        //zoomImage(unify(e).clientX, unify(e).clientY, 2);
+        mediaZoomObject.style.setProperty('--z',2);
+        mediaZoomObject.style.setProperty('--x',-40 + "px");
+        mediaZoomObject.style.setProperty('--y',-40 + "px");
     }
 }
 
@@ -951,9 +957,10 @@ function zoomMouseOrTouchMove(e) {
     if(e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
             // Zoom in or out (multi touch)
+            var center = fingerCenter(e.targetTouches[0], e.targetTouches[1]);
             var dist = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
-            var newScale = dist/dist0;
-            zoomImage(e.targetTouches[0].pageX, e.targetTouches[0].pageY, newScale);
+            var newScale = z0 * dist/dist0;
+            zoomImage(center.x, center.y, newScale);
         }
     }
     else if(dragging) {
@@ -993,27 +1000,73 @@ function zoomMouseOrTouchUp(e) {
 
 // Calculate distance between two fingers in touch
 function fingerDistance(finger1, finger2) {
-    var dX = Math.abs(finger1.pageX - finger2.pageX);
-    var dY = Math.abs(finger1.pageY - finger2.pageY);
+    var dX = Math.abs(finger1.clientX - finger2.clientX);
+    var dY = Math.abs(finger1.clientY - finger2.clientY);
     return Math.sqrt(Math.pow(dX,2) + Math.pow(dY,2))
 }
 
 // Center middle postion between two fingers in touch
 function fingerCenter(finger1, finger2) {
-
+    var point = new Object();
+    point.x = (finger1.clientX + finger2.clientX) / 2;
+    point.y = (finger1.clientY + finger2.clientY) / 2;
+    return point;
 }
 
 function zoomImage(centerX, centerY, scale) {
-    var newZ =  z0 * scale;
 
-    console.log("newZ : " + newZ);
-    mediaZoomObject.style.setProperty('--z',newZ);
+    // Current scale
+    previousScale = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
+
+    // Image actual width and height
+    var width = mediaZoomObject.naturalWidth;
+    var height = mediaZoomObject.naturalHeight;
+
+    // Image width and height with previous zoom level
+    var widthZ = width * previousScale;
+    var heightZ = height * previousScale;
+
+    // Image width and height with new zoom level
+    var widthZNew = width * scale;
+    var heightZNew = height * scale;
+
+    // X, Y coordinates with previous zoom level
+    var xZ = -1*xOffset + centerX;
+    var yZ = -1*yOffset + centerY;
+
+    // Convert zoomed coordiantes to atual image coordinates
+    var x = xZ / previousScale;
+    var y = yZ / previousScale;
+
+    // New X, Y coordinates with current zoom level
+    var xZNew = x * scale;
+    var yZNew = y * scale;
+
+    console.log("xoOld: " + xOffset + " yoOld: " + yOffset);
+    console.log("zOld: " + previousScale + " z: " + scale);
+    console.log("xC: " + centerX + " yC: " + centerY);
+    console.log("w: " + width + " h: " + height + " wZ: " + widthZ + " hZ: " + heightZ);
+    console.log("xZ: " + xZ + " yZ: " + yZ + " x: " + x + " y: " + y);
+
+    // New offset
+    xOffset = centerX - xZNew;
+    yOffset = centerY - yZNew;
+    console.log("xZn: " + xZNew + " yZn: " + yZNew + " xo: " + xOffset + " yo: " + yOffset);
+
+    // Set new scale
+    mediaZoomObject.style.setProperty('--z',scale);
+
+
+   /* console.log("xZ : " + xZ + "  yZ : " + yZ);
     
     xOffset =  -1 * x0 * scale;
-    yOffset =  -1 * y0 * scale;
+    yOffset =  -1 * y0 * scale;*/
+    // Set new offset
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");
-    console.log(mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
+
+    //console.log("original: " + mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
+    //console.log("current: " + mediaZoomObject.width + " : " + mediaZoomObject.height);
 }
 
 // Common for one finger touch and mouse
