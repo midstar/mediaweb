@@ -875,7 +875,6 @@ function mouseOrTouchDown(e) {
 
 // Called on mouse/touch drag
 function mouseOrTouchMove(e) { 
-    console.log("mouseMove drag: " + dragging); 
     e.preventDefault();
     if(dragging) {
         // Move container with mouse/touch x direction
@@ -890,7 +889,6 @@ function mouseOrTouchMove(e) {
 
 // Called on mouse/touch up 
 function mouseOrTouchUp(e) {
-  console.log("mouseOrTouchUp"); 
   if(dragging) {
     let dx = unify(e).clientX - x0;
     w = window.innerWidth;
@@ -912,7 +910,6 @@ function mouseOrTouchUp(e) {
     dragging = false;
 
   } else if (isZoomEnabled()) {
-    console.log("zoom enabled up");
     zoomMouseOrTouchUp(e);
     }
 }
@@ -1037,7 +1034,6 @@ function isZoomEnabled() {
 
 // Called on mouse/touch down on zoom image
 function zoomMouseOrTouchDown(e) {
-    console.log("zoomMouseOrTouchDown"); 
     if (e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
             // Multi finger touch. Use initial finger distance
@@ -1051,7 +1047,6 @@ function zoomMouseOrTouchDown(e) {
 
 // Called on mouse/touch drag on zoom image
 function zoomMouseOrTouchMove(e) { 
-    console.log("zoomMouseOrTouchMove"); 
     e.preventDefault();
     if(e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
@@ -1066,7 +1061,6 @@ function zoomMouseOrTouchMove(e) {
 
 // Called on mouse/touch up on zoom image
 function zoomMouseOrTouchUp(e) {
-    console.log("zoomMouseOrTouchUp"); 
     if (z == minZ) {
         // When zoomed to original size, close the zoom view.
         hideZoom();
