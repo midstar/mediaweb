@@ -862,9 +862,10 @@ function mouseOrTouchDown(e) {
     if (e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
             // Multi finger touch, start zoom instead of drag
-            showZoom();
-            zoomMouseOrTouchDown(e);
-            return
+            if (showZoom()) {
+                zoomMouseOrTouchDown(e);
+                return
+            }
         }
     }
     x0 = unify(e).clientX; // Store start x position
@@ -966,14 +967,22 @@ function animateSlide(iFrom, iTo, startTime = null) {
 // Global variables used for zooming
 var dist0 = null; // Initial distance between fingers in multitouch
 var z0 = null; // Initial zoom level when click
+var z = null; // Current zoom level
 var xOffset = 0; // Last set xOffset
 var yOffset = 0; // Last set yOffset
+var minZ = 0;
+var maxXOffset = 0; 
+var maxYOffset = 0; 
 
-// Starts zooming and initiates zooming global variables
+// Starts zooming and initiates zooming global variables. Returns
+// false if this is a video (videos are not supported to be zoomed)
 function showZoom() {
 
     // Set the image that shall be zoomed (same as swipe window)
     var mediaFile = mediaFiles[mediaIndex];
+    if (mediaFile.Type == "video") {
+        return false;
+    }
     mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
 
     // Get the image in the swipe window (used later)
@@ -982,12 +991,16 @@ function showZoom() {
 
     // Set the initial scale so it match in zoom and swipe Window
     z0 = mediaObject.width / mediaObject.naturalWidth;
-    mediaZoomObject.style.setProperty('--z',z0);
+    minZ = z0;
+    z = z0;
+    mediaZoomObject.style.setProperty('--z',z);
 
     // Set the x and y position so it match in zoom and swipe Window
     var rect = mediaObject.getBoundingClientRect();
     xOffset = rect.left;
     yOffset = rect.top;
+    maxXOffset = xOffset;
+    maxYOffset = yOffset;
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");   
 
@@ -996,6 +1009,8 @@ function showZoom() {
 
     // Hide the media containers
     mediaContainers.style.display = "none";  
+
+    return true;
 }
 
 function hideZoom() {
@@ -1010,11 +1025,10 @@ function hideZoom() {
 function zoomMouseOrTouchDown(e) { 
     if (e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
-            // Multi finger touch, start zoom instead of drag
+            // Multi finger touch. Use initial finger distance
+            // to figure out zoom level later
             dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
-            z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
-            x0 = e.targetTouches[0].clientX;
-            y0 = e.targetTouches[0].clientY;
+            z0 = z;
             return
         }
     }
@@ -1032,38 +1046,15 @@ function zoomMouseOrTouchMove(e) {
             zoomImage(center.x, center.y, newScale);
         }
     }
-    else if(dragging) {
-        // Move container with mouse/touch x direction
-        let dx = unify(e).clientX - x0;
-        w = window.innerWidth;
-        let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
-        mediaContainers.style.setProperty('--i', mediaIndex - f);
-    }
 }
 
 // Called on mouse/touch up on zoom image
 function zoomMouseOrTouchUp(e) {
-  if(dragging) {
-    let dx = unify(e).clientX - x0;
-    w = window.innerWidth;
-    let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
-
-    let iIni = mediaIndex - f;
-    if (Math.abs(f) > 0.1) { // At least 10% drag
-        if (dx < 0) {
-            nextMedia(iIni);
-        } else {
-            prevMedia(iIni);
-        }
-    } else {
-        // Move back to original position
-        animateSlide(iIni, mediaIndex);
+    console.log("z0 : " + z0 + " minZ : " + minZ);
+    if (z == minZ) {
+        // When zoomed to original size, close the zoom view.
+        hideZoom();
     }
-
-    x0 = null;
-    dragging = false;
-
-  }
 }
 
 
@@ -1082,10 +1073,13 @@ function fingerCenter(finger1, finger2) {
     return point;
 }
 
+// Zoom will be limited by maxXOffset, maxYOffset and minZ.
 function zoomImage(centerX, centerY, scale) {
+    // Don't allow zoom out more than minZ
+    scale = Math.max(scale, minZ);
 
     // Current scale
-    previousScale = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
+    previousScale = z;
 
     // Image actual width and height
     var width = mediaZoomObject.naturalWidth;
@@ -1111,31 +1105,17 @@ function zoomImage(centerX, centerY, scale) {
     var xZNew = x * scale;
     var yZNew = y * scale;
 
-    console.log("xoOld: " + xOffset + " yoOld: " + yOffset);
-    console.log("zOld: " + previousScale + " z: " + scale);
-    console.log("xC: " + centerX + " yC: " + centerY);
-    console.log("w: " + width + " h: " + height + " wZ: " + widthZ + " hZ: " + heightZ);
-    console.log("xZ: " + xZ + " yZ: " + yZ + " x: " + x + " y: " + y);
-
-    // New offset
-    xOffset = centerX - xZNew;
-    yOffset = centerY - yZNew;
-    console.log("xZn: " + xZNew + " yZn: " + yZNew + " xo: " + xOffset + " yo: " + yOffset);
+    // New offset 
+    xOffset = Math.min(centerX - xZNew, maxXOffset);
+    yOffset = Math.min(centerY - yZNew, maxYOffset);
 
     // Set new scale
-    mediaZoomObject.style.setProperty('--z',scale);
+    z = scale;
+    mediaZoomObject.style.setProperty('--z',z);
 
-
-   /* console.log("xZ : " + xZ + "  yZ : " + yZ);
-    
-    xOffset =  -1 * x0 * scale;
-    yOffset =  -1 * y0 * scale;*/
     // Set new offset
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");
-
-    //console.log("original: " + mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
-    //console.log("current: " + mediaZoomObject.width + " : " + mediaZoomObject.height);
 }
 
 
