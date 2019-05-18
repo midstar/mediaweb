@@ -846,31 +846,16 @@ function mediaViewLoaderCheck() {
     setTimeout(mediaViewLoaderCheck, 500);
 }
 
-function showZoom() {
-    // Show the image to zoom
-    var mediaFile = mediaFiles[mediaIndex];
-    mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
-    mediaZoomContainer.style.display = "block";  
 
-    // Hide the media containers
-    mediaContainers.style.display = "none";  
-}
 
-function hideZoom() {
-    // Hide the image to zoom
-    mediaZoomContainer.style.display = "none";    
 
-    // Show the media containers
-    mediaContainers.style.display = "flex";   
-}
+///////////////////////////////////////////////////////////////////////////////
+// Media Viewer - Finger / mouse swipe left/right
+///////////////////////////////////////////////////////////////////////////////
 
+// Global variables used for swiping
 var x0 = null; // Last mouse/touch x position
-var dist0 = null; // Initial distance between fingers in multitouch
-var z0 = null; // Initial zoom level when click
-var y0 = null; // Last mouse/touch y position
 var dragging = false; // Mouse or one finger is down
-var xOffset = 0; // Last set xOffset
-var yOffset = 0; // Last set yOffset
 
 // Called on mouse/touch down 
 function mouseOrTouchDown(e) { 
@@ -879,14 +864,6 @@ function mouseOrTouchDown(e) {
             // Multi finger touch, start zoom instead of drag
             showZoom();
             zoomMouseOrTouchDown(e);
-            /*
-            dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
-            z0 = getComputedStyle(mediaZoomObject).getPropertyValue('--z');
-            xOffset = -1*e.targetTouches[0].pageX;
-            yOffset = -1*e.targetTouches[0].pageY;
-            mediaZoomObject.style.setProperty('--x',xOffset + "px");
-            mediaZoomObject.style.setProperty('--y',yOffset + "px");
-            console.log("z0: " + z0);*/
             return
         }
     }
@@ -931,6 +908,104 @@ function mouseOrTouchUp(e) {
   }
 }
 
+// Common for one finger touch and mouse
+function unify(e) { 
+    return e.changedTouches ? e.changedTouches[0] : e 
+}
+
+var animationRequestID = null; // Animation frame request id
+
+// Animate drag left and right
+function animateSlide(iFrom, iTo, startTime = null) {
+
+    if (animationRequestID != null && startTime == null) {
+        // Another animation is in progress. Cancel that animation
+        // and continue with the new one.
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
+    }
+
+    if (iFrom == iTo) {
+        // No animation required
+        mediaContainers.style.setProperty('--i', iTo);
+        return;
+    }
+
+    if (startTime == null) {
+        // First frame - don't update anything now
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, Date.now()));
+        return;
+    }
+
+    const iRate = 0.004; // Increase of i per ms. 0.004 = 0.25 s for a full move
+    var iDelta = (Date.now() - startTime) * iRate;
+    var iNext;
+    if (iTo > iFrom) {
+        iNext = Math.min(iTo, iFrom + iDelta);
+    } else {
+        // iFrom > iTo
+        iNext = Math.max(iTo, iFrom - iDelta);
+    } 
+
+    mediaContainers.style.setProperty('--i', iNext);
+
+    if (iNext == iTo) {
+        // We are done
+        cancelAnimationFrame(animationRequestID);
+        animationRequestID = null;
+    } else {
+        // Call for next animation
+        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, startTime))
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Media Viewer - Finger multi touch zoom
+///////////////////////////////////////////////////////////////////////////////
+
+// Global variables used for zooming
+var dist0 = null; // Initial distance between fingers in multitouch
+var z0 = null; // Initial zoom level when click
+var xOffset = 0; // Last set xOffset
+var yOffset = 0; // Last set yOffset
+
+// Starts zooming and initiates zooming global variables
+function showZoom() {
+
+    // Set the image that shall be zoomed (same as swipe window)
+    var mediaFile = mediaFiles[mediaIndex];
+    mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
+
+    // Get the image in the swipe window (used later)
+    var mediaContainer = mediaContainers.children[mediaIndex];
+    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+
+    // Set the initial scale so it match in zoom and swipe Window
+    z0 = mediaObject.width / mediaObject.naturalWidth;
+    mediaZoomObject.style.setProperty('--z',z0);
+
+    // Set the x and y position so it match in zoom and swipe Window
+    var rect = mediaObject.getBoundingClientRect();
+    xOffset = rect.left;
+    yOffset = rect.top;
+    mediaZoomObject.style.setProperty('--x',xOffset + "px");
+    mediaZoomObject.style.setProperty('--y',yOffset + "px");   
+
+    // Show the zoom window
+    mediaZoomContainer.style.display = "block";  
+
+    // Hide the media containers
+    mediaContainers.style.display = "none";  
+}
+
+function hideZoom() {
+    // Hide the image to zoom
+    mediaZoomContainer.style.display = "none";    
+
+    // Show the media containers
+    mediaContainers.style.display = "flex";   
+}
+
 // Called on mouse/touch down on zoom image
 function zoomMouseOrTouchDown(e) { 
     if (e instanceof TouchEvent) {
@@ -942,12 +1017,6 @@ function zoomMouseOrTouchDown(e) {
             y0 = e.targetTouches[0].clientY;
             return
         }
-    } else {
-        // TBD REMOVE BELOW
-        //zoomImage(unify(e).clientX, unify(e).clientY, 2);
-        mediaZoomObject.style.setProperty('--z',2);
-        mediaZoomObject.style.setProperty('--x',-40 + "px");
-        mediaZoomObject.style.setProperty('--y',-40 + "px");
     }
 }
 
@@ -1067,57 +1136,6 @@ function zoomImage(centerX, centerY, scale) {
 
     //console.log("original: " + mediaZoomObject.naturalWidth + " : " + mediaZoomObject.naturalHeight);
     //console.log("current: " + mediaZoomObject.width + " : " + mediaZoomObject.height);
-}
-
-// Common for one finger touch and mouse
-function unify(e) { 
-    return e.changedTouches ? e.changedTouches[0] : e 
-}
-
-var animationRequestID = null; // Animation frame request id
-
-// Animate drag left and right
-function animateSlide(iFrom, iTo, startTime = null) {
-
-    if (animationRequestID != null && startTime == null) {
-        // Another animation is in progress. Cancel that animation
-        // and continue with the new one.
-        cancelAnimationFrame(animationRequestID);
-        animationRequestID = null;
-    }
-
-    if (iFrom == iTo) {
-        // No animation required
-        mediaContainers.style.setProperty('--i', iTo);
-        return;
-    }
-
-    if (startTime == null) {
-        // First frame - don't update anything now
-        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, Date.now()));
-        return;
-    }
-
-    const iRate = 0.004; // Increase of i per ms. 0.004 = 0.25 s for a full move
-    var iDelta = (Date.now() - startTime) * iRate;
-    var iNext;
-    if (iTo > iFrom) {
-        iNext = Math.min(iTo, iFrom + iDelta);
-    } else {
-        // iFrom > iTo
-        iNext = Math.max(iTo, iFrom - iDelta);
-    } 
-
-    mediaContainers.style.setProperty('--i', iNext);
-
-    if (iNext == iTo) {
-        // We are done
-        cancelAnimationFrame(animationRequestID);
-        animationRequestID = null;
-    } else {
-        // Call for next animation
-        animationRequestID = requestAnimationFrame(animateSlide.bind(this, iFrom, iTo, startTime))
-    }
 }
 
 
