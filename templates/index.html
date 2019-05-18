@@ -980,6 +980,10 @@ var yOffset = 0; // Last set yOffset
 var minZ = 0;
 var maxXOffset = 0; 
 var maxYOffset = 0; 
+var panX = 0; // Last X position during pan
+var panY = 0; // Last Y position during pan
+var pan = false; // Pan (when using single finger or mouse)
+
 
 // Starts zooming and initiates zooming global variables. Returns
 // false if this is a video (videos are not supported to be zoomed)
@@ -1006,12 +1010,9 @@ function showZoom() {
 
     // Set the x and y position so it match in zoom and swipe Window
     var rect = mediaObject.getBoundingClientRect();
-    xOffset = rect.left;
-    yOffset = rect.top;
-    maxXOffset = xOffset;
-    maxYOffset = yOffset;
-    mediaZoomObject.style.setProperty('--x',xOffset + "px");
-    mediaZoomObject.style.setProperty('--y',yOffset + "px");   
+    maxXOffset = rect.left;
+    maxYOffset = rect.top;
+    setZoomOffset(maxXOffset, maxYOffset); 
 
     // Show the zoom window
     mediaZoomContainer.style.display = "block";  
@@ -1042,9 +1043,13 @@ function zoomMouseOrTouchDown(e) {
             // to figure out zoom level later
             dist0 = fingerDistance(e.targetTouches[0],e.targetTouches[1]);
             z0 = z;
+            pan = false;
             return
         }
     }
+    pan = true;
+    panX = unify(e).clientX; // Store start x position
+    panY = unify(e).clientY; // Store start y position
 }
 
 // Called on mouse/touch drag on zoom image
@@ -1061,10 +1066,18 @@ function zoomMouseOrTouchMove(e) {
             zoomImage(center.x, center.y, newScale);
         }
     }
+    if (pan) {
+        var xDelta = unify(e).clientX - panX;
+        var yDelta = unify(e).clientY - panY;
+        setZoomOffset(xOffset + xDelta, yOffset + yDelta);
+        panX = unify(e).clientX;
+        panY = unify(e).clientY;
+    }
 }
 
 // Called on mouse/touch up on zoom image
 function zoomMouseOrTouchUp(e) {
+    pan = false;
     if (z == minZ) {
         // When zoomed to original size, close the zoom view.
         hideZoom();
@@ -1119,19 +1132,21 @@ function zoomImage(centerX, centerY, scale) {
     var xZNew = x * scale;
     var yZNew = y * scale;
 
-    // New offset 
-    xOffset = Math.min(centerX - xZNew, maxXOffset);
-    yOffset = Math.min(centerY - yZNew, maxYOffset);
-
     // Set new scale
     z = scale;
     mediaZoomObject.style.setProperty('--z',z);
 
-    // Set new offset
+    // New offset
+    setZoomOffset(centerX - xZNew, centerY - yZNew);
+}
+
+// Zoom offset will be limited by maxXOffset and maxYOffset.
+function setZoomOffset(x, y) {
+    xOffset = Math.min(x, maxXOffset);
+    yOffset = Math.min(y, maxYOffset);    
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");
 }
-
 
 </script>
 </head>
