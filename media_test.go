@@ -428,7 +428,7 @@ func TestGenerateThumbnails(t *testing.T) {
 	media := createMedia(box, "testmedia", cache, true, false, false, true)
 	stat := media.generateThumbnails("", true)
 	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
-	assertEqualsInt(t, "", 18, stat.NbrOfImages)
+	assertEqualsInt(t, "", 19, stat.NbrOfImages)
 	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
 	assertEqualsInt(t, "", 10, stat.NbrOfExif)
 	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
