@@ -31,7 +31,7 @@ View your images and play your videos:
 
 ![viewer](testmedia/screenshot_viewer.jpg)
 
-Swipe (mouse or mobile touch) to switch between images/videos:
+Swipe (mouse or mobile touch) to switch between images/videos. It is also possible to use keyboard; left arrow key (previous image), right (next image), page up (first image) and page down (last image):
 
 ![viewer](testmedia/screenshot_viewer_swipe.jpg)
 
