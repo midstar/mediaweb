@@ -10,7 +10,7 @@ platform: x64
 # Do not build on tags (GitHub and BitBucket)
 skip_tags: true
 
-version: 1.0.0.{build}
+version: 1.0.1.{build}
 
 stack: go 1.11
 
