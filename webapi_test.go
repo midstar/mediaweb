@@ -135,6 +135,10 @@ func TestStatic(t *testing.T) {
 	image := getBinary(t, "icon_folder.png", "image/png")
 	assertTrue(t, "", len(image) > 100)
 
+	// Get an icong
+	image = getBinary(t, "logo.ico", "image/x-icon")
+	assertTrue(t, "", len(image) > 100)
+
 	// Get a non-existing png
 	resp, err := http.Get(fmt.Sprintf("%s/invalid.html", baseURL))
 	assertExpectNoErr(t, "", err)
