@@ -115,6 +115,8 @@ func (wa *WebAPI) serveHTTPStatic(w http.ResponseWriter, r *http.Request) {
 	} else {
 		if filepath.Ext(fileName) == ".html" {
 			w.Header().Set("Content-Type", "text/html")
+		} else if filepath.Ext(fileName) == ".ico" {
+			w.Header().Set("Content-Type", "image/x-icon")
 		} else {
 			w.Header().Set("Content-Type", "image/png")
 		}

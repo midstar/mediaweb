@@ -15,8 +15,8 @@
    viewBox="0 0 744.09448819 1052.3622047"
    id="svg2"
    version="1.1"
-   inkscape:version="0.91 r13725"
-   sodipodi:docname="medaweb_logo.svg">
+   inkscape:version="0.92.1 r15371"
+   sodipodi:docname="logo.svg">
   <defs
      id="defs4">
     <linearGradient
@@ -91,10 +91,10 @@
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1440"
-     inkscape:window-height="897"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:window-width="1920"
+     inkscape:window-height="970"
+     inkscape:window-x="0"
+     inkscape:window-y="55"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata7">
@@ -104,7 +104,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -112,6 +112,13 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1">
+    <ellipse
+       id="path8729"
+       cx="393.66681"
+       cy="456.98801"
+       style="fill:#00ff00;stroke-width:0.85830301"
+       rx="306.68518"
+       ry="302.93597" />
     <rect
        style="fill:#808080;fill-opacity:1;stroke:#440000;stroke-width:13.9015379;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="use4148"
