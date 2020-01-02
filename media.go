@@ -30,6 +30,8 @@ type Media struct {
 	box                *rice.Box // For icons
 	thumbGenInProgress bool      // True if thumbnail generation in progress
 	watcher            *Watcher  // The media watcher
+	enablePreview      bool      // Resize images before provide to client
+	previewMaxSide     int       // Maximum width or hight of preview image
 }
 
 // File represents a folder or any other file
@@ -62,7 +64,9 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
 		box:                box,
-		thumbGenInProgress: false}
+		thumbGenInProgress: false,
+		enablePreview:      true, // TODO: Add to argument
+		previewMaxSide:     1280} // TODO: Add to argument
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
@@ -648,4 +652,54 @@ func (m *Media) generateThumbnails(relativePath string, recursive bool) *Thumbna
 		}
 	}
 	return &stat
+}
+
+// getImageWidthAndHeight returns the width and height of an image.
+// Returns error if the width and height could not be determined.
+func (m *Media) getImageWidthAndHeight(fullMediaPath string) (int, int, error) {
+	img, err := imaging.Open(fullMediaPath)
+	if err != nil {
+		return 0, 0, fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
+	}
+	return img.Bounds().Dx(), img.Bounds().Dy(), nil
+}
+
+// isImagePreviewRequired returns true if a preview of the image
+// should be, or already is, generated. Checks if image preview
+// is enabled in configuration and if the image width/height is
+// larger than the previewMaxSide configuration.
+func (m *Media) isImagePreviewRequired(fullMediaPath string) bool {
+	if !m.enablePreview || !m.isImage(fullMediaPath) {
+		return false
+	}
+	width, height, _ := m.getImageWidthAndHeight(fullMediaPath)
+
+	return width > m.previewMaxSide || height > m.previewMaxSide
+}
+
+// generateImagePreview generates a preview from any of the supported
+// images. Will create necessary subdirectories in the PreviewPath.
+func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) error {
+	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
+	if err != nil {
+		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
+	}
+	previewImg := imaging.Fit(img, m.previewMaxSide, m.previewMaxSide, imaging.Box)
+
+	// Create subdirectories if needed
+	directory := filepath.Dir(fullPreviewPath)
+	err = os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Unable to create directories in %s for creating preview. Reason %s", fullPreviewPath, err)
+	}
+
+	// Write thumbnail to file
+	outFile, err := os.Create(fullPreviewPath)
+	if err != nil {
+		return fmt.Errorf("Unable to open %s for creating preview. Reason %s", fullPreviewPath, err)
+	}
+	defer outFile.Close()
+	err = imaging.Encode(outFile, previewImg, imaging.JPEG)
+
+	return err
 }

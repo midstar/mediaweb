@@ -280,7 +280,7 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 	os.Remove(outFileName)
 	RestartTimer()
 	err := media.generateImageThumbnail(inFileName, outFileName)
-	LogTime(t, inFileName+"thumbnail generation: ")
+	LogTime(t, inFileName+" thumbnail generation: ")
 	assertExpectNoErr(t, "", err)
 	assertFileExist(t, "", outFileName)
 	t.Logf("Manually check that %s thumbnail is ok", outFileName)
@@ -506,4 +506,69 @@ func TestGenerateNoThumbnails(t *testing.T) {
 	assertFileNotExist(t, "", filepath.Join(cache, "_video.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
+}
+
+func TestGetImageWidthAndHeight(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "", "", true, false, false, true)
+
+	width, height, err := media.getImageWidthAndHeight("testmedia/jpeg.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 4128, width)
+	assertEqualsInt(t, "image height", 2322, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/gif.gif")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 3264, width)
+	assertEqualsInt(t, "image height", 2448, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/png.png")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 1632, width)
+	assertEqualsInt(t, "image height", 1224, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/tiff.tiff")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 979, width)
+	assertEqualsInt(t, "image height", 734, height)
+
+	// Test invalid
+	_, _, err = media.getImageWidthAndHeight("testmedia/invalid.jpg")
+	assertExpectErr(t, "", err)
+}
+
+func tGenerateImagePreview(t *testing.T, media *Media, inFileName, outFileName string) {
+	t.Helper()
+	os.Remove(outFileName)
+	RestartTimer()
+	err := media.generateImagePreview(inFileName, outFileName)
+	LogTime(t, inFileName+" preview generation: ")
+	assertExpectNoErr(t, "", err)
+	assertFileExist(t, "", outFileName)
+	// Check dimensions
+	width, height, err := media.getImageWidthAndHeight(outFileName)
+	assertExpectNoErr(t, "reading dimensions", err)
+	assertFalse(t, "preview width", width > media.previewMaxSide)
+	assertFalse(t, "preview height", height > media.previewMaxSide)
+}
+
+func TestGenerateImagePreview(t *testing.T) {
+	os.MkdirAll("tmpout/TestGenerateImagePreview", os.ModePerm) // If already exist no problem
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "", "", true, false, false, true)
+
+	tGenerateImagePreview(t, media, "testmedia/jpeg.jpg", "tmpout/TestGenerateImagePreview/jpeg_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/jpeg_rotated.jpg", "tmpout/TestGenerateImagePreview/jpeg_rotated_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/png.png", "tmpout/TestGenerateImagePreview/png_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/gif.gif", "tmpout/TestGenerateImagePreview/gif_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/tiff.tiff", "tmpout/TestGenerateImagePreview/tiff_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/exif_rotate/no_exif.jpg", "tmpout/TestGenerateImagePreview/exif_rotate/no_exif_preview.jpg")
+
+	// Test some invalid
+	err := media.generateImagePreview("nonexisting.png", "dont_matter.png")
+	assertExpectErr(t, "", err)
+
+	err = media.generateImagePreview("testmedia/invalid.jpg", "dont_matter.jpg")
+	assertExpectErr(t, "", err)
 }
