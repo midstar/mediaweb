@@ -146,17 +146,20 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
 		return
 	}
+	originalImage, hasOriginalImageQuery := r.URL.Query()["original-image"]
 	// Write preview file if possible and allowed
-	err := wa.media.writePreview(w, relativePath)
-	if err == nil {
-		// Previews are always in JPEG format
-		w.Header().Set("Content-Type", "image/jpeg")
-		return
+	if !hasOriginalImageQuery || originalImage[0] != "true" {
+		err := wa.media.writePreview(w, relativePath)
+		if err == nil {
+			// Previews are always in JPEG format
+			w.Header().Set("Content-Type", "image/jpeg")
+			return
+		}
 	}
 	if wa.media.isRotationNeeded(relativePath) {
 		// This is a JPEG file which requires rotation.
 		w.Header().Set("Content-Type", "image/jpeg")
-		err = wa.media.rotateAndWrite(w, relativePath)
+		err := wa.media.rotateAndWrite(w, relativePath)
 		if err != nil {
 			http.Error(w, "Rotate file: "+err.Error(), http.StatusInternalServerError)
 			return

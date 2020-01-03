@@ -722,9 +722,6 @@ func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) erro
 // generatePreview generates a preview image and returns the file name of the
 // preview. If a preview file already exist the file name will be returned.
 func (m *Media) generatePreview(relativeFilePath string) (string, error) {
-	if !m.isImage(relativeFilePath) {
-		return "", fmt.Errorf("only images support preview")
-	}
 	previewFileName, err := m.previewPath(relativeFilePath)
 	if err != nil {
 		llog.Error("%s", err)
@@ -738,11 +735,7 @@ func (m *Media) generatePreview(relativeFilePath string) (string, error) {
 	// No preview exist. Create it
 	llog.Info("Creating new preview file for %s", relativeFilePath)
 	startTime := time.Now().UnixNano()
-	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
-	if err != nil {
-		llog.Error("%s", err)
-		return previewFileName, err
-	}
+	fullMediaPath, _ := m.getFullMediaPath(relativeFilePath) // Error checked in previewPath
 	err = m.generateImagePreview(fullMediaPath, previewFileName)
 	if err != nil {
 		llog.Error("%s", err)
@@ -773,7 +766,7 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 		return err
 	}
 	width, height, _ := m.getImageWidthAndHeight(fullMediaPath)
-	if width < m.previewMaxSide && height < m.previewMaxSide {
+	if width <= m.previewMaxSide && height <= m.previewMaxSide {
 		return fmt.Errorf("Image too small to generate preview")
 	}
 

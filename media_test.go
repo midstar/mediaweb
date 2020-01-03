@@ -595,3 +595,55 @@ func TestGenerateImagePreview(t *testing.T) {
 	err = media.generateImagePreview("testmedia/invalid.jpg", "dont_matter.jpg")
 	assertExpectErr(t, "", err)
 }
+
+func tWritePreview(t *testing.T, media *Media, inFileName, outFileName string, failExpected bool) {
+	t.Helper()
+	os.Remove(outFileName)
+	outFile, err := os.Create(outFileName)
+	assertExpectNoErr(t, "unable to create out", err)
+	defer outFile.Close()
+	err = media.writePreview(outFile, inFileName)
+	if failExpected {
+		assertExpectErr(t, "should fail", err)
+	} else {
+		assertExpectNoErr(t, "unable to write preview", err)
+		t.Logf("Manually check that %s preview is ok", outFileName)
+	}
+}
+
+func TestWritePreview(t *testing.T) {
+	os.RemoveAll("tmpcache/TestWritePreview")
+	os.MkdirAll("tmpcache/TestWritePreview", os.ModePerm)
+	os.RemoveAll("tmpout/TestWritePreview")
+	os.MkdirAll("tmpout/TestWritePreview", os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "tmpcache/TestWritePreview", true, false, false, true, true, 970)
+
+	// JPEG
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", false)
+
+	// PNG
+	tWritePreview(t, media, "png.png", "tmpout/TestWritePreview/png.jpg", false)
+
+	// TIFF
+	tWritePreview(t, media, "tiff.tiff", "tmpout/TestWritePreview/tiff.tiff", false)
+
+	// Video - should fail
+	tWritePreview(t, media, "video.mp4", "tmpout/TestWritePreview/video.jpg", true)
+
+	// Image smaller than previewMaxSide should fail
+	tWritePreview(t, media, "screenshot_browser.jpg", "tmpout/TestWritePreview/screenshot_browser.jpg", true)
+
+	// Non existing file
+	tWritePreview(t, media, "dont_exist.jpg", "tmpout/TestWritePreview/dont_exist.jpg", true)
+
+	// Invalid file
+	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+
+	// Disable preview
+	media = createMedia(box, "testmedia", "tmpcache/TestWritePreview", false, false, false, true, false, 0)
+
+	// Should fail
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", true)
+}
