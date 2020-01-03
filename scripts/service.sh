@@ -160,6 +160,28 @@ install_service() {
     echo >> $CONFIG
     echo "#autorotate = off" >> $CONFIG
     echo >> $CONFIG
+    echo "# Resize images before providing them to the client. The" >> $CONFIG
+    echo "# resized images are cached in the same location as the" >> $CONFIG
+    echo "# thumbnails." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# The advantages are:" >> $CONFIG
+    echo "#  1. Lower network bandwith required" >> $CONFIG
+    echo "#  2. Smoother navigation at the client. Particular if" >> $CONFIG
+    echo "#     browsing the images using a mobile client." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Disadvantages are:" >> $CONFIG
+    echo "#  1. Slower response time to view the image first time" >> $CONFIG
+    echo "#     since resizing image might take several seconds." >> $CONFIG
+    echo "#  2. Increased cache storage required." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Previews are default off." >> $CONFIG
+    echo "#enablepreview = on" >> $CONFIG
+    echo >> $CONFIG
+    echo "# Max size of preview images in pixels. The image will" >> $CONFIG
+    echo "# be resized so that witdh and hight is not larger than" >> $CONFIG
+    echo "# this value." >> $CONFIG
+    echo "#previewmaxside = 1280" >> $CONFIG
+    echo >> $CONFIG
     echo "logfile = /var/log/mediaweb.log" >> $CONFIG
     echo >> $CONFIG
     echo "# Log level is 'info' by default" >> $CONFIG

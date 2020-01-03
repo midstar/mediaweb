@@ -17,6 +17,8 @@ type settings struct {
 	genThumbsOnStartup bool       // Generate all thumbnails on startup
 	genThumbsOnAdd     bool       // Generate thumbnails when file added (start watcher)
 	autoRotate         bool       // Rotate JPEG files when needed
+	enablePreview      bool       // Generate preview files
+	previewMaxSide     int        // Max height/width of preview file
 	logLevel           llog.Level // Logging level
 	logFile            string     // Log file ("" means stderr)
 	userName           string     // User name ("" means no authentication)
@@ -99,7 +101,7 @@ func loadSettings(fileName string) settings {
 	}
 	result.genThumbsOnStartup = genThumbsOnStartup
 
-	// Load genthumbsonadd(OPTIONAL)
+	// Load genthumbsonadd (OPTIONAL)
 	// Default: true
 	genThumbsOnAdd, err := config.GetBool("genthumbsonadd", true)
 	if err != nil {
@@ -114,6 +116,22 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.autoRotate = autoRotate
+
+	// Load enablePreview (OPTIONAL)
+	// Default: false
+	enablePreview, err := config.GetBool("enablepreview", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.enablePreview = enablePreview
+
+	// Load previewMaxSide (OPTIONAL)
+	// Default: 1280 (pixels)
+	previewMaxSide, err := config.GetInt("previewmaxside", 1280)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.previewMaxSide = previewMaxSide
 
 	// Load logFile (OPTIONAL)
 	// Default: "" (log to stderr)

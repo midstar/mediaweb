@@ -27,6 +27,8 @@ mediapath = Y:\pictures`
 	assertEqualsBool(t, "genthumbsonstartup", false, s.genThumbsOnStartup)
 	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
+	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
+	assertEqualsInt(t, "previewmaxside", 1280, s.previewMaxSide)
 	assertEqualsInt(t, "logLevel", int(llog.LvlInfo), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "", s.logFile)
 	assertEqualsStr(t, "userName", "", s.userName)
@@ -44,6 +46,8 @@ enablethumbcache = off
 genthumbsonstartup = on
 genthumbsonadd = off
 autorotate = false
+enablepreview = true
+previewmaxside = 1920
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 username = an_email@password.com
@@ -62,6 +66,8 @@ password = A!#_q7*+
 	assertEqualsBool(t, "genthumbsonstartup", true, s.genThumbsOnStartup)
 	assertEqualsBool(t, "genthumbsonadd", false, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", false, s.autoRotate)
+	assertEqualsBool(t, "enablepreview", true, s.enablePreview)
+	assertEqualsInt(t, "previewmaxside", 1920, s.previewMaxSide)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
 	assertEqualsStr(t, "userName", "an_email@password.com", s.userName)
@@ -79,6 +85,8 @@ enablethumbcache = 33
 genthumbsonstartup = -1
 genthumbsonadd = 5.5
 autorotate = invalid
+enablepreview = 27
+previewmaxside = invalid
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 `
@@ -91,6 +99,7 @@ logfile = /tmp/log/mediaweb.log
 
 	// Check set values on optional
 	assertEqualsStr(t, "thumbPath", "/tmp/thumb", s.thumbPath)
+	assertEqualsInt(t, "previewmaxside", 1280, s.previewMaxSide)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
 
@@ -99,6 +108,7 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsBool(t, "genthumbsonstartup", false, s.genThumbsOnStartup)
 	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
+	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
 
 }
 
