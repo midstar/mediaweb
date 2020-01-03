@@ -43,7 +43,9 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, startWatcher, autoRotate bool) *Media {
+func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache,
+	genThumbsOnStartup, startWatcher, autoRotate, enablePreview bool,
+	previewMaxSide int) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -65,8 +67,8 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		autoRotate:         autoRotate,
 		box:                box,
 		thumbGenInProgress: false,
-		enablePreview:      true, // TODO: Add to argument
-		previewMaxSide:     1280} // TODO: Add to argument
+		enablePreview:      enablePreview,
+		previewMaxSide:     previewMaxSide}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
 		go media.generateAllThumbnails()
@@ -103,6 +105,13 @@ func (m *Media) getFullMediaPath(relativePath string) (string, error) {
 // getFullThumbPath returns the full path of the provided path, i.e:
 // thumb path + relative path.
 func (m *Media) getFullThumbPath(relativePath string) (string, error) {
+	return m.getFullPath(m.thumbPath, relativePath)
+}
+
+// getFullPreviewPath returns the full path of the provided path, i.e:
+// preview path + relative path.
+// The preview files shares the same path (cache location) as thumbnails.
+func (m *Media) getFullPreviewPath(relativePath string) (string, error) {
 	return m.getFullPath(m.thumbPath, relativePath)
 }
 
@@ -664,17 +673,23 @@ func (m *Media) getImageWidthAndHeight(fullMediaPath string) (int, int, error) {
 	return img.Bounds().Dx(), img.Bounds().Dy(), nil
 }
 
-// isImagePreviewRequired returns true if a preview of the image
-// should be, or already is, generated. Checks if image preview
-// is enabled in configuration and if the image width/height is
-// larger than the previewMaxSide configuration.
-func (m *Media) isImagePreviewRequired(fullMediaPath string) bool {
-	if !m.enablePreview || !m.isImage(fullMediaPath) {
-		return false
+// previewPath returns the absolute preview file path from a
+// media path. Previews are always stored in JPEG format (.jpg
+// extension) and starts with 'view_'.
+// Returns error if the media path is invalid.
+func (m *Media) previewPath(relativeMediaPath string) (string, error) {
+	path, file := filepath.Split(relativeMediaPath)
+	if !m.isJPEG(file) {
+		// Replace extension with .jpg
+		ext := filepath.Ext(file)
+		if ext == "" {
+			return "", fmt.Errorf("File has no extension: %s", file)
+		}
+		file = strings.Replace(file, ext, ".jpg", -1)
 	}
-	width, height, _ := m.getImageWidthAndHeight(fullMediaPath)
-
-	return width > m.previewMaxSide || height > m.previewMaxSide
+	file = "view_" + file
+	relativePreviewPath := filepath.Join(path, file)
+	return m.getFullPreviewPath(relativePreviewPath)
 }
 
 // generateImagePreview generates a preview from any of the supported
@@ -702,4 +717,82 @@ func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) erro
 	err = imaging.Encode(outFile, previewImg, imaging.JPEG)
 
 	return err
+}
+
+// generatePreview generates a preview image and returns the file name of the
+// preview. If a preview file already exist the file name will be returned.
+func (m *Media) generatePreview(relativeFilePath string) (string, error) {
+	if !m.isImage(relativeFilePath) {
+		return "", fmt.Errorf("only images support preview")
+	}
+	previewFileName, err := m.previewPath(relativeFilePath)
+	if err != nil {
+		llog.Error("%s", err)
+		return "", err
+	}
+	_, err = os.Stat(previewFileName) // Check if file exist
+	if err == nil {
+		return previewFileName, nil // Preview already generated
+	}
+
+	// No preview exist. Create it
+	llog.Info("Creating new preview file for %s", relativeFilePath)
+	startTime := time.Now().UnixNano()
+	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Error("%s", err)
+		return previewFileName, err
+	}
+	err = m.generateImagePreview(fullMediaPath, previewFileName)
+	if err != nil {
+		llog.Error("%s", err)
+		return previewFileName, err
+	}
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
+	llog.Info("Preview done for %s (conversion time: %d ms)",
+		relativeFilePath, deltaTime)
+	return previewFileName, nil
+}
+
+// writePreview writes preview image for media to w.
+//
+// It has following sequence/priority:
+//  1. Write a cached preview file exist
+//  2. Generate a preview in cache and write
+//  3. If all above fails return error
+func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
+	if !m.isImage(relativeFilePath) {
+		return fmt.Errorf("only images support preview")
+	}
+	if !m.enablePreview {
+		return fmt.Errorf("Preview disabled")
+	}
+	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Error("%s", err)
+		return err
+	}
+	width, height, _ := m.getImageWidthAndHeight(fullMediaPath)
+	if width < m.previewMaxSide && height < m.previewMaxSide {
+		return fmt.Errorf("Image too small to generate preview")
+	}
+
+	// Check preview cache (and generate if necessary)
+	previewFileName, err := m.generatePreview(relativeFilePath)
+	if err != nil {
+		return err // Logging handled in generatePreview
+	}
+
+	previewFile, err := os.Open(previewFileName)
+	if err != nil {
+		return err
+	}
+	defer previewFile.Close()
+
+	_, err = io.Copy(w, previewFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
