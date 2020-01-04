@@ -61,6 +61,7 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		llog.Info("Thumbnail cache disabled")
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
+	llog.Info("Image preview: %t  (max width/height %d px)", enablePreview, previewMaxSide)
 	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
 		thumbPath:          filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache:   enableThumbCache,

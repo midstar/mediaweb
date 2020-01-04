@@ -623,6 +623,9 @@ func TestWritePreview(t *testing.T) {
 	// JPEG
 	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", false)
 
+	// Same file again, get cached result
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", false)
+
 	// PNG
 	tWritePreview(t, media, "png.png", "tmpout/TestWritePreview/png.jpg", false)
 
@@ -641,9 +644,12 @@ func TestWritePreview(t *testing.T) {
 	// Invalid file
 	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
 
+	// Invalid path
+	tWritePreview(t, media, "../../secret.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+
 	// Disable preview
 	media = createMedia(box, "testmedia", "tmpcache/TestWritePreview", false, false, false, true, false, 0)
 
-	// Should fail
+	// Should fail since preview is disabled now
 	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", true)
 }

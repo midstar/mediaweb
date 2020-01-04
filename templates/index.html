@@ -202,6 +202,10 @@
     width: calc(100%/var(--n)); /* Make each container fit the screen */
 }
 
+.media-container a {
+    text-decoration: none;
+}
+
 .media-object-container {
     width: 100%;
     height: calc(100% - 20px);
@@ -602,7 +606,9 @@ function setupMediaViewer(files) {
         <img class='media-thumb' src=''> \
         " + mediaTag + " class='media-object' src=''> \
     </div> \
-    <div class='media-caption'>" + file.Name + "</div> \
+    <a href='media/" + file.Path + "?original-image=true' download>\
+        <div class='media-caption'>" + file.Name + "</div> \
+    </a>\
 </div>"
         mediaContainers.insertAdjacentHTML( 'beforeend', containerTxt);
     }
