@@ -5,6 +5,7 @@
 - [How do I view my media?](#how-do-i-view-my-media)
 - [Why are the Video thumbnails not generated?](#why-are-the-video-thumbnails-not-generated)
 - [Why does it take so long time to load images the first time?](#why-does-it-take-so-long-time-to-load-images-the-first-time)
+- [Why is swiping or zooming images lagging?](#why-is-swiping-or-zooming-images-lagging)
 
 
 ## Why use MediaWEB and not any other similar software?
@@ -55,3 +56,19 @@ Also, MediaWEB can generate thumbnails as soon as files are added to the media d
     genthumbsonadd = on
 
 This will improve performance a lot the first time each folder is browsed. 
+
+## Why is swiping or zooming images lagging?
+
+By default the original images are opened in the viewer. If the images are large (typical 2 - 10 MB) low end platforms (such as mobile browsers) will have a hard time to make a smooth navigation / zooming. Also, it make take some time to download the images if the network bandwidth is limited.
+
+This can be fixed by automatically resizing the images on the server side by enabling image preview with following configuration parameter:
+
+    enablepreview = on
+
+It will take some time for the server to resize the image, but once the image has been resized, it will be cached in the same location as the thumbnails. Next time the image is viewed it will be balzing fast. 
+
+The size of the preview images is set with the previewmaxside configuration parameter. To limit the height and width to 1000 pixels, set:
+
+    previewmaxside = 1000
+
+The aspect ratio of the image will be kept.
