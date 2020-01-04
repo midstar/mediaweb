@@ -237,10 +237,10 @@ func TestRelativePath(t *testing.T) {
 	}
 
 	// Errors
-	result, err = media.getRelativePath("another", "directory")
+	_, err = media.getRelativePath("another", "directory")
 	assertExpectErr(t, "", err)
 
-	result, err = media.getRelativePath("/a", "b")
+	_, err = media.getRelativePath("/a", "b")
 	assertExpectErr(t, "", err)
 
 	// getRelativeMediaPath
@@ -248,7 +248,7 @@ func TestRelativePath(t *testing.T) {
 	assertExpectNoErr(t, "", err)
 	assertEqualsStr(t, "", "dir1/dir2", result)
 
-	result, err = media.getRelativeMediaPath("another/dir1/dir2")
+	_, err = media.getRelativeMediaPath("another/dir1/dir2")
 	assertExpectErr(t, "", err)
 }
 

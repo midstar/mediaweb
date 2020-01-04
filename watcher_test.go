@@ -225,6 +225,7 @@ func TestWatchFolder(t *testing.T) {
 	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0)
 
 	watcher, err := fsnotify.NewWatcher()
+	assertExpectNoErr(t, "", err)
 
 	// Test some valid
 	err = media.watcher.watchFolder(watcher, "testmedia")
