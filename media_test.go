@@ -343,12 +343,21 @@ func TestWriteThumbnail(t *testing.T) {
 	// Video - only if video is supported
 	if media.videoThumbnailSupport() {
 		tWriteThumbnail(t, media, "video.mp4", "tmpout/TestWriteThumbnail/video.jpg", false)
+
+		// Test invalid
+		tWriteThumbnail(t, media, "invalidvideo.mp4", "tmpout/TestWriteThumbnail/invalidvideo.jpg", true)
+		// Check that error indication file is created
+		assertFileExist(t, "", "tmpcache/TestWriteThumbnail/_invalidvideo.err.txt")
 	}
 
 	// Non existing file
 	tWriteThumbnail(t, media, "dont_exist.jpg", "tmpout/TestWriteThumbnail/dont_exist.jpg", true)
 
 	// Invalid file
+	tWriteThumbnail(t, media, "invalid.jpg", "tmpout/TestWriteThumbnail/invalid.jpg", true)
+	// Check that error indication file is created
+	assertFileExist(t, "", "tmpcache/TestWriteThumbnail/_invalid.err.txt")
+	// Generate again - just for coverage
 	tWriteThumbnail(t, media, "invalid.jpg", "tmpout/TestWriteThumbnail/invalid.jpg", true)
 
 	// Disable thumb cache
@@ -415,7 +424,7 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	// Test some invalid
 	err := media.generateVideoThumbnail("nonexisting.mp4", tmp+"dont_matter.jpg")
 	assertExpectErr(t, "", err)
-	err = media.generateVideoThumbnail("invalidvideo.mp4", tmp+"dont_matter_png.jpg")
+	err = media.generateVideoThumbnail("invalidvideo.mp4", tmp+"/invalidvideo.jpg")
 	assertExpectErr(t, "", err)
 }
 

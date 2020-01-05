@@ -364,6 +364,15 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 	return m.getFullThumbPath(relativeThumbnailPath)
 }
 
+// errorIndicationPath returns the file path with the extension
+// replaced with err.
+func (m *Media) errorIndicationPath(anyPath string) string {
+	path, file := filepath.Split(anyPath)
+	ext := filepath.Ext(file)
+	file = strings.Replace(file, ext, ".err.txt", -1)
+	return filepath.Join(path, file)
+}
+
 // generateImageThumbnail generates a thumbnail from any of the supported
 // images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
@@ -404,6 +413,16 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	if err == nil {
 		return thumbFileName, nil // Thumb already generated
 	}
+	errorIndicationFile := m.errorIndicationPath(thumbFileName)
+	_, err = os.Stat(errorIndicationFile) // Check if file exist
+	if err == nil {
+		// File has failed to be generated before, don't bother
+		// trying to re-generate it.
+		msg := fmt.Sprintf("Skipping generate thumbnail for %s since it has failed before.", 
+			relativeFilePath)
+		llog.Trace(msg)
+		return "", fmt.Errorf(msg)
+	}	
 
 	// No thumb exist. Create it
 	llog.Info("Creating new thumbnail for %s", relativeFilePath)
@@ -411,7 +430,7 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
 		llog.Error("%s", err)
-		return thumbFileName, err
+		return "", err
 	}
 	if m.isVideo(fullMediaPath) {
 		err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
@@ -420,7 +439,14 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	}
 	if err != nil {
 		llog.Error("%s", err)
-		return thumbFileName, err
+		// To avoid generate the file again, create an error indication file
+		errorFile, err2 := os.Create(errorIndicationFile)
+		if err2 == nil {
+			defer errorFile.Close()
+			errorFile.WriteString(err.Error())
+			llog.Info("Created: %s", errorIndicationFile)
+		}
+		return "", err
 	}
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
 	llog.Info("Thumbnail done for %s (conversion time: %d ms)",
@@ -565,9 +591,10 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
-			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
+	_, outFileErr := os.Stat(outFilePath) 
+	if err != nil || outFileErr != nil {
+		return fmt.Errorf("%s %s\nStdout: %s\nStderr: %s",
+			ffmpegCmd, strings.Join(ffmpegArgs, " "), stdout.String(), stderr.String())
 	}
 	return nil
 }

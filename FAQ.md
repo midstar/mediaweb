@@ -65,7 +65,7 @@ This can be fixed by automatically resizing the images on the server side by ena
 
     enablepreview = on
 
-It will take some time for the server to resize the image, but once the image has been resized, it will be cached in the same location as the thumbnails. Next time the image is viewed it will be balzing fast. 
+It will take some time for the server to resize the image, but once the image has been resized, it will be cached in the same location as the thumbnails. Next time the image is viewed it will be blazing fast. 
 
 The size of the preview images is set with the previewmaxside configuration parameter. To limit the height and width to 1000 pixels, set:
 
