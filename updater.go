@@ -11,8 +11,8 @@ import (
 // required from the Media type. The reason why we have an
 // interface is to be able to mock it during testing.
 type mediaInterface interface {
-	generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics
-	isThumbGenInProgress() bool
+	generateCache(relativePath string, recursive bool) *PreCacheStatistics
+	isPreCacheInProgress() bool
 }
 
 // directory represents one directory
@@ -115,11 +115,11 @@ func (u *Updater) updaterThread() {
 		case <-time.After(1 * time.Second):
 			// If mediaweb is configured to update the thumbs on
 			// startup we don't want to conflict with this
-			if !u.media.isThumbGenInProgress() {
+			if !u.media.isPreCacheInProgress() {
 				path, ok := u.nextDirectoryToUpdate()
 				if ok {
 					llog.Info("Updating thumbs in %s", path)
-					u.media.generateThumbnails(path, false)
+					u.media.generateCache(path, false)
 				}
 			}
 		case <-u.stopUpdaterChan:

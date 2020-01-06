@@ -366,16 +366,16 @@ window.onload = function() {
 }
 
 function warningClick() {
-    alert('Thumbnail generation in progress\nResponse might be slow');
+    alert('Thumbnail/preview generation in progress\nResponse might be slow');
 }
 
 function updateWarning() {
-   loadJSON("isThumbGenInProgress", onIsThumbGenInProgress, onError); 
+   loadJSON("isPreCacheInProgress", onIsPreCacheInProgress, onError); 
 }
 
-function onIsThumbGenInProgress(isThumbGenInProgress) {
+function onIsPreCacheInProgress(isPreCacheInProgress) {
     warning = document.getElementById("warning");
-    if (isThumbGenInProgress) {
+    if (isPreCacheInProgress) {
         warning.style.display = "block";
     } else {
         warning.style.display = "none";

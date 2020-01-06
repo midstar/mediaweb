@@ -429,13 +429,13 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 }
 
 func TestGenerateThumbnails(t *testing.T) {
-	cache := "tmpcache/TestGenerateThumbnails"
+	cache := "tmpcache/TestGenerateCache"
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, false, true, false, 0)
-	stat := media.generateThumbnails("", true)
+	stat := media.generateCache("", true)
 	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
 	assertEqualsInt(t, "", 19, stat.NbrOfImages)
 	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
@@ -473,11 +473,11 @@ func TestGenerateAllThumbnails(t *testing.T) {
 
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
-		if !media.isThumbGenInProgress() {
+		if !media.isPreCacheInProgress() {
 			break
 		}
 	}
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 
 	// Check that thumbnails where generated
 	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
@@ -504,9 +504,9 @@ func TestGenerateNoThumbnails(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, false, true, false, 0)
 
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 	time.Sleep(100 * time.Millisecond)
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 
 	// Check that no thumbnails where generated
 	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))

@@ -88,8 +88,8 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wa.serveHTTPMedia(w, r)
 	} else if head == "thumb" && r.Method == "GET" {
 		wa.serveHTTPThumbnail(w, r)
-	} else if head == "isThumbGenInProgress" && r.Method == "GET" {
-		toJSON(w, wa.media.isThumbGenInProgress())
+	} else if head == "isPreCacheInProgress" && r.Method == "GET" {
+		toJSON(w, wa.media.isPreCacheInProgress())
 	} else if r.Method == "GET" {
 		r.URL.Path = originalURL
 		wa.serveHTTPStatic(w, r)

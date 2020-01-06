@@ -27,11 +27,11 @@ type Media struct {
 	thumbPath          string    // Top level path for thumbnails
 	enableThumbCache   bool      // Generate thumbnails
 	autoRotate         bool      // Rotate JPEG files when needed
-	box                *rice.Box // For icons
-	thumbGenInProgress bool      // True if thumbnail generation in progress
-	watcher            *Watcher  // The media watcher
 	enablePreview      bool      // Resize images before provide to client
 	previewMaxSide     int       // Maximum width or hight of preview image
+	box                *rice.Box // For icons
+	preCacheInProgress bool      // True if thumbnail/preview generation in progress
+	watcher            *Watcher  // The media watcher
 }
 
 // File represents a folder or any other file
@@ -66,13 +66,13 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		thumbPath:          filepath.ToSlash(filepath.Clean(thumbPath)),
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
-		box:                box,
-		thumbGenInProgress: false,
 		enablePreview:      enablePreview,
-		previewMaxSide:     previewMaxSide}
+		previewMaxSide:     previewMaxSide,
+		box:                box,
+		preCacheInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
-		go media.generateAllThumbnails()
+		go media.generateAllCache()
 	}
 	if enableThumbCache && startWatcher {
 		media.watcher = createWatcher(media)
@@ -607,98 +607,6 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	return nil
 }
 
-// generateAllThumbnails goes through all files in the media path
-// and generates thumbnails for these
-func (m *Media) generateAllThumbnails() {
-	llog.Info("Generating all thumbnails")
-	startTime := time.Now().UnixNano()
-	stat := m.generateThumbnails("", true)
-	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
-	minutes := int(deltaTime / 60)
-	seconds := int(deltaTime) - minutes*60
-	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
-  Number of folders: %d
-  Number of images: %d
-  Number of videos: %d
-  Number of images with embedded EXIF: %d
-  Number of failed folders: %d
-  Number of failed images: %d
-  Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
-		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
-}
-
-// ThumbnailStatistics statistics results from generateThumbnails
-type ThumbnailStatistics struct {
-	NbrOfFolders       int
-	NbrOfImages        int
-	NbrOfVideos        int
-	NbrOfExif          int
-	NbrOfFailedFolders int // I.e. unable to list contents of folder
-	NbrOfFailedImages  int
-	NbrOfFailedVideos  int
-}
-
-func (m *Media) isThumbGenInProgress() bool {
-	return m.thumbGenInProgress
-}
-
-// generateThumbnails recursively (optional) goes through all files
-// relativePath and its subdirectories and generates thumbnails for
-// these. If relativePath is "" it means generate for all files.
-func (m *Media) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
-	prevProgress := m.thumbGenInProgress
-	m.thumbGenInProgress = true
-	defer func() { m.thumbGenInProgress = prevProgress }()
-
-	stat := ThumbnailStatistics{}
-	files, err := m.getFiles(relativePath)
-	if err != nil {
-		stat.NbrOfFailedFolders = 1
-		return &stat
-	}
-	for _, file := range files {
-		if file.Type == "folder" {
-			if recursive {
-				stat.NbrOfFolders++
-				newStat := m.generateThumbnails(file.Path, true) // Recursive
-				stat.NbrOfFolders += newStat.NbrOfFolders
-				stat.NbrOfImages += newStat.NbrOfImages
-				stat.NbrOfVideos += newStat.NbrOfVideos
-				stat.NbrOfExif += newStat.NbrOfExif
-				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
-				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
-				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
-			}
-		} else {
-			if file.Type == "image" {
-				stat.NbrOfImages++
-			} else if file.Type == "video" {
-				stat.NbrOfVideos++
-			}
-			// Check if file has EXIF thumbnail
-			ex := m.extractEXIF(file.Path)
-			if ex != nil {
-				_, err := ex.JpegThumbnail()
-				if err == nil {
-					// Media has EXIF thumbnail
-					stat.NbrOfExif++
-					continue // Next file
-				}
-			}
-			// Generate new thumbnail
-			_, err = m.generateThumbnail(file.Path)
-			if err != nil {
-				if file.Type == "image" {
-					stat.NbrOfFailedImages++
-				} else if file.Type == "video" {
-					stat.NbrOfFailedVideos++
-				}
-			}
-		}
-	}
-	return &stat
-}
-
 // getImageWidthAndHeight returns the width and height of an image.
 // Returns error if the width and height could not be determined.
 func (m *Media) getImageWidthAndHeight(fullMediaPath string) (int, int, error) {
@@ -844,4 +752,98 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 	}
 
 	return nil
+}
+
+
+// PreCacheStatistics statistics results from generateCache
+type PreCacheStatistics struct {
+	NbrOfFolders       int
+	NbrOfImages        int
+	NbrOfVideos        int
+	NbrOfExif          int
+	NbrOfFailedFolders int // I.e. unable to list contents of folder
+	NbrOfFailedImages  int
+	NbrOfFailedVideos  int
+}
+
+func (m *Media) isPreCacheInProgress() bool {
+	return m.preCacheInProgress
+}
+
+// generateCache recursively (optional) goes through all files
+// relativePath and its subdirectories and generates thumbnails and
+// previews for these. If relativePath is "" it means generate for all files.
+func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStatistics {
+	prevProgress := m.preCacheInProgress
+	m.preCacheInProgress = true
+	defer func() { m.preCacheInProgress = prevProgress }()
+
+	stat := PreCacheStatistics{}
+	files, err := m.getFiles(relativePath)
+	if err != nil {
+		stat.NbrOfFailedFolders = 1
+		return &stat
+	}
+	for _, file := range files {
+		if file.Type == "folder" {
+			if recursive {
+				stat.NbrOfFolders++
+				newStat := m.generateCache(file.Path, true) // Recursive
+				stat.NbrOfFolders += newStat.NbrOfFolders
+				stat.NbrOfImages += newStat.NbrOfImages
+				stat.NbrOfVideos += newStat.NbrOfVideos
+				stat.NbrOfExif += newStat.NbrOfExif
+				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
+				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
+				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+			}
+		} else {
+			if file.Type == "image" {
+				stat.NbrOfImages++
+			} else if file.Type == "video" {
+				stat.NbrOfVideos++
+			}
+			// Check if file has EXIF thumbnail
+			ex := m.extractEXIF(file.Path)
+			if ex != nil {
+				_, err := ex.JpegThumbnail()
+				if err == nil {
+					// Media has EXIF thumbnail
+					stat.NbrOfExif++
+					continue // Next file
+				}
+			}
+			// Generate new thumbnail
+			_, err = m.generateThumbnail(file.Path)
+			if err != nil {
+				if file.Type == "image" {
+					stat.NbrOfFailedImages++
+				} else if file.Type == "video" {
+					stat.NbrOfFailedVideos++
+				}
+			}
+		}
+	}
+	return &stat
+}
+
+
+// generateAllCache goes through all files in the media path
+// and generates thumbnails/preview for these
+func (m *Media) generateAllCache() {
+	llog.Info("Generating all thumbnails")
+	startTime := time.Now().UnixNano()
+	stat := m.generateCache("", true)
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
+	minutes := int(deltaTime / 60)
+	seconds := int(deltaTime) - minutes*60
+	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
+  Number of folders: %d
+  Number of images: %d
+  Number of videos: %d
+  Number of images with embedded EXIF: %d
+  Number of failed folders: %d
+  Number of failed images: %d
+  Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
 }
