@@ -51,7 +51,7 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		directory := filepath.Dir(thumbPath)
 		err := os.MkdirAll(directory, os.ModePerm)
 		if err != nil {
-			llog.Error("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
+			llog.Warn("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
 			llog.Info("Thumbnail cache will be disabled")
 			enableThumbCache = false
 		} else {
@@ -373,6 +373,20 @@ func (m *Media) errorIndicationPath(anyPath string) string {
 	return filepath.Join(path, file)
 }
 
+
+// generateErrorIndication creates a text file including the error reason.
+func (m *Media) generateErrorIndicationFile(errorIndicationFile string, err error) {
+	llog.Warn("%s",err)
+	errorFile, err2 := os.Create(errorIndicationFile)
+	if err2 == nil {
+		defer errorFile.Close()
+		errorFile.WriteString(err.Error())
+		llog.Info("Created: %s", errorIndicationFile)
+	} else {
+		llog.Warn("Unable to create %s. Reason: %s", errorIndicationFile, err2)
+	}
+}
+
 // generateImageThumbnail generates a thumbnail from any of the supported
 // images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
@@ -406,7 +420,7 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	thumbFileName, err := m.thumbnailPath(relativeFilePath)
 	if err != nil {
-		llog.Error("%s", err)
+		llog.Warn("%s", err)
 		return "", err
 	}
 	_, err = os.Stat(thumbFileName) // Check if file exist
@@ -429,7 +443,7 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	startTime := time.Now().UnixNano()
 	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
-		llog.Error("%s", err)
+		llog.Warn("%s", err)
 		return "", err
 	}
 	if m.isVideo(fullMediaPath) {
@@ -438,14 +452,8 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 		err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
 	}
 	if err != nil {
-		llog.Error("%s", err)
 		// To avoid generate the file again, create an error indication file
-		errorFile, err2 := os.Create(errorIndicationFile)
-		if err2 == nil {
-			defer errorFile.Close()
-			errorFile.WriteString(err.Error())
-			llog.Info("Created: %s", errorIndicationFile)
-		}
+		m.generateErrorIndicationFile(errorIndicationFile, err)
 		return "", err
 	}
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
@@ -611,7 +619,7 @@ func (m *Media) generateAllThumbnails() {
 	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
   Number of folders: %d
   Number of images: %d
-  Number of vidos: %d
+  Number of videos: %d
   Number of images with embedded EXIF: %d
   Number of failed folders: %d
   Number of failed images: %d
@@ -752,7 +760,7 @@ func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) erro
 func (m *Media) generatePreview(relativeFilePath string) (string, error) {
 	previewFileName, err := m.previewPath(relativeFilePath)
 	if err != nil {
-		llog.Error("%s", err)
+		llog.Warn("%s", err)
 		return "", err
 	}
 	_, err = os.Stat(previewFileName) // Check if file exist
@@ -760,14 +768,43 @@ func (m *Media) generatePreview(relativeFilePath string) (string, error) {
 		return previewFileName, nil // Preview already generated
 	}
 
+	errorIndicationFile := m.errorIndicationPath(previewFileName)
+	_, err = os.Stat(errorIndicationFile) // Check if file exist
+	if err == nil {
+		// File has failed to be generated before, don't bother
+		// trying to re-generate it.
+		msg := fmt.Sprintf("Skipping generate preview for %s since it has failed before.", 
+			relativeFilePath)
+		llog.Trace(msg)
+		return "", fmt.Errorf(msg)
+	}	
+
+	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Warn("%s", err)
+		return "", err
+	}
+
+	width, height, err := m.getImageWidthAndHeight(fullMediaPath)
+	if err != nil {
+		// To avoid generate the file again, create an error indication file
+		m.generateErrorIndicationFile(errorIndicationFile, err)
+		return "", err
+	}
+	if width <= m.previewMaxSide && height <= m.previewMaxSide {
+		msg := fmt.Sprintf("Image %s too small to generate preview", relativeFilePath)
+		llog.Trace(msg)
+		return "", fmt.Errorf(msg)
+	}
+
 	// No preview exist. Create it
 	llog.Info("Creating new preview file for %s", relativeFilePath)
 	startTime := time.Now().UnixNano()
-	fullMediaPath, _ := m.getFullMediaPath(relativeFilePath) // Error checked in previewPath
 	err = m.generateImagePreview(fullMediaPath, previewFileName)
 	if err != nil {
-		llog.Error("%s", err)
-		return previewFileName, err
+		// To avoid generate the file again, create an error indication file
+		m.generateErrorIndicationFile(errorIndicationFile, err)
+		return "", err
 	}
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
 	llog.Info("Preview done for %s (conversion time: %d ms)",
@@ -787,15 +824,6 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 	}
 	if !m.enablePreview {
 		return fmt.Errorf("Preview disabled")
-	}
-	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
-	if err != nil {
-		llog.Error("%s", err)
-		return err
-	}
-	width, height, _ := m.getImageWidthAndHeight(fullMediaPath)
-	if width <= m.previewMaxSide && height <= m.previewMaxSide {
-		return fmt.Errorf("Image too small to generate preview")
 	}
 
 	// Check preview cache (and generate if necessary)

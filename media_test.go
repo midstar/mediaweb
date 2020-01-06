@@ -616,7 +616,11 @@ func tWritePreview(t *testing.T, media *Media, inFileName, outFileName string, f
 		assertExpectErr(t, "should fail", err)
 	} else {
 		assertExpectNoErr(t, "unable to write preview", err)
-		t.Logf("Manually check that %s preview is ok", outFileName)
+		// Check dimensions
+		width, height, err := media.getImageWidthAndHeight(outFileName)
+		assertExpectNoErr(t, "reading dimensions", err)
+		assertFalse(t, "preview width", width > media.previewMaxSide)
+		assertFalse(t, "preview height", height > media.previewMaxSide)
 	}
 }
 
@@ -651,6 +655,10 @@ func TestWritePreview(t *testing.T) {
 	tWritePreview(t, media, "dont_exist.jpg", "tmpout/TestWritePreview/dont_exist.jpg", true)
 
 	// Invalid file
+	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+	// Check that error indication file is created
+	assertFileExist(t, "", "tmpcache/TestWritePreview/view_invalid.err.txt")
+	// Regenerate for increased coverage
 	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
 
 	// Invalid path
