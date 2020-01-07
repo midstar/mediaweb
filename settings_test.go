@@ -22,7 +22,7 @@ mediapath = Y:\pictures`
 	assertEqualsStr(t, "mediaPath", "Y:\\pictures", s.mediaPath)
 
 	// All default on optional
-	assertEqualsStr(t, "thumbPath", filepath.Join(os.TempDir(), "mediaweb"), s.thumbPath)
+	assertEqualsStr(t, "cachePath", filepath.Join(os.TempDir(), "mediaweb"), s.cachePath)
 	assertEqualsBool(t, "enablethumbCache", true, s.enableThumbCache)
 	assertEqualsBool(t, "genthumbsonstartup", false, s.genThumbsOnStartup)
 	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
@@ -43,7 +43,7 @@ func TestSettings(t *testing.T) {
 		`
 port = 80
 mediapath = /media/usb/pictures
-thumbpath = /tmp/thumb
+cachepath = /tmp/thumb
 enablethumbcache = off
 genthumbsonstartup = on
 genthumbsonadd = off
@@ -65,7 +65,7 @@ password = A!#_q7*+
 	assertEqualsStr(t, "mediaPath", "/media/usb/pictures", s.mediaPath)
 
 	// Check set values on optional
-	assertEqualsStr(t, "thumbPath", "/tmp/thumb", s.thumbPath)
+	assertEqualsStr(t, "cachePath", "/tmp/thumb", s.cachePath)
 	assertEqualsBool(t, "enableThumbCache", false, s.enableThumbCache)
 	assertEqualsBool(t, "genthumbsonstartup", true, s.genThumbsOnStartup)
 	assertEqualsBool(t, "genthumbsonadd", false, s.genThumbsOnAdd)
@@ -86,7 +86,7 @@ func TestSettingsInvalidOptional(t *testing.T) {
 		`
 port = 80
 mediapath = /media/usb/pictures
-thumbpath = /tmp/thumb
+cachepath = /tmp/thumb
 enablethumbcache = 33
 genthumbsonstartup = -1
 genthumbsonadd = 5.5
@@ -106,7 +106,7 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsStr(t, "mediaPath", "/media/usb/pictures", s.mediaPath)
 
 	// Check set values on optional
-	assertEqualsStr(t, "thumbPath", "/tmp/thumb", s.thumbPath)
+	assertEqualsStr(t, "cachePath", "/tmp/thumb", s.cachePath)
 	assertEqualsInt(t, "previewmaxside", 1280, s.previewMaxSide)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
@@ -119,6 +119,28 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
 	assertEqualsBool(t, "genpreviewonstartup", false, s.genPreviewOnStartup)
 	assertEqualsBool(t, "genpreviewonadd", true, s.genPreviewOnAdd)
+
+}
+
+
+func TestSettingsBackwardsCompatibility(t *testing.T) {
+	contents :=
+		`
+port = 80
+mediapath = /media/usb/pictures
+thumbpath = /tmp/thumb
+loglevel = debug
+logfile = /tmp/log/mediaweb.log
+`
+	fullPath := createConfigFile(t, "TestSettings.conf", contents)
+	s := loadSettings(fullPath)
+
+	// Mandatory values
+	assertEqualsInt(t, "port", 80, s.port)
+	assertEqualsStr(t, "mediaPath", "/media/usb/pictures", s.mediaPath)
+
+	// Check that cachepath is working with thumbpath
+	assertEqualsStr(t, "cachePath", "/tmp/thumb", s.cachePath)
 
 }
 

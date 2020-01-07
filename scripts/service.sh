@@ -137,14 +137,18 @@ install_service() {
       exit 1
     }
     echo >> $CONFIG
+    echo "# Server network port." >> $CONFIG
+    echo "# This parameter is MANDATORY" >> $CONFIG
     echo "port = $PORT" >> $CONFIG
     echo >> $CONFIG
+    echo "# Media path, i.e. where is your media located" >> $CONFIG
+    echo "# This parameter is MANADTORY" >> $CONFIG
     echo "mediapath = $MEDIAPATH" >> $CONFIG
     echo >> $CONFIG
-    echo "# Thumb cache path is by default your operating systems" >> $CONFIG
-    echo "# temp folder + mediaweb. Uncomment below to set to" >> $CONFIG
-    echo "# another location. Not used if enablethumbcache = off." >> $CONFIG
-    echo "#thumbpath =" >> $CONFIG
+    echo "# Cache path is by default your operating systems" >> $CONFIG
+    echo "# temp folder + mediaweb. Cache path is where" >> $CONFIG
+    echo "# thumbnails and preview images are stored." >> $CONFIG
+    echo "cachepath = tmpcache" >> $CONFIG
     echo >> $CONFIG
     echo "# Thumbnail cache is on by default" >> $CONFIG
     echo "#enablethumbcache = off" >> $CONFIG

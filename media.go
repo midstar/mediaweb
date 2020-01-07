@@ -24,7 +24,7 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 // Media represents the media including its base path
 type Media struct {
 	mediaPath          string    // Top level path for media files
-	thumbPath          string    // Top level path for thumbnails
+	cachepath          string    // Top level path for thumbnails
 	enableThumbCache   bool      // Generate thumbnails
 	autoRotate         bool      // Rotate JPEG files when needed
 	enablePreview      bool      // Resize images before provide to client
@@ -43,27 +43,28 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache,
+func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbCache,
 	genThumbsOnStartup, genThumbsOnAdd, autoRotate, enablePreview bool,
 	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
-	if enableThumbCache {
-		directory := filepath.Dir(thumbPath)
+	if enableThumbCache || enablePreview{
+		directory := filepath.Dir(cachepath)
 		err := os.MkdirAll(directory, os.ModePerm)
 		if err != nil {
-			llog.Warn("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
-			llog.Info("Thumbnail cache will be disabled")
+			llog.Warn("Unable to create cache path %s. Reason: %s", cachepath, err)
+			llog.Info("Thumbnail and preview cache will be disabled")
 			enableThumbCache = false
+			enablePreview = false
 		} else {
-			llog.Info("Thumbnail cache path: %s", thumbPath)
+			llog.Info("Cache path: %s", cachepath)
 		}
 	} else {
-		llog.Info("Thumbnail cache disabled")
+		llog.Info("Cache disabled")
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
 	llog.Info("Image preview: %t  (max width/height %d px)", enablePreview, previewMaxSide)
 	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
-		thumbPath:          filepath.ToSlash(filepath.Clean(thumbPath)),
+		cachepath:          filepath.ToSlash(filepath.Clean(cachepath)),
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
 		enablePreview:      enablePreview,
@@ -106,14 +107,14 @@ func (m *Media) getFullMediaPath(relativePath string) (string, error) {
 // getFullThumbPath returns the full path of the provided path, i.e:
 // thumb path + relative path.
 func (m *Media) getFullThumbPath(relativePath string) (string, error) {
-	return m.getFullPath(m.thumbPath, relativePath)
+	return m.getFullPath(m.cachepath, relativePath)
 }
 
 // getFullPreviewPath returns the full path of the provided path, i.e:
 // preview path + relative path.
 // The preview files shares the same path (cache location) as thumbnails.
 func (m *Media) getFullPreviewPath(relativePath string) (string, error) {
-	return m.getFullPath(m.thumbPath, relativePath)
+	return m.getFullPath(m.cachepath, relativePath)
 }
 
 // getRelativePath returns the relative path from an absolute base
@@ -466,7 +467,7 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 //
 // It has following sequence/priority:
 //  1. Write embedded EXIF thumbnail if it exist (only JPEG)
-//  2. Write a cached thumbnail file exist in thumbPath
+//  2. Write a cached thumbnail file exist in cachepath
 //  3. Generate a thumbnail to cache and write
 //  4. If all above fails return error
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {

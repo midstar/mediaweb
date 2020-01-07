@@ -12,7 +12,7 @@ import (
 type settings struct {
 	port                int        // Network port
 	mediaPath           string     // Top level path for media files
-	thumbPath           string     // Top level path for thumbnails
+	cachePath           string     // Top level path for cache (thumbs and preview)
 	enableThumbCache    bool       // Generate thumbnails
 	genThumbsOnStartup  bool       // Generate all thumbnails on startup
 	genThumbsOnAdd      bool       // Generate thumbnails when file added (start watcher)
@@ -76,15 +76,21 @@ func loadSettings(fileName string) settings {
 	mediaPath := config.GetString("mediapath", "")
 	result.mediaPath = mediaPath
 
-	// Load thumbPath (OPTIONAL)
+	// Load cachePath (OPTIONAL)
 	// Default: OS temp directory
-	if config.HasKey("thumbpath") {
-		thumbPath := config.GetString("thumbpath", "")
-		result.thumbPath = thumbPath
+	if config.HasKey("cachepath") {
+		cachePath := config.GetString("cachepath", "")
+		result.cachePath = cachePath
 	} else {
-		// Use default temporary directory + mediaweb
-		tempDir := os.TempDir()
-		result.thumbPath = filepath.Join(tempDir, "mediaweb")
+		// For backwards compatibility with old versions
+		if config.HasKey("thumbpath") {
+			cachePath := config.GetString("thumbpath", "")
+			result.cachePath = cachePath
+		} else {
+			// Use default temporary directory + mediaweb
+			tempDir := os.TempDir()
+			result.cachePath = filepath.Join(tempDir, "mediaweb")
+		}
 	}
 
 	// Load enableThumbCache (OPTIONAL)

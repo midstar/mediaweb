@@ -171,14 +171,18 @@ Section "${APPLICATION_NAME}" SectionMain
   ; Create configuration file
   FileOpen $4 "$INSTDIR\mediaweb.conf" w
 
+  FileWrite $4 "# Server network port.$\r$\n"
+  FileWrite $4 "# This parameter is MANDATORY$\r$\n"
   FileWrite $4 "port = 9834$\r$\n"
   FileWrite $4 "$\r$\n"
+  FileWrite $4 "# Media path, i.e. where is your media located$\r$\n"
+  FileWrite $4 "# This parameter is MANADTORY$\r$\n"
   FileWrite $4 "mediapath = $0$\r$\n"
   FileWrite $4 "$\r$\n"
-  FileWrite $4 "# Thumb cache path is by default your operating systems$\r$\n"
-  FileWrite $4 "# temp folder + mediaweb. Uncomment below to set to$\r$\n"
-  FileWrite $4 "# another location. Not used if enablethumbcache = off.$\r$\n"
-  FileWrite $4 "#thumbpath =$\r$\n"
+  FileWrite $4 "# Cache path is by default your operating systems$\r$\n"
+  FileWrite $4 "# temp folder + mediaweb. Cache path is where$\r$\n"
+  FileWrite $4 "# thumbnails and preview images are stored.$\r$\n"
+  FileWrite $4 "#cachepath =$\r$\n"
   FileWrite $4 "$\r$\n"
   FileWrite $4 "# Thumbnail cache is on by default$\r$\n"
   FileWrite $4 "#enablethumbcache = off$\r$\n"
