@@ -761,9 +761,12 @@ type PreCacheStatistics struct {
 	NbrOfImages             int
 	NbrOfVideos             int
 	NbrOfExif               int
+	NbrOfImageThumb         int
+	NbrOfVideoThumb         int
+	NbrOfImagePreview       int
 	NbrOfFailedFolders      int // I.e. unable to list contents of folder
-	NbrOfFailedImages       int
-	NbrOfFailedVideos       int
+	NbrOfFailedImageThumb  int
+	NbrOfFailedVideoThumb  int
 	NbrOfFailedImagePreview int
 	NbrOfSmallImages        int // Don't require any preview
 }
@@ -795,9 +798,12 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 				stat.NbrOfImages += newStat.NbrOfImages
 				stat.NbrOfVideos += newStat.NbrOfVideos
 				stat.NbrOfExif += newStat.NbrOfExif
+				stat.NbrOfImageThumb += newStat.NbrOfImageThumb
+				stat.NbrOfVideoThumb += newStat.NbrOfVideoThumb
+				stat.NbrOfImagePreview += newStat.NbrOfImagePreview
 				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
-				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
-				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+				stat.NbrOfFailedImageThumb += newStat.NbrOfFailedImageThumb
+				stat.NbrOfFailedVideoThumb += newStat.NbrOfFailedVideoThumb
 				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview 
 				stat.NbrOfSmallImages += newStat.NbrOfSmallImages 
 			}
@@ -808,23 +814,30 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 				stat.NbrOfVideos++
 			}
 			// Check if file has EXIF thumbnail
+			hasExifThumb := false
 			ex := m.extractEXIF(file.Path)
 			if ex != nil {
 				_, err := ex.JpegThumbnail()
 				if err == nil {
 					// Media has EXIF thumbnail
 					stat.NbrOfExif++
-					continue // Next file
+					hasExifThumb = true
 				}
-			}
-			if (thumbnails) {
+			} 
+			if (thumbnails && !hasExifThumb) {
 				// Generate new thumbnail
 				_, err = m.generateThumbnail(file.Path)
 				if err != nil {
 					if file.Type == "image" {
-						stat.NbrOfFailedImages++
+						stat.NbrOfFailedImageThumb++
 					} else if file.Type == "video" {
-						stat.NbrOfFailedVideos++
+						stat.NbrOfFailedVideoThumb++
+					}
+				} else {
+					if file.Type == "image" {
+						stat.NbrOfImageThumb++
+					} else if file.Type == "video" {
+						stat.NbrOfVideoThumb++
 					}
 				}
 			}
@@ -837,6 +850,8 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 					} else {
 						stat.NbrOfFailedImagePreview++
 					}
+				} else {
+					stat.NbrOfImagePreview++
 				}
 			} 
 		}
@@ -859,11 +874,15 @@ func (m *Media) generateAllCache(thumbnails, preview bool) {
   Number of images: %d
   Number of videos: %d
   Number of images with embedded EXIF: %d
+  Number of generated image thumbnails: %d
+  Number of generated video thumbnails: %d
+  Number of generated image previews: %d
   Number of failed folders: %d
   Number of failed image thumbnails: %d
   Number of failed video thumbnails: %d
   Number of failed image previews: %d
   Number of small images not require preview: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
-		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos, 
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfImageThumb, stat.NbrOfVideoThumb, stat.NbrOfImagePreview, 
+		stat.NbrOfFailedFolders, stat.NbrOfFailedImageThumb, stat.NbrOfFailedVideoThumb, 
 		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages)
 }

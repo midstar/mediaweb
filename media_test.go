@@ -429,7 +429,7 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 }
 
 func TestGenerateThumbnails(t *testing.T) {
-	cache := "tmpcache/TestGenerateCache"
+	cache := "tmpcache/TestGenerateThumbnails"
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
@@ -440,13 +440,19 @@ func TestGenerateThumbnails(t *testing.T) {
 	assertEqualsInt(t, "", 19, stat.NbrOfImages)
 	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
 	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 8, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 0, stat.NbrOfImagePreview)
 	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
-	assertEqualsInt(t, "", 1, stat.NbrOfFailedImages)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfSmallImages)
 	if media.videoThumbnailSupport() {
-		assertEqualsInt(t, "", 1, stat.NbrOfFailedVideos)
+		assertEqualsInt(t, "", 1, stat.NbrOfVideoThumb)
+		assertEqualsInt(t, "", 1, stat.NbrOfFailedVideoThumb)
 		assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
 	} else {
-		assertEqualsInt(t, "", 2, stat.NbrOfFailedVideos)
+		assertEqualsInt(t, "", 0, stat.NbrOfVideoThumb)
+		assertEqualsInt(t, "", 2, stat.NbrOfFailedVideoThumb)
 	}
 
 	// Check that thumbnails where generated
@@ -460,6 +466,70 @@ func TestGenerateThumbnails(t *testing.T) {
 	assertFileNotExist(t, "", filepath.Join(cache, "_jpeg_rotated.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_180deg.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_mirror.jpg"))
+
+}
+
+func TestGeneratePreviews(t *testing.T) {
+	cache := "tmpcache/TestGeneratePreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, false, false)
+	stat := media.generateCache("", true, false, true)
+	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
+	assertEqualsInt(t, "", 19, stat.NbrOfImages)
+	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
+	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 0, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 12, stat.NbrOfImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 6, stat.NbrOfSmallImages)
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that no thumbnails where generated
+	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+
+}
+
+func TestGenerateThumbnailsAndPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateThumbnailsAndPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, false, false)
+	stat := media.generateCache("", true, true, true)
+	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
+	assertEqualsInt(t, "", 19, stat.NbrOfImages)
+	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
+	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 8, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 12, stat.NbrOfImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 6, stat.NbrOfSmallImages)
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that thumbnails where generated
+	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
 }
 
@@ -494,6 +564,68 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	if media.videoThumbnailSupport() {
 		assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
 	}
+}
+
+func TestGenerateAllPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateAllPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, true, false)
+
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if !media.isPreCacheInProgress() {
+			break
+		}
+	}
+	assertFalse(t, "", media.isPreCacheInProgress())
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that no previews where generated for "small" images
+	assertFileNotExist(t, "", filepath.Join(cache, "view_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "view_screenshot_viewer.jpg"))
+
+	// Check that no thumbnails where generated
+	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_video.jpg"))
+}
+
+func TestGenerateAllThumbsAndPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateAllThumbsAndPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, true, false, true, true, 1280, true, false)
+
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if !media.isPreCacheInProgress() {
+			break
+		}
+	}
+	assertFalse(t, "", media.isPreCacheInProgress())
+
+	// Check that thumbnails where generated
+	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
 }
 
 func TestGenerateNoThumbnails(t *testing.T) {
