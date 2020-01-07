@@ -214,7 +214,7 @@ Section "${APPLICATION_NAME}" SectionMain
   FileWrite $4 "#enablepreview = on$\r$\n"
   FileWrite $4 "$\r$\n"
   FileWrite $4 "# Max size of preview images in pixels. The image will$\r$\n"
-  FileWrite $4 "# be resized so that witdh and hight is not larger than$\r$\n"
+  FileWrite $4 "# be resized so that width and hight is not larger than$\r$\n"
   FileWrite $4 "# this value.$\r$\n"
   FileWrite $4 "#previewmaxside = 1280$\r$\n"
   FileWrite $4 "$\r$\n"

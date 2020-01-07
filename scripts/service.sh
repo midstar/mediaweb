@@ -178,7 +178,7 @@ install_service() {
     echo "#enablepreview = on" >> $CONFIG
     echo >> $CONFIG
     echo "# Max size of preview images in pixels. The image will" >> $CONFIG
-    echo "# be resized so that witdh and hight is not larger than" >> $CONFIG
+    echo "# be resized so that width and hight is not larger than" >> $CONFIG
     echo "# this value." >> $CONFIG
     echo "#previewmaxside = 1280" >> $CONFIG
     echo >> $CONFIG

@@ -435,7 +435,7 @@ func TestGenerateThumbnails(t *testing.T) {
 
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", cache, true, false, false, true, false, 0)
-	stat := media.generateCache("", true)
+	stat := media.generateCache("", true, true, false)
 	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
 	assertEqualsInt(t, "", 19, stat.NbrOfImages)
 	assertEqualsInt(t, "", 2, stat.NbrOfVideos)

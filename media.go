@@ -72,10 +72,10 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		preCacheInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
 	if enableThumbCache && genThumbsOnStartup {
-		go media.generateAllCache()
+		go media.generateAllCache(genThumbsOnStartup, false)
 	}
 	if enableThumbCache && startWatcher {
-		media.watcher = createWatcher(media)
+		media.watcher = createWatcher(media, startWatcher, false)
 		go media.watcher.startWatcher()
 	}
 	return media
@@ -665,15 +665,15 @@ func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) erro
 
 // generatePreview generates a preview image and returns the file name of the
 // preview. If a preview file already exist the file name will be returned.
-func (m *Media) generatePreview(relativeFilePath string) (string, error) {
+func (m *Media) generatePreview(relativeFilePath string) (string, bool, error) {
 	previewFileName, err := m.previewPath(relativeFilePath)
 	if err != nil {
 		llog.Warn("%s", err)
-		return "", err
+		return "", false, err
 	}
 	_, err = os.Stat(previewFileName) // Check if file exist
 	if err == nil {
-		return previewFileName, nil // Preview already generated
+		return previewFileName, false, nil // Preview already generated
 	}
 
 	errorIndicationFile := m.errorIndicationPath(previewFileName)
@@ -684,25 +684,25 @@ func (m *Media) generatePreview(relativeFilePath string) (string, error) {
 		msg := fmt.Sprintf("Skipping generate preview for %s since it has failed before.", 
 			relativeFilePath)
 		llog.Trace(msg)
-		return "", fmt.Errorf(msg)
+		return "", false, fmt.Errorf(msg)
 	}	
 
 	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
 		llog.Warn("%s", err)
-		return "", err
+		return "", false, err
 	}
 
 	width, height, err := m.getImageWidthAndHeight(fullMediaPath)
 	if err != nil {
 		// To avoid generate the file again, create an error indication file
 		m.generateErrorIndicationFile(errorIndicationFile, err)
-		return "", err
+		return "", false, err
 	}
 	if width <= m.previewMaxSide && height <= m.previewMaxSide {
 		msg := fmt.Sprintf("Image %s too small to generate preview", relativeFilePath)
 		llog.Trace(msg)
-		return "", fmt.Errorf(msg)
+		return "", true, fmt.Errorf(msg)
 	}
 
 	// No preview exist. Create it
@@ -712,12 +712,12 @@ func (m *Media) generatePreview(relativeFilePath string) (string, error) {
 	if err != nil {
 		// To avoid generate the file again, create an error indication file
 		m.generateErrorIndicationFile(errorIndicationFile, err)
-		return "", err
+		return "", false, err
 	}
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
 	llog.Info("Preview done for %s (conversion time: %d ms)",
 		relativeFilePath, deltaTime)
-	return previewFileName, nil
+	return previewFileName, false, nil
 }
 
 // writePreview writes preview image for media to w.
@@ -735,7 +735,7 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 	}
 
 	// Check preview cache (and generate if necessary)
-	previewFileName, err := m.generatePreview(relativeFilePath)
+	previewFileName, _, err := m.generatePreview(relativeFilePath)
 	if err != nil {
 		return err // Logging handled in generatePreview
 	}
@@ -757,13 +757,15 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 
 // PreCacheStatistics statistics results from generateCache
 type PreCacheStatistics struct {
-	NbrOfFolders       int
-	NbrOfImages        int
-	NbrOfVideos        int
-	NbrOfExif          int
-	NbrOfFailedFolders int // I.e. unable to list contents of folder
-	NbrOfFailedImages  int
-	NbrOfFailedVideos  int
+	NbrOfFolders            int
+	NbrOfImages             int
+	NbrOfVideos             int
+	NbrOfExif               int
+	NbrOfFailedFolders      int // I.e. unable to list contents of folder
+	NbrOfFailedImages       int
+	NbrOfFailedVideos       int
+	NbrOfFailedImagePreview int
+	NbrOfSmallImages        int // Don't require any preview
 }
 
 func (m *Media) isPreCacheInProgress() bool {
@@ -773,7 +775,7 @@ func (m *Media) isPreCacheInProgress() bool {
 // generateCache recursively (optional) goes through all files
 // relativePath and its subdirectories and generates thumbnails and
 // previews for these. If relativePath is "" it means generate for all files.
-func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStatistics {
+func (m *Media) generateCache(relativePath string, recursive, thumbnails, preview bool) *PreCacheStatistics {
 	prevProgress := m.preCacheInProgress
 	m.preCacheInProgress = true
 	defer func() { m.preCacheInProgress = prevProgress }()
@@ -788,7 +790,7 @@ func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStat
 		if file.Type == "folder" {
 			if recursive {
 				stat.NbrOfFolders++
-				newStat := m.generateCache(file.Path, true) // Recursive
+				newStat := m.generateCache(file.Path, true, thumbnails, preview) // Recursive
 				stat.NbrOfFolders += newStat.NbrOfFolders
 				stat.NbrOfImages += newStat.NbrOfImages
 				stat.NbrOfVideos += newStat.NbrOfVideos
@@ -796,6 +798,8 @@ func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStat
 				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
 				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
 				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview 
+				stat.NbrOfSmallImages += newStat.NbrOfSmallImages 
 			}
 		} else {
 			if file.Type == "image" {
@@ -813,15 +817,28 @@ func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStat
 					continue // Next file
 				}
 			}
-			// Generate new thumbnail
-			_, err = m.generateThumbnail(file.Path)
-			if err != nil {
-				if file.Type == "image" {
-					stat.NbrOfFailedImages++
-				} else if file.Type == "video" {
-					stat.NbrOfFailedVideos++
+			if (thumbnails) {
+				// Generate new thumbnail
+				_, err = m.generateThumbnail(file.Path)
+				if err != nil {
+					if file.Type == "image" {
+						stat.NbrOfFailedImages++
+					} else if file.Type == "video" {
+						stat.NbrOfFailedVideos++
+					}
 				}
 			}
+			if (preview && file.Type == "image") {
+				// Generate new preview
+				_, tooSmall, err := m.generatePreview(file.Path)
+				if err != nil {
+					if tooSmall {
+						stat.NbrOfSmallImages++
+					} else {
+						stat.NbrOfFailedImagePreview++
+					}
+				}
+			} 
 		}
 	}
 	return &stat
@@ -830,20 +847,23 @@ func (m *Media) generateCache(relativePath string, recursive bool) *PreCacheStat
 
 // generateAllCache goes through all files in the media path
 // and generates thumbnails/preview for these
-func (m *Media) generateAllCache() {
-	llog.Info("Generating all thumbnails")
+func (m *Media) generateAllCache(thumbnails, preview bool) {
+	llog.Info("Pre-generating cache (thumbnails: %t, preview: %t", thumbnails, preview)
 	startTime := time.Now().UnixNano()
-	stat := m.generateCache("", true)
+	stat := m.generateCache("", true, thumbnails, preview)
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
 	minutes := int(deltaTime / 60)
 	seconds := int(deltaTime) - minutes*60
-	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
+	llog.Info(`Generating cache took %d minutes and %d seconds
   Number of folders: %d
   Number of images: %d
   Number of videos: %d
   Number of images with embedded EXIF: %d
   Number of failed folders: %d
-  Number of failed images: %d
-  Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
-		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
+  Number of failed image thumbnails: %d
+  Number of failed video thumbnails: %d
+  Number of failed image previews: %d
+  Number of small images not require preview: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos, 
+		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages)
 }

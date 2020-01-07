@@ -10,7 +10,7 @@ type mediaMock struct {
 
 var lastPathGenerated string
 
-func (m *mediaMock) generateCache(relativePath string, recursive bool) *PreCacheStatistics {
+func (m *mediaMock) generateCache(relativePath string, recursive, thumbnails, preview bool) *PreCacheStatistics {
 	lastPathGenerated = relativePath
 	return nil
 }
@@ -22,7 +22,7 @@ func (m *mediaMock) isPreCacheInProgress() bool {
 }
 
 func TestUpdaterMarkAndTouch(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	t1 := time.Now()
 	time.Sleep(2 * time.Millisecond)
 
@@ -50,7 +50,7 @@ func TestUpdaterMarkAndTouch(t *testing.T) {
 }
 
 func TestNextDirectoryToUpdate(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	u.minTimeSinceChangeSec = 1 // 5 -> 1 sec to reduce test time
 
 	// Add some directories
@@ -77,7 +77,7 @@ func TestNextDirectoryToUpdate(t *testing.T) {
 }
 
 func TestUpdaterThread(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	u.minTimeSinceChangeSec = 1 // 5 -> 1 sec to reduce test time
 	lastPathGenerated = ""
 

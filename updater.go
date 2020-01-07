@@ -11,7 +11,7 @@ import (
 // required from the Media type. The reason why we have an
 // interface is to be able to mock it during testing.
 type mediaInterface interface {
-	generateCache(relativePath string, recursive bool) *PreCacheStatistics
+	generateCache(relativePath string, recursive, thumbnails, preview bool) *PreCacheStatistics
 	isPreCacheInProgress() bool
 }
 
@@ -28,16 +28,20 @@ type Updater struct {
 	stopUpdaterChan       chan bool            // Set to true to stop the updater go-routine
 	done                  chan bool            // Set to true when updater go-routine has stopped
 	media                 mediaInterface       // To run the actual thumbnail update
+	thumbnails            bool                 // Update thumbnails
+	preview               bool                 // Update preview
 }
 
-func createUpdater(media mediaInterface) *Updater {
+func createUpdater(media mediaInterface, thumbnails, preview bool) *Updater {
 	return &Updater{
-		directories: make(map[string]time.Time),
-		mutex:       sync.Mutex{},
+		directories:           make(map[string]time.Time),
+		mutex:                 sync.Mutex{},
 		minTimeSinceChangeSec: 5, // Five seconds
 		stopUpdaterChan:       make(chan bool),
 		done:                  make(chan bool),
-		media:                 media}
+		media:                 media,
+		thumbnails:            thumbnails,
+		preview:               preview}
 }
 
 func (u *Updater) startUpdater() {
@@ -119,7 +123,7 @@ func (u *Updater) updaterThread() {
 				path, ok := u.nextDirectoryToUpdate()
 				if ok {
 					llog.Info("Updating thumbs in %s", path)
-					u.media.generateCache(path, false)
+					u.media.generateCache(path, false, u.thumbnails, u.preview)
 				}
 			}
 		case <-u.stopUpdaterChan:
