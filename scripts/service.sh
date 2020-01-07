@@ -181,6 +181,17 @@ install_service() {
     echo "# be resized so that width and hight is not larger than" >> $CONFIG
     echo "# this value." >> $CONFIG
     echo "#previewmaxside = 1280" >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Generate preview images on startup is by default off. Uncomment" >> $CONFIG
+    echo "# below to generate preview every time Media WEB startup." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Warning! A lot of cache space might be required" >> $CONFIG
+    echo "#genpreviewonstartup = on" >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Watch media path for updates is by default on." >> $CONFIG
+    echo "# Uncomment below to don't generate new image previews for" >> $CONFIG
+    echo "# files that are added in the media path" >> $CONFIG
+    echo "#genpreviewonadd = off" >> $CONFIG
     echo >> $CONFIG
     echo "logfile = /var/log/mediaweb.log" >> $CONFIG
     echo >> $CONFIG

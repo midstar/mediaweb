@@ -18,7 +18,8 @@ func mainCommon() *WebAPI {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, s.mediaPath, s.thumbPath,
 		s.enableThumbCache, s.genThumbsOnStartup,
-		s.genThumbsOnAdd, s.autoRotate, s.enablePreview, s.previewMaxSide)
+		s.genThumbsOnAdd, s.autoRotate, s.enablePreview, s.previewMaxSide,
+	    s.genPreviewOnStartup, s.genPreviewOnAdd)
 	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)
 	return webAPI
 }

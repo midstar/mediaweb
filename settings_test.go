@@ -29,6 +29,8 @@ mediapath = Y:\pictures`
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
 	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
 	assertEqualsInt(t, "previewmaxside", 1280, s.previewMaxSide)
+	assertEqualsBool(t, "genpreviewonstartup", false, s.genPreviewOnStartup)
+	assertEqualsBool(t, "genpreviewonadd", true, s.genPreviewOnAdd)
 	assertEqualsInt(t, "logLevel", int(llog.LvlInfo), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "", s.logFile)
 	assertEqualsStr(t, "userName", "", s.userName)
@@ -48,6 +50,8 @@ genthumbsonadd = off
 autorotate = false
 enablepreview = true
 previewmaxside = 1920
+genpreviewonstartup = on
+genpreviewonadd = off
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 username = an_email@password.com
@@ -68,6 +72,8 @@ password = A!#_q7*+
 	assertEqualsBool(t, "autoRotate", false, s.autoRotate)
 	assertEqualsBool(t, "enablepreview", true, s.enablePreview)
 	assertEqualsInt(t, "previewmaxside", 1920, s.previewMaxSide)
+	assertEqualsBool(t, "genpreviewonstartup", true, s.genPreviewOnStartup)
+	assertEqualsBool(t, "genpreviewonadd", false, s.genPreviewOnAdd)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
 	assertEqualsStr(t, "userName", "an_email@password.com", s.userName)
@@ -87,6 +93,8 @@ genthumbsonadd = 5.5
 autorotate = invalid
 enablepreview = 27
 previewmaxside = invalid
+enablethumbcache = -6
+genthumbsonstartup = 67
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 `
@@ -109,6 +117,8 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsBool(t, "genthumbsonadd", true, s.genThumbsOnAdd)
 	assertEqualsBool(t, "autoRotate", true, s.autoRotate)
 	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
+	assertEqualsBool(t, "genpreviewonstartup", false, s.genPreviewOnStartup)
+	assertEqualsBool(t, "genpreviewonadd", true, s.genPreviewOnAdd)
 
 }
 

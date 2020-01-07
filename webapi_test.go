@@ -221,7 +221,7 @@ func TestGetThumbnail(t *testing.T) {
 
 func TestGetThumbnailNoCache(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0)
+	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -253,7 +253,7 @@ func TestGetThumbnailNoCache(t *testing.T) {
 
 func TestGetPreview(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "tmpcache/TestGetPreview", true, false, false, true, true, 1280)
+	media := createMedia(box, "testmedia", "tmpcache/TestGetPreview", true, false, false, true, true, 1280, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -280,7 +280,7 @@ func TestInvalidPath(t *testing.T) {
 
 func TestAuthentication(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", true, false, false, true, false, 0)
+	media := createMedia(box, "testmedia", "", true, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)
@@ -313,7 +313,7 @@ func TestAuthentication(t *testing.T) {
 
 func TestIsPreCacheInProgress(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0)
+	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)

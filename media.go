@@ -44,8 +44,8 @@ type File struct {
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
 func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache,
-	genThumbsOnStartup, startWatcher, autoRotate, enablePreview bool,
-	previewMaxSide int) *Media {
+	genThumbsOnStartup, genThumbsOnAdd, autoRotate, enablePreview bool,
+	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache {
 		directory := filepath.Dir(thumbPath)
@@ -71,12 +71,12 @@ func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbC
 		box:                box,
 		preCacheInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
-	if enableThumbCache && genThumbsOnStartup {
-		go media.generateAllCache(genThumbsOnStartup, false)
+	if enableThumbCache && genThumbsOnStartup || enablePreview && genPreviewOnStartup {
+		go media.generateAllCache(enableThumbCache && genThumbsOnStartup, enablePreview && genPreviewOnStartup)
 	}
-	if enableThumbCache && startWatcher {
-		media.watcher = createWatcher(media, startWatcher, false)
-		go media.watcher.startWatcher()
+	if enableThumbCache && genThumbsOnAdd || enablePreview && genPreviewOnAdd {
+		media.watcher = createWatcher(media, enableThumbCache && genThumbsOnAdd, enablePreview && genPreviewOnAdd)
+		go media.watcher.startWatcher() 
 	}
 	return media
 }

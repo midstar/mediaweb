@@ -10,19 +10,21 @@ import (
 )
 
 type settings struct {
-	port               int        // Network port
-	mediaPath          string     // Top level path for media files
-	thumbPath          string     // Top level path for thumbnails
-	enableThumbCache   bool       // Generate thumbnails
-	genThumbsOnStartup bool       // Generate all thumbnails on startup
-	genThumbsOnAdd     bool       // Generate thumbnails when file added (start watcher)
-	autoRotate         bool       // Rotate JPEG files when needed
-	enablePreview      bool       // Generate preview files
-	previewMaxSide     int        // Max height/width of preview file
-	logLevel           llog.Level // Logging level
-	logFile            string     // Log file ("" means stderr)
-	userName           string     // User name ("" means no authentication)
-	password           string     // Password
+	port                int        // Network port
+	mediaPath           string     // Top level path for media files
+	thumbPath           string     // Top level path for thumbnails
+	enableThumbCache    bool       // Generate thumbnails
+	genThumbsOnStartup  bool       // Generate all thumbnails on startup
+	genThumbsOnAdd      bool       // Generate thumbnails when file added (start watcher)
+	autoRotate          bool       // Rotate JPEG files when needed
+	enablePreview       bool       // Generate preview files
+	previewMaxSide      int        // Max height/width of preview file
+	genPreviewOnStartup bool       // Generate all preview on startup
+	genPreviewOnAdd     bool       // Generate preview when file added (start watcher)
+	logLevel            llog.Level // Logging level
+	logFile             string     // Log file ("" means stderr)
+	userName            string     // User name ("" means no authentication)
+	password            string     // Password
 }
 
 // defaultConfPath holds configuration file paths in priority order
@@ -132,6 +134,22 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.previewMaxSide = previewMaxSide
+
+	// Load genpreviewonstartup (OPTIONAL)
+	// Default: false
+	genPreviewOnStartup, err := config.GetBool("genpreviewonstartup", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genPreviewOnStartup = genPreviewOnStartup
+
+	// Load genpreviewonadd (OPTIONAL)
+	// Default: true
+	genPreviewOnAdd, err := config.GetBool("genpreviewonadd", true)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genPreviewOnAdd = genPreviewOnAdd
 
 	// Load logFile (OPTIONAL)
 	// Default: "" (log to stderr)
