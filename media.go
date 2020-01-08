@@ -864,7 +864,7 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 // generateAllCache goes through all files in the media path
 // and generates thumbnails/preview for these
 func (m *Media) generateAllCache(thumbnails, preview bool) {
-	llog.Info("Pre-generating cache (thumbnails: %t, preview: %t", thumbnails, preview)
+	llog.Info("Pre-generating cache (thumbnails: %t, preview: %t)", thumbnails, preview)
 	startTime := time.Now().UnixNano()
 	stat := m.generateCache("", true, thumbnails, preview)
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
