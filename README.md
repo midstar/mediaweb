@@ -153,7 +153,7 @@ On Linux platforms execute following to install MediaWEB as a service:
 
 ## Configuration guide
 
-See [mediaweb.conf](mediaweb.conf) for the available configuration parameters.
+See [mediaweb.conf](configs/mediaweb.conf) for the available configuration parameters.
 
 The most important configuration parameter is *mediapath* which points out the 
 directory of your media. 
