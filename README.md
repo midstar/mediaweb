@@ -26,8 +26,8 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 - [Screenshots](#screenshots)
 - [Features](#features)
 - [Download and install Linux](#download-and-install-linux)
-- [Download and install on Windows (64bit)](#download-and-install-on-windows-(64bit))
-- [Build from source (any platform)](#build-from-source-(any-platform))
+- [Download and install on Windows](#download-and-install-on-windows)
+- [Build from source on any platform](#build-from-source-on-any-platform)
 - [Configuration guide](#configuration-guide)
 - [Future improvements](#future-improvements)
 - [Author and license](#author-and-license)
@@ -104,7 +104,7 @@ To uninstall MediaWEB run:
 
 Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 
-## Download and install on Windows (64bit)
+## Download and install on Windows
 
 Download mediaweb_windows_x64_setup.exe [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
@@ -117,7 +117,7 @@ You need to install [ffmpeg](https://www.ffmpeg.org/) separately and put ffmpeg 
 
 Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 
-## Build from source (any platform)
+## Build from source on any platform
 
 To build from source on any platform you need to:
 

@@ -72,3 +72,5 @@ The size of the preview images is set with the previewmaxside configuration para
     previewmaxside = 1000
 
 The aspect ratio of the image will be kept.
+
+Your can also configure MediaWEB to generate the previews during startup and when files are added to the media folder as described in the [configuration guide](README.md).
