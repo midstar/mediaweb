@@ -10,17 +10,21 @@ import (
 )
 
 type settings struct {
-	port               int        // Network port
-	mediaPath          string     // Top level path for media files
-	thumbPath          string     // Top level path for thumbnails
-	enableThumbCache   bool       // Generate thumbnails
-	genThumbsOnStartup bool       // Generate all thumbnails on startup
-	genThumbsOnAdd     bool       // Generate thumbnails when file added (start watcher)
-	autoRotate         bool       // Rotate JPEG files when needed
-	logLevel           llog.Level // Logging level
-	logFile            string     // Log file ("" means stderr)
-	userName           string     // User name ("" means no authentication)
-	password           string     // Password
+	port                int        // Network port
+	mediaPath           string     // Top level path for media files
+	cachePath           string     // Top level path for cache (thumbs and preview)
+	enableThumbCache    bool       // Generate thumbnails
+	genThumbsOnStartup  bool       // Generate all thumbnails on startup
+	genThumbsOnAdd      bool       // Generate thumbnails when file added (start watcher)
+	autoRotate          bool       // Rotate JPEG files when needed
+	enablePreview       bool       // Generate preview files
+	previewMaxSide      int        // Max height/width of preview file
+	genPreviewOnStartup bool       // Generate all preview on startup
+	genPreviewOnAdd     bool       // Generate preview when file added (start watcher)
+	logLevel            llog.Level // Logging level
+	logFile             string     // Log file ("" means stderr)
+	userName            string     // User name ("" means no authentication)
+	password            string     // Password
 }
 
 // defaultConfPath holds configuration file paths in priority order
@@ -72,15 +76,21 @@ func loadSettings(fileName string) settings {
 	mediaPath := config.GetString("mediapath", "")
 	result.mediaPath = mediaPath
 
-	// Load thumbPath (OPTIONAL)
+	// Load cachePath (OPTIONAL)
 	// Default: OS temp directory
-	if config.HasKey("thumbpath") {
-		thumbPath := config.GetString("thumbpath", "")
-		result.thumbPath = thumbPath
+	if config.HasKey("cachepath") {
+		cachePath := config.GetString("cachepath", "")
+		result.cachePath = cachePath
 	} else {
-		// Use default temporary directory + mediaweb
-		tempDir := os.TempDir()
-		result.thumbPath = filepath.Join(tempDir, "mediaweb")
+		// For backwards compatibility with old versions
+		if config.HasKey("thumbpath") {
+			cachePath := config.GetString("thumbpath", "")
+			result.cachePath = cachePath
+		} else {
+			// Use default temporary directory + mediaweb
+			tempDir := os.TempDir()
+			result.cachePath = filepath.Join(tempDir, "mediaweb")
+		}
 	}
 
 	// Load enableThumbCache (OPTIONAL)
@@ -99,7 +109,7 @@ func loadSettings(fileName string) settings {
 	}
 	result.genThumbsOnStartup = genThumbsOnStartup
 
-	// Load genthumbsonadd(OPTIONAL)
+	// Load genthumbsonadd (OPTIONAL)
 	// Default: true
 	genThumbsOnAdd, err := config.GetBool("genthumbsonadd", true)
 	if err != nil {
@@ -114,6 +124,38 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.autoRotate = autoRotate
+
+	// Load enablePreview (OPTIONAL)
+	// Default: false
+	enablePreview, err := config.GetBool("enablepreview", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.enablePreview = enablePreview
+
+	// Load previewMaxSide (OPTIONAL)
+	// Default: 1280 (pixels)
+	previewMaxSide, err := config.GetInt("previewmaxside", 1280)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.previewMaxSide = previewMaxSide
+
+	// Load genpreviewonstartup (OPTIONAL)
+	// Default: false
+	genPreviewOnStartup, err := config.GetBool("genpreviewonstartup", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genPreviewOnStartup = genPreviewOnStartup
+
+	// Load genpreviewonadd (OPTIONAL)
+	// Default: true
+	genPreviewOnAdd, err := config.GetBool("genpreviewonadd", true)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.genPreviewOnAdd = genPreviewOnAdd
 
 	// Load logFile (OPTIONAL)
 	// Default: "" (log to stderr)

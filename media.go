@@ -24,11 +24,13 @@ var vidExtensions = [...]string{".avi", ".mov", ".vid", ".mkv", ".mp4"}
 // Media represents the media including its base path
 type Media struct {
 	mediaPath          string    // Top level path for media files
-	thumbPath          string    // Top level path for thumbnails
+	cachepath          string    // Top level path for thumbnails
 	enableThumbCache   bool      // Generate thumbnails
 	autoRotate         bool      // Rotate JPEG files when needed
+	enablePreview      bool      // Resize images before provide to client
+	previewMaxSide     int       // Maximum width or hight of preview image
 	box                *rice.Box // For icons
-	thumbGenInProgress bool      // True if thumbnail generation in progress
+	preCacheInProgress bool      // True if thumbnail/preview generation in progress
 	watcher            *Watcher  // The media watcher
 }
 
@@ -41,35 +43,41 @@ type File struct {
 
 // createMedia creates a new media. If thumb cache is enabled the path is
 // created when needed.
-func createMedia(box *rice.Box, mediaPath string, thumbPath string, enableThumbCache, genThumbsOnStartup, startWatcher, autoRotate bool) *Media {
+func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbCache,
+	genThumbsOnStartup, genThumbsOnAdd, autoRotate, enablePreview bool,
+	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
-	if enableThumbCache {
-		directory := filepath.Dir(thumbPath)
+	if enableThumbCache || enablePreview{
+		directory := filepath.Dir(cachepath)
 		err := os.MkdirAll(directory, os.ModePerm)
 		if err != nil {
-			llog.Error("Unable to create thumbnail cache path %s. Reason: %s", thumbPath, err)
-			llog.Info("Thumbnail cache will be disabled")
+			llog.Warn("Unable to create cache path %s. Reason: %s", cachepath, err)
+			llog.Info("Thumbnail and preview cache will be disabled")
 			enableThumbCache = false
+			enablePreview = false
 		} else {
-			llog.Info("Thumbnail cache path: %s", thumbPath)
+			llog.Info("Cache path: %s", cachepath)
 		}
 	} else {
-		llog.Info("Thumbnail cache disabled")
+		llog.Info("Cache disabled")
 	}
 	llog.Info("JPEG auto rotate: %t", autoRotate)
+	llog.Info("Image preview: %t  (max width/height %d px)", enablePreview, previewMaxSide)
 	media := &Media{mediaPath: filepath.ToSlash(filepath.Clean(mediaPath)),
-		thumbPath:          filepath.ToSlash(filepath.Clean(thumbPath)),
+		cachepath:          filepath.ToSlash(filepath.Clean(cachepath)),
 		enableThumbCache:   enableThumbCache,
 		autoRotate:         autoRotate,
+		enablePreview:      enablePreview,
+		previewMaxSide:     previewMaxSide,
 		box:                box,
-		thumbGenInProgress: false}
+		preCacheInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
-	if enableThumbCache && genThumbsOnStartup {
-		go media.generateAllThumbnails()
+	if enableThumbCache && genThumbsOnStartup || enablePreview && genPreviewOnStartup {
+		go media.generateAllCache(enableThumbCache && genThumbsOnStartup, enablePreview && genPreviewOnStartup)
 	}
-	if enableThumbCache && startWatcher {
-		media.watcher = createWatcher(media)
-		go media.watcher.startWatcher()
+	if enableThumbCache && genThumbsOnAdd || enablePreview && genPreviewOnAdd {
+		media.watcher = createWatcher(media, enableThumbCache && genThumbsOnAdd, enablePreview && genPreviewOnAdd)
+		go media.watcher.startWatcher() 
 	}
 	return media
 }
@@ -99,7 +107,14 @@ func (m *Media) getFullMediaPath(relativePath string) (string, error) {
 // getFullThumbPath returns the full path of the provided path, i.e:
 // thumb path + relative path.
 func (m *Media) getFullThumbPath(relativePath string) (string, error) {
-	return m.getFullPath(m.thumbPath, relativePath)
+	return m.getFullPath(m.cachepath, relativePath)
+}
+
+// getFullPreviewPath returns the full path of the provided path, i.e:
+// preview path + relative path.
+// The preview files shares the same path (cache location) as thumbnails.
+func (m *Media) getFullPreviewPath(relativePath string) (string, error) {
+	return m.getFullPath(m.cachepath, relativePath)
 }
 
 // getRelativePath returns the relative path from an absolute base
@@ -350,6 +365,29 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 	return m.getFullThumbPath(relativeThumbnailPath)
 }
 
+// errorIndicationPath returns the file path with the extension
+// replaced with err.
+func (m *Media) errorIndicationPath(anyPath string) string {
+	path, file := filepath.Split(anyPath)
+	ext := filepath.Ext(file)
+	file = strings.Replace(file, ext, ".err.txt", -1)
+	return filepath.Join(path, file)
+}
+
+
+// generateErrorIndication creates a text file including the error reason.
+func (m *Media) generateErrorIndicationFile(errorIndicationFile string, err error) {
+	llog.Warn("%s",err)
+	errorFile, err2 := os.Create(errorIndicationFile)
+	if err2 == nil {
+		defer errorFile.Close()
+		errorFile.WriteString(err.Error())
+		llog.Info("Created: %s", errorIndicationFile)
+	} else {
+		llog.Warn("Unable to create %s. Reason: %s", errorIndicationFile, err2)
+	}
+}
+
 // generateImageThumbnail generates a thumbnail from any of the supported
 // images. Will create necessary subdirectories in the thumbpath.
 func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) error {
@@ -383,21 +421,31 @@ func (m *Media) generateImageThumbnail(fullMediaPath, fullThumbPath string) erro
 func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	thumbFileName, err := m.thumbnailPath(relativeFilePath)
 	if err != nil {
-		llog.Error("%s", err)
+		llog.Warn("%s", err)
 		return "", err
 	}
 	_, err = os.Stat(thumbFileName) // Check if file exist
 	if err == nil {
 		return thumbFileName, nil // Thumb already generated
 	}
+	errorIndicationFile := m.errorIndicationPath(thumbFileName)
+	_, err = os.Stat(errorIndicationFile) // Check if file exist
+	if err == nil {
+		// File has failed to be generated before, don't bother
+		// trying to re-generate it.
+		msg := fmt.Sprintf("Skipping generate thumbnail for %s since it has failed before.", 
+			relativeFilePath)
+		llog.Trace(msg)
+		return "", fmt.Errorf(msg)
+	}	
 
 	// No thumb exist. Create it
 	llog.Info("Creating new thumbnail for %s", relativeFilePath)
 	startTime := time.Now().UnixNano()
 	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
-		llog.Error("%s", err)
-		return thumbFileName, err
+		llog.Warn("%s", err)
+		return "", err
 	}
 	if m.isVideo(fullMediaPath) {
 		err = m.generateVideoThumbnail(fullMediaPath, thumbFileName)
@@ -405,8 +453,9 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 		err = m.generateImageThumbnail(fullMediaPath, thumbFileName)
 	}
 	if err != nil {
-		llog.Error("%s", err)
-		return thumbFileName, err
+		// To avoid generate the file again, create an error indication file
+		m.generateErrorIndicationFile(errorIndicationFile, err)
+		return "", err
 	}
 	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
 	llog.Info("Thumbnail done for %s (conversion time: %d ms)",
@@ -418,7 +467,7 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 //
 // It has following sequence/priority:
 //  1. Write embedded EXIF thumbnail if it exist (only JPEG)
-//  2. Write a cached thumbnail file exist in thumbPath
+//  2. Write a cached thumbnail file exist in cachepath
 //  3. Generate a thumbnail to cache and write
 //  4. If all above fails return error
 func (m *Media) writeThumbnail(w io.Writer, relativeFilePath string) error {
@@ -551,57 +600,191 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("%s %s\nError: %s\nStdout: %s\nStderr: %s",
-			ffmpegCmd, strings.Join(ffmpegArgs, " "), err, stdout.String(), stderr.String())
+	_, outFileErr := os.Stat(outFilePath) 
+	if err != nil || outFileErr != nil {
+		return fmt.Errorf("%s %s\nStdout: %s\nStderr: %s",
+			ffmpegCmd, strings.Join(ffmpegArgs, " "), stdout.String(), stderr.String())
 	}
 	return nil
 }
 
-// generateAllThumbnails goes through all files in the media path
-// and generates thumbnails for these
-func (m *Media) generateAllThumbnails() {
-	llog.Info("Generating all thumbnails")
+// getImageWidthAndHeight returns the width and height of an image.
+// Returns error if the width and height could not be determined.
+func (m *Media) getImageWidthAndHeight(fullMediaPath string) (int, int, error) {
+	img, err := imaging.Open(fullMediaPath)
+	if err != nil {
+		return 0, 0, fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
+	}
+	return img.Bounds().Dx(), img.Bounds().Dy(), nil
+}
+
+// previewPath returns the absolute preview file path from a
+// media path. Previews are always stored in JPEG format (.jpg
+// extension) and starts with 'view_'.
+// Returns error if the media path is invalid.
+func (m *Media) previewPath(relativeMediaPath string) (string, error) {
+	path, file := filepath.Split(relativeMediaPath)
+	if !m.isJPEG(file) {
+		// Replace extension with .jpg
+		ext := filepath.Ext(file)
+		if ext == "" {
+			return "", fmt.Errorf("File has no extension: %s", file)
+		}
+		file = strings.Replace(file, ext, ".jpg", -1)
+	}
+	file = "view_" + file
+	relativePreviewPath := filepath.Join(path, file)
+	return m.getFullPreviewPath(relativePreviewPath)
+}
+
+// generateImagePreview generates a preview from any of the supported
+// images. Will create necessary subdirectories in the PreviewPath.
+func (m *Media) generateImagePreview(fullMediaPath, fullPreviewPath string) error {
+	img, err := imaging.Open(fullMediaPath, imaging.AutoOrientation(true))
+	if err != nil {
+		return fmt.Errorf("Unable to open image %s. Reason: %s", fullMediaPath, err)
+	}
+	previewImg := imaging.Fit(img, m.previewMaxSide, m.previewMaxSide, imaging.Box)
+
+	// Create subdirectories if needed
+	directory := filepath.Dir(fullPreviewPath)
+	err = os.MkdirAll(directory, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("Unable to create directories in %s for creating preview. Reason %s", fullPreviewPath, err)
+	}
+
+	// Write thumbnail to file
+	outFile, err := os.Create(fullPreviewPath)
+	if err != nil {
+		return fmt.Errorf("Unable to open %s for creating preview. Reason %s", fullPreviewPath, err)
+	}
+	defer outFile.Close()
+	err = imaging.Encode(outFile, previewImg, imaging.JPEG)
+
+	return err
+}
+
+// generatePreview generates a preview image and returns the file name of the
+// preview. If a preview file already exist the file name will be returned.
+func (m *Media) generatePreview(relativeFilePath string) (string, bool, error) {
+	previewFileName, err := m.previewPath(relativeFilePath)
+	if err != nil {
+		llog.Warn("%s", err)
+		return "", false, err
+	}
+	_, err = os.Stat(previewFileName) // Check if file exist
+	if err == nil {
+		return previewFileName, false, nil // Preview already generated
+	}
+
+	errorIndicationFile := m.errorIndicationPath(previewFileName)
+	_, err = os.Stat(errorIndicationFile) // Check if file exist
+	if err == nil {
+		// File has failed to be generated before, don't bother
+		// trying to re-generate it.
+		msg := fmt.Sprintf("Skipping generate preview for %s since it has failed before.", 
+			relativeFilePath)
+		llog.Trace(msg)
+		return "", false, fmt.Errorf(msg)
+	}	
+
+	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
+	if err != nil {
+		llog.Warn("%s", err)
+		return "", false, err
+	}
+
+	width, height, err := m.getImageWidthAndHeight(fullMediaPath)
+	if err != nil {
+		// To avoid generate the file again, create an error indication file
+		m.generateErrorIndicationFile(errorIndicationFile, err)
+		return "", false, err
+	}
+	if width <= m.previewMaxSide && height <= m.previewMaxSide {
+		msg := fmt.Sprintf("Image %s too small to generate preview", relativeFilePath)
+		llog.Trace(msg)
+		return "", true, fmt.Errorf(msg)
+	}
+
+	// No preview exist. Create it
+	llog.Info("Creating new preview file for %s", relativeFilePath)
 	startTime := time.Now().UnixNano()
-	stat := m.generateThumbnails("", true)
-	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
-	minutes := int(deltaTime / 60)
-	seconds := int(deltaTime) - minutes*60
-	llog.Info(`Generating all thumbnails took %d minutes and %d seconds
-  Number of folders: %d
-  Number of images: %d
-  Number of vidos: %d
-  Number of images with embedded EXIF: %d
-  Number of failed folders: %d
-  Number of failed images: %d
-  Number of failed videos: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
-		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfFailedFolders, stat.NbrOfFailedImages, stat.NbrOfFailedVideos)
+	err = m.generateImagePreview(fullMediaPath, previewFileName)
+	if err != nil {
+		// To avoid generate the file again, create an error indication file
+		m.generateErrorIndicationFile(errorIndicationFile, err)
+		return "", false, err
+	}
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Millisecond)
+	llog.Info("Preview done for %s (conversion time: %d ms)",
+		relativeFilePath, deltaTime)
+	return previewFileName, false, nil
 }
 
-// ThumbnailStatistics statistics results from generateThumbnails
-type ThumbnailStatistics struct {
-	NbrOfFolders       int
-	NbrOfImages        int
-	NbrOfVideos        int
-	NbrOfExif          int
-	NbrOfFailedFolders int // I.e. unable to list contents of folder
-	NbrOfFailedImages  int
-	NbrOfFailedVideos  int
+// writePreview writes preview image for media to w.
+//
+// It has following sequence/priority:
+//  1. Write a cached preview file exist
+//  2. Generate a preview in cache and write
+//  3. If all above fails return error
+func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
+	if !m.isImage(relativeFilePath) {
+		return fmt.Errorf("only images support preview")
+	}
+	if !m.enablePreview {
+		return fmt.Errorf("Preview disabled")
+	}
+
+	// Check preview cache (and generate if necessary)
+	previewFileName, _, err := m.generatePreview(relativeFilePath)
+	if err != nil {
+		return err // Logging handled in generatePreview
+	}
+
+	previewFile, err := os.Open(previewFileName)
+	if err != nil {
+		return err
+	}
+	defer previewFile.Close()
+
+	_, err = io.Copy(w, previewFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (m *Media) isThumbGenInProgress() bool {
-	return m.thumbGenInProgress
+
+// PreCacheStatistics statistics results from generateCache
+type PreCacheStatistics struct {
+	NbrOfFolders            int
+	NbrOfImages             int
+	NbrOfVideos             int
+	NbrOfExif               int
+	NbrOfImageThumb         int
+	NbrOfVideoThumb         int
+	NbrOfImagePreview       int
+	NbrOfFailedFolders      int // I.e. unable to list contents of folder
+	NbrOfFailedImageThumb  int
+	NbrOfFailedVideoThumb  int
+	NbrOfFailedImagePreview int
+	NbrOfSmallImages        int // Don't require any preview
 }
 
-// generateThumbnails recursively (optional) goes through all files
-// relativePath and its subdirectories and generates thumbnails for
-// these. If relativePath is "" it means generate for all files.
-func (m *Media) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
-	prevProgress := m.thumbGenInProgress
-	m.thumbGenInProgress = true
-	defer func() { m.thumbGenInProgress = prevProgress }()
+func (m *Media) isPreCacheInProgress() bool {
+	return m.preCacheInProgress
+}
 
-	stat := ThumbnailStatistics{}
+// generateCache recursively (optional) goes through all files
+// relativePath and its subdirectories and generates thumbnails and
+// previews for these. If relativePath is "" it means generate for all files.
+func (m *Media) generateCache(relativePath string, recursive, thumbnails, preview bool) *PreCacheStatistics {
+	prevProgress := m.preCacheInProgress
+	m.preCacheInProgress = true
+	defer func() { m.preCacheInProgress = prevProgress }()
+
+	stat := PreCacheStatistics{}
 	files, err := m.getFiles(relativePath)
 	if err != nil {
 		stat.NbrOfFailedFolders = 1
@@ -611,14 +794,19 @@ func (m *Media) generateThumbnails(relativePath string, recursive bool) *Thumbna
 		if file.Type == "folder" {
 			if recursive {
 				stat.NbrOfFolders++
-				newStat := m.generateThumbnails(file.Path, true) // Recursive
+				newStat := m.generateCache(file.Path, true, thumbnails, preview) // Recursive
 				stat.NbrOfFolders += newStat.NbrOfFolders
 				stat.NbrOfImages += newStat.NbrOfImages
 				stat.NbrOfVideos += newStat.NbrOfVideos
 				stat.NbrOfExif += newStat.NbrOfExif
+				stat.NbrOfImageThumb += newStat.NbrOfImageThumb
+				stat.NbrOfVideoThumb += newStat.NbrOfVideoThumb
+				stat.NbrOfImagePreview += newStat.NbrOfImagePreview
 				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
-				stat.NbrOfFailedImages += newStat.NbrOfFailedImages
-				stat.NbrOfFailedVideos += newStat.NbrOfFailedVideos
+				stat.NbrOfFailedImageThumb += newStat.NbrOfFailedImageThumb
+				stat.NbrOfFailedVideoThumb += newStat.NbrOfFailedVideoThumb
+				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview 
+				stat.NbrOfSmallImages += newStat.NbrOfSmallImages 
 			}
 		} else {
 			if file.Type == "image" {
@@ -627,25 +815,75 @@ func (m *Media) generateThumbnails(relativePath string, recursive bool) *Thumbna
 				stat.NbrOfVideos++
 			}
 			// Check if file has EXIF thumbnail
+			hasExifThumb := false
 			ex := m.extractEXIF(file.Path)
 			if ex != nil {
 				_, err := ex.JpegThumbnail()
 				if err == nil {
 					// Media has EXIF thumbnail
 					stat.NbrOfExif++
-					continue // Next file
+					hasExifThumb = true
+				}
+			} 
+			if (thumbnails && !hasExifThumb) {
+				// Generate new thumbnail
+				_, err = m.generateThumbnail(file.Path)
+				if err != nil {
+					if file.Type == "image" {
+						stat.NbrOfFailedImageThumb++
+					} else if file.Type == "video" {
+						stat.NbrOfFailedVideoThumb++
+					}
+				} else {
+					if file.Type == "image" {
+						stat.NbrOfImageThumb++
+					} else if file.Type == "video" {
+						stat.NbrOfVideoThumb++
+					}
 				}
 			}
-			// Generate new thumbnail
-			_, err = m.generateThumbnail(file.Path)
-			if err != nil {
-				if file.Type == "image" {
-					stat.NbrOfFailedImages++
-				} else if file.Type == "video" {
-					stat.NbrOfFailedVideos++
+			if (preview && file.Type == "image") {
+				// Generate new preview
+				_, tooSmall, err := m.generatePreview(file.Path)
+				if err != nil {
+					if tooSmall {
+						stat.NbrOfSmallImages++
+					} else {
+						stat.NbrOfFailedImagePreview++
+					}
+				} else {
+					stat.NbrOfImagePreview++
 				}
-			}
+			} 
 		}
 	}
 	return &stat
+}
+
+
+// generateAllCache goes through all files in the media path
+// and generates thumbnails/preview for these
+func (m *Media) generateAllCache(thumbnails, preview bool) {
+	llog.Info("Pre-generating cache (thumbnails: %t, preview: %t)", thumbnails, preview)
+	startTime := time.Now().UnixNano()
+	stat := m.generateCache("", true, thumbnails, preview)
+	deltaTime := (time.Now().UnixNano() - startTime) / int64(time.Second)
+	minutes := int(deltaTime / 60)
+	seconds := int(deltaTime) - minutes*60
+	llog.Info(`Generating cache took %d minutes and %d seconds
+  Number of folders: %d
+  Number of images: %d
+  Number of videos: %d
+  Number of images with embedded EXIF: %d
+  Number of generated image thumbnails: %d
+  Number of generated video thumbnails: %d
+  Number of generated image previews: %d
+  Number of failed folders: %d
+  Number of failed image thumbnails: %d
+  Number of failed video thumbnails: %d
+  Number of failed image previews: %d
+  Number of small images not require preview: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfImageThumb, stat.NbrOfVideoThumb, stat.NbrOfImagePreview, 
+		stat.NbrOfFailedFolders, stat.NbrOfFailedImageThumb, stat.NbrOfFailedVideoThumb, 
+		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages)
 }

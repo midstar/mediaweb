@@ -31,7 +31,7 @@ func LogTime(t *testing.T, whatWasMeasured string) {
 
 func TestGetFiles(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 	files, err := media.getFiles("")
 	assertExpectNoErr(t, "", err)
 	assertTrue(t, "No files found", len(files) > 5)
@@ -39,7 +39,7 @@ func TestGetFiles(t *testing.T) {
 
 func TestGetFilesInvalid(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 	files, err := media.getFiles("invalidfolder")
 	assertExpectErr(t, "invalid path shall give errors", err)
 	assertTrue(t, "Should not find any files", len(files) == 0)
@@ -47,7 +47,7 @@ func TestGetFilesInvalid(t *testing.T) {
 
 func TestGetFilesHacker(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 	files, err := media.getFiles("../..")
 	assertExpectErr(t, "hacker path shall give errors", err)
 	assertTrue(t, "Should not find any files", len(files) == 0)
@@ -55,7 +55,7 @@ func TestGetFilesHacker(t *testing.T) {
 
 func TestIsRotationNeeded(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 
 	rotationNeeded := media.isRotationNeeded("exif_rotate/180deg.jpg")
 	assertTrue(t, "Rotation should be needed", rotationNeeded)
@@ -105,7 +105,7 @@ func TestRotateAndWrite(t *testing.T) {
 	os.MkdirAll("tmpout/TestRotateAndWrite", os.ModePerm) // If already exist no problem
 	os.Remove(outFileName)
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 	outFile, err := os.Create(outFileName)
 	assertExpectNoErr(t, "unable to create out", err)
 	defer outFile.Close()
@@ -135,7 +135,7 @@ func tEXIFThumbnail(t *testing.T, media *Media, filename string) {
 func TestWriteEXIFThumbnail(t *testing.T) {
 	os.MkdirAll("tmpout/TestWriteEXIFThumbnail", os.ModePerm) // If already exist no problem
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 
 	tEXIFThumbnail(t, media, "normal.jpg")
 	tEXIFThumbnail(t, media, "180deg.jpg")
@@ -160,7 +160,7 @@ func TestWriteEXIFThumbnail(t *testing.T) {
 func TestFullPath(t *testing.T) {
 	// Root path
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, ".", ".", true, false, false, true)
+	media := createMedia(box, ".", ".", true, false, false, true, false, 0, false, false)
 	p, err := media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "afile.jpg", p)
@@ -169,7 +169,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Relative path
-	media = createMedia(box, "arelative/path", ".", true, false, false, true)
+	media = createMedia(box, "arelative/path", ".", true, false, false, true, false, 0, false, false)
 	p, err = media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "arelative/path/afile.jpg", p)
@@ -178,7 +178,7 @@ func TestFullPath(t *testing.T) {
 	assertExpectErr(t, "hackers shall not be allowed", err)
 
 	// Absolute path
-	media = createMedia(box, "/root/absolute/path", ".", true, false, false, true)
+	media = createMedia(box, "/root/absolute/path", ".", true, false, false, true, false, 0, false, false)
 	p, err = media.getFullMediaPath("afile.jpg")
 	assertExpectNoErr(t, "unable to get valid full path", err)
 	assertEqualsStr(t, "invalid path", "/root/absolute/path/afile.jpg", p)
@@ -190,7 +190,7 @@ func TestFullPath(t *testing.T) {
 func TestRelativePath(t *testing.T) {
 	// Root path
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 
 	result, err := media.getRelativePath("", "")
 	assertExpectNoErr(t, "", err)
@@ -237,10 +237,10 @@ func TestRelativePath(t *testing.T) {
 	}
 
 	// Errors
-	result, err = media.getRelativePath("another", "directory")
+	_, err = media.getRelativePath("another", "directory")
 	assertExpectErr(t, "", err)
 
-	result, err = media.getRelativePath("/a", "b")
+	_, err = media.getRelativePath("/a", "b")
 	assertExpectErr(t, "", err)
 
 	// getRelativeMediaPath
@@ -248,13 +248,13 @@ func TestRelativePath(t *testing.T) {
 	assertExpectNoErr(t, "", err)
 	assertEqualsStr(t, "", "dir1/dir2", result)
 
-	result, err = media.getRelativeMediaPath("another/dir1/dir2")
+	_, err = media.getRelativeMediaPath("another/dir1/dir2")
 	assertExpectErr(t, "", err)
 }
 
 func TestThumbnailPath(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "/c/mediapath", "/d/thumbpath", true, false, false, true)
+	media := createMedia(box, "/c/mediapath", "/d/thumbpath", true, false, false, true, false, 0, false, false)
 
 	thumbPath, err := media.thumbnailPath("myimage.jpg")
 	assertExpectNoErr(t, "", err)
@@ -280,7 +280,7 @@ func tGenerateImageThumbnail(t *testing.T, media *Media, inFileName, outFileName
 	os.Remove(outFileName)
 	RestartTimer()
 	err := media.generateImageThumbnail(inFileName, outFileName)
-	LogTime(t, inFileName+"thumbnail generation: ")
+	LogTime(t, inFileName+" thumbnail generation: ")
 	assertExpectNoErr(t, "", err)
 	assertFileExist(t, "", outFileName)
 	t.Logf("Manually check that %s thumbnail is ok", outFileName)
@@ -290,7 +290,7 @@ func TestGenerateImageThumbnail(t *testing.T) {
 	os.MkdirAll("tmpout/TestGenerateImageThumbnail", os.ModePerm) // If already exist no problem
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "", "", true, false, false, true)
+	media := createMedia(box, "", "", true, false, false, true, false, 0, false, false)
 
 	tGenerateImageThumbnail(t, media, "testmedia/jpeg.jpg", "tmpout/TestGenerateImageThumbnail/jpeg_thumbnail.jpg")
 	tGenerateImageThumbnail(t, media, "testmedia/jpeg_rotated.jpg", "tmpout/TestGenerateImageThumbnail/jpeg_rotated_thumbnail.jpg")
@@ -329,7 +329,7 @@ func TestWriteThumbnail(t *testing.T) {
 	os.MkdirAll("tmpout/TestWriteThumbnail", os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", true, false, false, true)
+	media := createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", true, false, false, true, false, 0, false, false)
 
 	// JPEG with embedded EXIF
 	tWriteThumbnail(t, media, "jpeg.jpg", "tmpout/TestWriteThumbnail/jpeg.jpg", false)
@@ -343,6 +343,11 @@ func TestWriteThumbnail(t *testing.T) {
 	// Video - only if video is supported
 	if media.videoThumbnailSupport() {
 		tWriteThumbnail(t, media, "video.mp4", "tmpout/TestWriteThumbnail/video.jpg", false)
+
+		// Test invalid
+		tWriteThumbnail(t, media, "invalidvideo.mp4", "tmpout/TestWriteThumbnail/invalidvideo.jpg", true)
+		// Check that error indication file is created
+		assertFileExist(t, "", "tmpcache/TestWriteThumbnail/_invalidvideo.err.txt")
 	}
 
 	// Non existing file
@@ -350,9 +355,13 @@ func TestWriteThumbnail(t *testing.T) {
 
 	// Invalid file
 	tWriteThumbnail(t, media, "invalid.jpg", "tmpout/TestWriteThumbnail/invalid.jpg", true)
+	// Check that error indication file is created
+	assertFileExist(t, "", "tmpcache/TestWriteThumbnail/_invalid.err.txt")
+	// Generate again - just for coverage
+	tWriteThumbnail(t, media, "invalid.jpg", "tmpout/TestWriteThumbnail/invalid.jpg", true)
 
 	// Disable thumb cache
-	media = createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", false, false, false, true)
+	media = createMedia(box, "testmedia", "tmpcache/TestWriteThumbnail", false, false, false, true, false, 0, false, false)
 
 	// JPEG with embedded EXIF
 	tWriteThumbnail(t, media, "jpeg.jpg", "tmpout/TestWriteThumbnail/jpeg.jpg", false)
@@ -370,7 +379,7 @@ func TestVideoThumbnailSupport(t *testing.T) {
 	}()
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 
 	t.Logf("ffmpeg supported: %v", media.videoThumbnailSupport())
 
@@ -399,7 +408,7 @@ func tGenerateVideoThumbnail(t *testing.T, media *Media, inFileName, outFileName
 
 func TestGenerateVideoThumbnail(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", ".", true, false, false, true)
+	media := createMedia(box, "testmedia", ".", true, false, false, true, false, 0, false, false)
 	if !media.videoThumbnailSupport() {
 		t.Skip("ffmpeg not installed skipping test")
 		return
@@ -415,7 +424,7 @@ func TestGenerateVideoThumbnail(t *testing.T) {
 	// Test some invalid
 	err := media.generateVideoThumbnail("nonexisting.mp4", tmp+"dont_matter.jpg")
 	assertExpectErr(t, "", err)
-	err = media.generateVideoThumbnail("invalidvideo.mp4", tmp+"dont_matter_png.jpg")
+	err = media.generateVideoThumbnail("invalidvideo.mp4", tmp+"/invalidvideo.jpg")
 	assertExpectErr(t, "", err)
 }
 
@@ -425,19 +434,25 @@ func TestGenerateThumbnails(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", cache, true, false, false, true)
-	stat := media.generateThumbnails("", true)
+	media := createMedia(box, "testmedia", cache, true, false, false, true, false, 0, false, false)
+	stat := media.generateCache("", true, true, false)
 	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
 	assertEqualsInt(t, "", 19, stat.NbrOfImages)
 	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
 	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 8, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 0, stat.NbrOfImagePreview)
 	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
-	assertEqualsInt(t, "", 1, stat.NbrOfFailedImages)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfSmallImages)
 	if media.videoThumbnailSupport() {
-		assertEqualsInt(t, "", 1, stat.NbrOfFailedVideos)
+		assertEqualsInt(t, "", 1, stat.NbrOfVideoThumb)
+		assertEqualsInt(t, "", 1, stat.NbrOfFailedVideoThumb)
 		assertFileExist(t, "", filepath.Join(cache, "_video.jpg"))
 	} else {
-		assertEqualsInt(t, "", 2, stat.NbrOfFailedVideos)
+		assertEqualsInt(t, "", 0, stat.NbrOfVideoThumb)
+		assertEqualsInt(t, "", 2, stat.NbrOfFailedVideoThumb)
 	}
 
 	// Check that thumbnails where generated
@@ -451,6 +466,70 @@ func TestGenerateThumbnails(t *testing.T) {
 	assertFileNotExist(t, "", filepath.Join(cache, "_jpeg_rotated.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_180deg.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_mirror.jpg"))
+
+}
+
+func TestGeneratePreviews(t *testing.T) {
+	cache := "tmpcache/TestGeneratePreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, false, false)
+	stat := media.generateCache("", true, false, true)
+	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
+	assertEqualsInt(t, "", 19, stat.NbrOfImages)
+	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
+	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 0, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 12, stat.NbrOfImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 6, stat.NbrOfSmallImages)
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that no thumbnails where generated
+	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+
+}
+
+func TestGenerateThumbnailsAndPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateThumbnailsAndPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, false, false)
+	stat := media.generateCache("", true, true, true)
+	assertEqualsInt(t, "", 1, stat.NbrOfFolders)
+	assertEqualsInt(t, "", 19, stat.NbrOfImages)
+	assertEqualsInt(t, "", 2, stat.NbrOfVideos)
+	assertEqualsInt(t, "", 10, stat.NbrOfExif)
+	assertEqualsInt(t, "", 8, stat.NbrOfImageThumb)
+	assertEqualsInt(t, "", 12, stat.NbrOfImagePreview)
+	assertEqualsInt(t, "", 0, stat.NbrOfFailedFolders)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImageThumb)
+	assertEqualsInt(t, "", 1, stat.NbrOfFailedImagePreview)
+	assertEqualsInt(t, "", 6, stat.NbrOfSmallImages)
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that thumbnails where generated
+	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
 }
 
@@ -460,15 +539,15 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", cache, true, true, false, true)
+	media := createMedia(box, "testmedia", cache, true, true, false, true, false, 0, false, false)
 
 	for i := 0; i < 300; i++ {
 		time.Sleep(100 * time.Millisecond)
-		if !media.isThumbGenInProgress() {
+		if !media.isPreCacheInProgress() {
 			break
 		}
 	}
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 
 	// Check that thumbnails where generated
 	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
@@ -487,17 +566,79 @@ func TestGenerateAllThumbnails(t *testing.T) {
 	}
 }
 
+func TestGenerateAllPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateAllPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, false, false, true, true, 1280, true, false)
+
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if !media.isPreCacheInProgress() {
+			break
+		}
+	}
+	assertFalse(t, "", media.isPreCacheInProgress())
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+	// Check that no previews where generated for "small" images
+	assertFileNotExist(t, "", filepath.Join(cache, "view_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "view_screenshot_viewer.jpg"))
+
+	// Check that no thumbnails where generated
+	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+	assertFileNotExist(t, "", filepath.Join(cache, "_video.jpg"))
+}
+
+func TestGenerateAllThumbsAndPreviews(t *testing.T) {
+	cache := "tmpcache/TestGenerateAllThumbsAndPreviews"
+	os.RemoveAll(cache)
+	os.MkdirAll(cache, os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", cache, true, true, false, true, true, 1280, true, false)
+
+	for i := 0; i < 300; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if !media.isPreCacheInProgress() {
+			break
+		}
+	}
+	assertFalse(t, "", media.isPreCacheInProgress())
+
+	// Check that thumbnails where generated
+	assertFileExist(t, "", filepath.Join(cache, "_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "_tiff.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
+
+	// Check that previews where generated
+	assertFileExist(t, "", filepath.Join(cache, "view_png.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "view_gif.jpg"))
+	assertFileExist(t, "", filepath.Join(cache, "exif_rotate", "view_normal.jpg"))
+
+}
+
 func TestGenerateNoThumbnails(t *testing.T) {
 	cache := "tmpcache/TestGenerateNoThumbnails"
 	os.RemoveAll(cache)
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", cache, true, false, false, true)
+	media := createMedia(box, "testmedia", cache, true, false, false, true, false, 0, false, false)
 
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 	time.Sleep(100 * time.Millisecond)
-	assertFalse(t, "", media.isThumbGenInProgress())
+	assertFalse(t, "", media.isPreCacheInProgress())
 
 	// Check that no thumbnails where generated
 	assertFileNotExist(t, "", filepath.Join(cache, "_png.jpg"))
@@ -506,4 +647,158 @@ func TestGenerateNoThumbnails(t *testing.T) {
 	assertFileNotExist(t, "", filepath.Join(cache, "_video.jpg"))
 	assertFileNotExist(t, "", filepath.Join(cache, "exif_rotate", "_no_exif.jpg"))
 
+}
+
+func TestGetImageWidthAndHeight(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "", "", true, false, false, true, false, 0, false, false)
+
+	width, height, err := media.getImageWidthAndHeight("testmedia/jpeg.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 4128, width)
+	assertEqualsInt(t, "image height", 2322, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/gif.gif")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 3264, width)
+	assertEqualsInt(t, "image height", 2448, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/png.png")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 1632, width)
+	assertEqualsInt(t, "image height", 1224, height)
+
+	width, height, err = media.getImageWidthAndHeight("testmedia/tiff.tiff")
+	assertExpectNoErr(t, "", err)
+	assertEqualsInt(t, "image width", 979, width)
+	assertEqualsInt(t, "image height", 734, height)
+
+	// Test invalid
+	_, _, err = media.getImageWidthAndHeight("testmedia/invalid.jpg")
+	assertExpectErr(t, "", err)
+}
+
+func TestPreviewPath(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "/c/mediapath", "/d/thumbpath", true, false, false, true, true, 1280, false, false)
+
+	previewPath, err := media.previewPath("myimage.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/view_myimage.jpg", previewPath)
+
+	previewPath, err = media.previewPath("subdrive/myimage.jpg")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/subdrive/view_myimage.jpg", previewPath)
+
+	previewPath, err = media.previewPath("subdrive/myimage.png")
+	assertExpectNoErr(t, "", err)
+	assertEqualsStr(t, "", "/d/thumbpath/subdrive/view_myimage.jpg", previewPath)
+
+	_, err = media.previewPath("subdrive/myimage")
+	assertExpectErr(t, "", err)
+
+	_, err = media.previewPath("subdrive/../../hacker")
+	assertExpectErr(t, "", err)
+}
+
+func tGenerateImagePreview(t *testing.T, media *Media, inFileName, outFileName string) {
+	t.Helper()
+	os.Remove(outFileName)
+	RestartTimer()
+	err := media.generateImagePreview(inFileName, outFileName)
+	LogTime(t, inFileName+" preview generation: ")
+	assertExpectNoErr(t, "", err)
+	assertFileExist(t, "", outFileName)
+	// Check dimensions
+	width, height, err := media.getImageWidthAndHeight(outFileName)
+	assertExpectNoErr(t, "reading dimensions", err)
+	assertFalse(t, "preview width", width > media.previewMaxSide)
+	assertFalse(t, "preview height", height > media.previewMaxSide)
+}
+
+func TestGenerateImagePreview(t *testing.T) {
+	os.MkdirAll("tmpout/TestGenerateImagePreview", os.ModePerm) // If already exist no problem
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "", "", true, false, false, true, true, 1280, false, false)
+
+	tGenerateImagePreview(t, media, "testmedia/jpeg.jpg", "tmpout/TestGenerateImagePreview/jpeg_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/jpeg_rotated.jpg", "tmpout/TestGenerateImagePreview/jpeg_rotated_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/png.png", "tmpout/TestGenerateImagePreview/png_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/gif.gif", "tmpout/TestGenerateImagePreview/gif_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/tiff.tiff", "tmpout/TestGenerateImagePreview/tiff_preview.jpg")
+	tGenerateImagePreview(t, media, "testmedia/exif_rotate/no_exif.jpg", "tmpout/TestGenerateImagePreview/exif_rotate/no_exif_preview.jpg")
+
+	// Test some invalid
+	err := media.generateImagePreview("nonexisting.png", "dont_matter.png")
+	assertExpectErr(t, "", err)
+
+	err = media.generateImagePreview("testmedia/invalid.jpg", "dont_matter.jpg")
+	assertExpectErr(t, "", err)
+}
+
+func tWritePreview(t *testing.T, media *Media, inFileName, outFileName string, failExpected bool) {
+	t.Helper()
+	os.Remove(outFileName)
+	outFile, err := os.Create(outFileName)
+	assertExpectNoErr(t, "unable to create out", err)
+	defer outFile.Close()
+	err = media.writePreview(outFile, inFileName)
+	if failExpected {
+		assertExpectErr(t, "should fail", err)
+	} else {
+		assertExpectNoErr(t, "unable to write preview", err)
+		// Check dimensions
+		width, height, err := media.getImageWidthAndHeight(outFileName)
+		assertExpectNoErr(t, "reading dimensions", err)
+		assertFalse(t, "preview width", width > media.previewMaxSide)
+		assertFalse(t, "preview height", height > media.previewMaxSide)
+	}
+}
+
+func TestWritePreview(t *testing.T) {
+	os.RemoveAll("tmpcache/TestWritePreview")
+	os.MkdirAll("tmpcache/TestWritePreview", os.ModePerm)
+	os.RemoveAll("tmpout/TestWritePreview")
+	os.MkdirAll("tmpout/TestWritePreview", os.ModePerm)
+
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "tmpcache/TestWritePreview", true, false, false, true, true, 970, false, false)
+
+	// JPEG
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", false)
+
+	// Same file again, get cached result
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", false)
+
+	// PNG
+	tWritePreview(t, media, "png.png", "tmpout/TestWritePreview/png.jpg", false)
+
+	// TIFF
+	tWritePreview(t, media, "tiff.tiff", "tmpout/TestWritePreview/tiff.tiff", false)
+
+	// Video - should fail
+	tWritePreview(t, media, "video.mp4", "tmpout/TestWritePreview/video.jpg", true)
+
+	// Image smaller than previewMaxSide should fail
+	tWritePreview(t, media, "screenshot_browser.jpg", "tmpout/TestWritePreview/screenshot_browser.jpg", true)
+
+	// Non existing file
+	tWritePreview(t, media, "dont_exist.jpg", "tmpout/TestWritePreview/dont_exist.jpg", true)
+
+	// Invalid file
+	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+	// Check that error indication file is created
+	assertFileExist(t, "", "tmpcache/TestWritePreview/view_invalid.err.txt")
+	// Regenerate for increased coverage
+	tWritePreview(t, media, "invalid.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+
+	// Invalid path
+	tWritePreview(t, media, "../../secret.jpg", "tmpout/TestWritePreview/invalid.jpg", true)
+
+	// Disable preview
+	media = createMedia(box, "testmedia", "tmpcache/TestWritePreview", false, false, false, true, false, 0, false, false)
+
+	// Should fail since preview is disabled now
+	tWritePreview(t, media, "jpeg.jpg", "tmpout/TestWritePreview/jpeg.jpg", true)
 }

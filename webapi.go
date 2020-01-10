@@ -88,8 +88,8 @@ func (wa *WebAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wa.serveHTTPMedia(w, r)
 	} else if head == "thumb" && r.Method == "GET" {
 		wa.serveHTTPThumbnail(w, r)
-	} else if head == "isThumbGenInProgress" && r.Method == "GET" {
-		toJSON(w, wa.media.isThumbGenInProgress())
+	} else if head == "isPreCacheInProgress" && r.Method == "GET" {
+		toJSON(w, wa.media.isPreCacheInProgress())
 	} else if r.Method == "GET" {
 		r.URL.Path = originalURL
 		wa.serveHTTPStatic(w, r)
@@ -145,6 +145,16 @@ func (wa *WebAPI) serveHTTPMedia(w http.ResponseWriter, r *http.Request) {
 	if wa.media.getFileType(relativePath) == "" {
 		http.Error(w, "Not a valid media file: "+relativePath, http.StatusNotFound)
 		return
+	}
+	originalImage, hasOriginalImageQuery := r.URL.Query()["original-image"]
+	// Write preview file if possible and allowed
+	if !hasOriginalImageQuery || originalImage[0] != "true" {
+		err := wa.media.writePreview(w, relativePath)
+		if err == nil {
+			// Previews are always in JPEG format
+			w.Header().Set("Content-Type", "image/jpeg")
+			return
+		}
 	}
 	if wa.media.isRotationNeeded(relativePath) {
 		// This is a JPEG file which requires rotation.

@@ -221,7 +221,7 @@ func TestGetThumbnail(t *testing.T) {
 
 func TestGetThumbnailNoCache(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", false, false, false, true)
+	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
@@ -251,6 +251,24 @@ func TestGetThumbnailNoCache(t *testing.T) {
 	*/
 }
 
+func TestGetPreview(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "tmpcache/TestGetPreview", true, false, false, true, true, 1280, false, false)
+	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI.Start()
+	waitserver(t)
+	defer shutdown(t)
+
+	previewImage := getBinary(t, "media/jpeg.jpg", "image/jpeg")
+	assertTrue(t, "", len(previewImage) > 100)
+
+	fullImage := getBinary(t, "media/jpeg.jpg?full-image=true", "image/jpeg")
+	assertTrue(t, "", len(fullImage) > 100)
+
+	assertTrue(t, "Preview shall be smaller than original", len(previewImage) >= len(fullImage))
+
+}
+
 func TestInvalidPath(t *testing.T) {
 	startserver(t)
 	defer shutdown(t)
@@ -262,7 +280,7 @@ func TestInvalidPath(t *testing.T) {
 
 func TestAuthentication(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", true, false, false, true)
+	media := createMedia(box, "testmedia", "", true, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
 	webAPI.Start()
 	waitserver(t)
@@ -293,20 +311,20 @@ func TestAuthentication(t *testing.T) {
 
 }
 
-func TestIsThumbGenInProgress(t *testing.T) {
+func TestIsPreCacheInProgress(t *testing.T) {
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, "testmedia", "", false, false, false, true)
+	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
 	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
 
-	var isThumbGenInProgress bool
-	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
-	assertFalse(t, "", isThumbGenInProgress)
+	var isPreCacheInProgress bool
+	getObject(t, "isPreCacheInProgress", &isPreCacheInProgress)
+	assertFalse(t, "", isPreCacheInProgress)
 
-	media.thumbGenInProgress = true
-	getObject(t, "isThumbGenInProgress", &isThumbGenInProgress)
-	assertTrue(t, "", isThumbGenInProgress)
+	media.preCacheInProgress = true
+	getObject(t, "isPreCacheInProgress", &isPreCacheInProgress)
+	assertTrue(t, "", isPreCacheInProgress)
 
 }

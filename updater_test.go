@@ -10,19 +10,19 @@ type mediaMock struct {
 
 var lastPathGenerated string
 
-func (m *mediaMock) generateThumbnails(relativePath string, recursive bool) *ThumbnailStatistics {
+func (m *mediaMock) generateCache(relativePath string, recursive, thumbnails, preview bool) *PreCacheStatistics {
 	lastPathGenerated = relativePath
 	return nil
 }
 
-var isThumbGenInProgressResult = false
+var isPreCacheInProgressResult = false
 
-func (m *mediaMock) isThumbGenInProgress() bool {
-	return isThumbGenInProgressResult
+func (m *mediaMock) isPreCacheInProgress() bool {
+	return isPreCacheInProgressResult
 }
 
 func TestUpdaterMarkAndTouch(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	t1 := time.Now()
 	time.Sleep(2 * time.Millisecond)
 
@@ -50,7 +50,7 @@ func TestUpdaterMarkAndTouch(t *testing.T) {
 }
 
 func TestNextDirectoryToUpdate(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	u.minTimeSinceChangeSec = 1 // 5 -> 1 sec to reduce test time
 
 	// Add some directories
@@ -77,7 +77,7 @@ func TestNextDirectoryToUpdate(t *testing.T) {
 }
 
 func TestUpdaterThread(t *testing.T) {
-	u := createUpdater(&mediaMock{})
+	u := createUpdater(&mediaMock{}, true, false)
 	u.minTimeSinceChangeSec = 1 // 5 -> 1 sec to reduce test time
 	lastPathGenerated = ""
 
@@ -96,7 +96,7 @@ func TestUpdaterThread(t *testing.T) {
 	assertEqualsStr(t, "", "dir1", lastPathGenerated)
 
 	// Don't allow updater to run since update is in progress
-	isThumbGenInProgressResult = true
+	isPreCacheInProgressResult = true
 	u.markDirectoryAsUpdated("dir2")
 	time.Sleep(2000 * time.Millisecond)
 
@@ -104,7 +104,7 @@ func TestUpdaterThread(t *testing.T) {
 	assertEqualsStr(t, "", "dir1", lastPathGenerated)
 
 	// Allow it now
-	isThumbGenInProgressResult = false
+	isPreCacheInProgressResult = false
 	time.Sleep(2000 * time.Millisecond)
 	assertEqualsStr(t, "", "dir2", lastPathGenerated)
 

@@ -21,6 +21,18 @@ No additional stuff, such as dockers and similar is required.
 
 MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana Pi, ROCK64 and similar. It is still very fast and can be used with advantage on PC:s running Windows, Linux or Mac OS.
 
+## Content
+
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Download and install Linux](#download-and-install-linux)
+- [Download and install on Windows](#download-and-install-on-windows)
+- [Build from source on any platform](#build-from-source-on-any-platform)
+- [Configuration guide](#configuration-guide)
+- [Future improvements](#future-improvements)
+- [Author and license](#author-and-license)
+- [FAQ](FAQ.md)
+
 ## Screenshots
 
 Browse your media:
@@ -45,6 +57,7 @@ Multi-touch pitch to zoom images:
 * Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed
 * Automatic rotation JPEG images when needed (based on EXIF information)
 * Generate thumbnails on the fly, on start-up and/or when new files are added to the media directory
+* **NEW!** Automatically resize images to reduce network bandwidth and get a smoother navigation at client
 * Optional authentication with username and password
 
 ## Download and install Linux
@@ -89,9 +102,9 @@ To uninstall MediaWEB run:
     cd ~/mediaweb
     sudo sh service.sh uninstall
 
-Also, checkout the [FAQ](FAQ.md).
+Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 
-## Download and install on Windows (64bit)
+## Download and install on Windows
 
 Download mediaweb_windows_x64_setup.exe [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
@@ -102,9 +115,9 @@ service in task manager.
 
 You need to install [ffmpeg](https://www.ffmpeg.org/) separately and put ffmpeg into your PATH to get video thumbnail support.
 
-Also, checkout the [FAQ](FAQ.md).
+Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 
-## Build from source (any platform)
+## Build from source on any platform
 
 To build from source on any platform you need to:
 
@@ -136,6 +149,43 @@ To install as a Windows service start cmd.exe in administrator mode and run:
 On Linux platforms execute following to install MediaWEB as a service:
 
     sudo sh scripts/service.sh install
+
+
+## Configuration guide
+
+See [mediaweb.conf](configs/mediaweb.conf) for the available configuration parameters.
+
+The most important configuration parameter is *mediapath* which points out the 
+directory of your media. 
+
+Your might also want to change the *port* configuration parameter.
+
+### Increase performance with preview / resized images
+
+By default the server will provide the full images to the client (WEB browser).
+This is generally not an issue if you view your images over your home network, but
+over Internet or a mobile network it might take very long time to load the images.
+Also, since the images are large, the user interface might feel slow and unresponsive
+particulary in mobile web browsers.
+
+To fix these issues, at the cost of more caching storage space, MediaWEB can reduce the
+size / resolution and put the resized images in cache. The resizing procedure will
+take quite much time, especially for SBCs. Therefore you should configure MediaWEB
+to generate the previews at startup and when new files are added to your media
+directory:
+
+    enablethumbcache = on
+    genthumbsonstartup = on
+    genthumbsonadd = on
+    enablepreview = on
+    genpreviewonstartup = on
+    genpreviewonadd = on
+
+Count with ~300 - 800 KB per image, so you need to secure that the cache folder pointed
+out with the *cachepath* has enough disk space.
+
+Also, if you have many images and are running on an SBC it might take very, very long
+time the first time the images are resized. Count with several days.
 
 
 ## Future improvements

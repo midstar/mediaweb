@@ -17,10 +17,10 @@ type Watcher struct {
 	done            chan bool // Set to true when watcher go-routine has stopped
 }
 
-func createWatcher(media *Media) *Watcher {
+func createWatcher(media *Media, thumbnails, preview bool) *Watcher {
 	return &Watcher{
 		media:           media,
-		updater:         createUpdater(media),
+		updater:         createUpdater(media, thumbnails, preview),
 		stopWatcherChan: make(chan bool),
 		done:            make(chan bool)}
 }

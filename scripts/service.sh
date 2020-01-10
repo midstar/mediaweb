@@ -137,14 +137,18 @@ install_service() {
       exit 1
     }
     echo >> $CONFIG
+    echo "# Server network port." >> $CONFIG
+    echo "# This parameter is MANDATORY" >> $CONFIG
     echo "port = $PORT" >> $CONFIG
     echo >> $CONFIG
+    echo "# Media path, i.e. where is your media located" >> $CONFIG
+    echo "# This parameter is MANADTORY" >> $CONFIG
     echo "mediapath = $MEDIAPATH" >> $CONFIG
     echo >> $CONFIG
-    echo "# Thumb cache path is by default your operating systems" >> $CONFIG
-    echo "# temp folder + mediaweb. Uncomment below to set to" >> $CONFIG
-    echo "# another location. Not used if enablethumbcache = off." >> $CONFIG
-    echo "#thumbpath =" >> $CONFIG
+    echo "# Cache path is by default your operating systems" >> $CONFIG
+    echo "# temp folder + mediaweb. Cache path is where" >> $CONFIG
+    echo "# thumbnails and preview images are stored." >> $CONFIG
+    echo "cachepath = tmpcache" >> $CONFIG
     echo >> $CONFIG
     echo "# Thumbnail cache is on by default" >> $CONFIG
     echo "#enablethumbcache = off" >> $CONFIG
@@ -159,6 +163,39 @@ install_service() {
     echo "#genthumbsonadd = off" >> $CONFIG
     echo >> $CONFIG
     echo "#autorotate = off" >> $CONFIG
+    echo >> $CONFIG
+    echo "# Resize images before providing them to the client. The" >> $CONFIG
+    echo "# resized images are cached in the same location as the" >> $CONFIG
+    echo "# thumbnails." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# The advantages are:" >> $CONFIG
+    echo "#  1. Lower network bandwith required" >> $CONFIG
+    echo "#  2. Smoother navigation at the client. Particular if" >> $CONFIG
+    echo "#     browsing the images using a mobile client." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Disadvantages are:" >> $CONFIG
+    echo "#  1. Slower response time to view the image first time" >> $CONFIG
+    echo "#     since resizing image might take several seconds." >> $CONFIG
+    echo "#  2. Increased cache storage required." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Previews are default off." >> $CONFIG
+    echo "#enablepreview = on" >> $CONFIG
+    echo >> $CONFIG
+    echo "# Max size of preview images in pixels. The image will" >> $CONFIG
+    echo "# be resized so that width and hight is not larger than" >> $CONFIG
+    echo "# this value." >> $CONFIG
+    echo "#previewmaxside = 1280" >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Generate preview images on startup is by default off. Uncomment" >> $CONFIG
+    echo "# below to generate preview every time Media WEB startup." >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Warning! A lot of cache space might be required" >> $CONFIG
+    echo "#genpreviewonstartup = on" >> $CONFIG
+    echo "#" >> $CONFIG
+    echo "# Watch media path for updates is by default on." >> $CONFIG
+    echo "# Uncomment below to don't generate new image previews for" >> $CONFIG
+    echo "# files that are added in the media path" >> $CONFIG
+    echo "#genpreviewonadd = off" >> $CONFIG
     echo >> $CONFIG
     echo "logfile = /var/log/mediaweb.log" >> $CONFIG
     echo >> $CONFIG
