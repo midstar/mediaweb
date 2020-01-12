@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <html>
 <head>
 <title>MediaWEB</title>
@@ -32,19 +33,6 @@
     border-radius: 3px;
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait)  {
-    /* Mobile device in portrait mode  */
-    #navigator {
-        font-size: 40px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape)  {
-    /* Mobile device in landscape mode  */
-    #navigator {
-        font-size: 20px;
-    }    
-}
 
 /******************************************************************************
 * Media / file browser styles below
@@ -54,29 +42,16 @@
     margin-top: 40px; /* To not hit navigator */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .items {
-        margin-top:70px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape) {
-    /* Mobile device in landscape mode */
-    .items {
-        margin-top:45px;
-    }    
-}
-
 .item {
     width: 160px;
     height: 190px;
-    margin-top: 5px;
-    margin-left: 10px;
-    margin-right: 10px;
-    margin-bottom: 10px;
+    margin-top: 0px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
     display:inline-block;
     overflow: hidden;
+    /*border-style: solid;*/
 }
 .thumb {
     padding-top: 5px;
@@ -90,14 +65,34 @@
     display: block;
     width:128px; 
     height:128px;   
-    border-radius: 10px;
+    border-radius: 10%;
 }
 .thumb:hover img {
     transform: scale(1.1);
     cursor: pointer;
 }
 .name {
+    font-size: 15px;
     text-align: center;
+    overflow-wrap: break-word;
+}
+
+/* Smaller devices */
+@media only screen and (max-width: 1000px) {
+    .item {
+        width: 100px;
+        height: 130px;
+        margin-left: 2px;
+        margin-right: 2px;
+        margin-bottom: 2px;
+    }
+    .thumb img {
+        width:90px; 
+        height:90px; 
+    }
+    .name {
+        font-size: 8px;
+    }
 }
 
 /******************************************************************************
@@ -242,19 +237,6 @@
     text-align: center; /* center content inside div */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .media-caption {
-        height: 30px;
-        font-size: 26px;
-        margin-top: 2px;
-    }    
-    .media-object-container {
-        height: calc(100% - 30px);
-    }
-
-}
-
 /* Add Animation (when opening) */
 .media-viewer {  
     -webkit-animation-name: zoom;
@@ -283,20 +265,6 @@
     z-index: 5; /* Sit on top */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .media-button {
-        font-size: 120px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape) {
-    /* Mobile device in landscape mode */
-    .media-button {
-        font-size:55px;
-    }    
-}
-
 .media-button:hover,
 .media-button:focus {
     color: #bbb;
@@ -307,20 +275,6 @@
 #mediaViewerClose {
     top: 15px;
     right: 35px;
-}
-
-@media (min-resolution: 250dpi) and (orientation : portrait)  {
-    /* This is a high resolution device (such as a mobile) */
-    #na vigator{
-        font-size: 40px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape)  {
-    /* This is a high resolution device (such as a mobile) */
-    #navigator {
-        font-size: 20px;
-    }    
 }
 
 .media-zoom-container {
