@@ -507,7 +507,7 @@ function loadJSON(filePath, success, error)
                     success(JSON.parse(xhr.responseText));
         } else {
             if (error)
-                error(xhr.responseText + "\n\nMake sure you have updated the mediapath \nproperty in mediaweb.conf correctly!");
+                error(xhr.responseText + "\n\nUnable to connect to the MediaWEB server!");
             }
         }
     };
