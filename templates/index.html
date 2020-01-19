@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <html>
 <head>
 <title>MediaWEB</title>
@@ -32,19 +33,6 @@
     border-radius: 3px;
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait)  {
-    /* Mobile device in portrait mode  */
-    #navigator {
-        font-size: 40px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape)  {
-    /* Mobile device in landscape mode  */
-    #navigator {
-        font-size: 20px;
-    }    
-}
 
 /******************************************************************************
 * Media / file browser styles below
@@ -54,29 +42,16 @@
     margin-top: 40px; /* To not hit navigator */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .items {
-        margin-top:70px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape) {
-    /* Mobile device in landscape mode */
-    .items {
-        margin-top:45px;
-    }    
-}
-
 .item {
     width: 160px;
     height: 190px;
-    margin-top: 5px;
-    margin-left: 10px;
-    margin-right: 10px;
-    margin-bottom: 10px;
+    margin-top: 0px;
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
     display:inline-block;
     overflow: hidden;
+    /*border-style: solid;*/
 }
 .thumb {
     padding-top: 5px;
@@ -90,14 +65,34 @@
     display: block;
     width:128px; 
     height:128px;   
-    border-radius: 10px;
+    border-radius: 10%;
 }
 .thumb:hover img {
     transform: scale(1.1);
     cursor: pointer;
 }
 .name {
+    font-size: 15px;
     text-align: center;
+    overflow-wrap: break-word;
+}
+
+/* Smaller devices */
+@media only screen and (max-width: 1000px) {
+    .item {
+        width: 100px;
+        height: 130px;
+        margin-left: 2px;
+        margin-right: 2px;
+        margin-bottom: 2px;
+    }
+    .thumb img {
+        width:90px; 
+        height:90px; 
+    }
+    .name {
+        font-size: 8px;
+    }
 }
 
 /******************************************************************************
@@ -242,19 +237,6 @@
     text-align: center; /* center content inside div */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .media-caption {
-        height: 30px;
-        font-size: 26px;
-        margin-top: 2px;
-    }    
-    .media-object-container {
-        height: calc(100% - 30px);
-    }
-
-}
-
 /* Add Animation (when opening) */
 .media-viewer {  
     -webkit-animation-name: zoom;
@@ -283,20 +265,6 @@
     z-index: 5; /* Sit on top */
 }
 
-@media (min-resolution: 250dpi) and (orientation : portrait) {
-    /* Mobile device in portrait mode */
-    .media-button {
-        font-size: 120px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape) {
-    /* Mobile device in landscape mode */
-    .media-button {
-        font-size:55px;
-    }    
-}
-
 .media-button:hover,
 .media-button:focus {
     color: #bbb;
@@ -307,20 +275,6 @@
 #mediaViewerClose {
     top: 15px;
     right: 35px;
-}
-
-@media (min-resolution: 250dpi) and (orientation : portrait)  {
-    /* This is a high resolution device (such as a mobile) */
-    #na vigator{
-        font-size: 40px;
-    }    
-}
-
-@media (min-resolution: 250dpi) and (orientation : landscape)  {
-    /* This is a high resolution device (such as a mobile) */
-    #navigator {
-        font-size: 20px;
-    }    
 }
 
 .media-zoom-container {
@@ -553,7 +507,7 @@ function loadJSON(filePath, success, error)
                     success(JSON.parse(xhr.responseText));
         } else {
             if (error)
-                error(xhr.responseText + "\n\nMake sure you have updated the mediapath \nproperty in mediaweb.conf correctly!");
+                error(xhr.responseText + "\n\nUnable to connect to the MediaWEB server!");
             }
         }
     };
@@ -583,37 +537,7 @@ function setupMediaViewer(files) {
     mediaZoomContainer = document.getElementsByClassName("media-zoom-container")[0];
     mediaZoomObject = document.getElementsByClassName("media-zoom-object")[0];
 
-    // Remove all old files
-    while (mediaContainers.firstChild) {
-        mediaContainers.removeChild(mediaContainers.firstChild);
-    }
-
-    // Add new files
-    for (i=0 ; i < mediaFiles.length ; i++) {
-        var file = mediaFiles[i];
-        var mediaTag;
-        if (file.Type == "video") {
-            mediaTag = "<video controls";
-        } else {
-            mediaTag = "<img";
-        }
-        // Create the media container. For now define the thumb or
-        // image src/URL. We only load the data when needed of 
-        // performance reasons
-        var containerTxt =
-"<div class='media-container'> \
-    <div class='media-object-container'> \
-        <img class='media-thumb' src=''> \
-        " + mediaTag + " class='media-object' src=''> \
-    </div> \
-    <a href='media/" + file.Path + "?original-image=true' download>\
-        <div class='media-caption'>" + file.Name + "</div> \
-    </a>\
-</div>"
-        mediaContainers.insertAdjacentHTML( 'beforeend', containerTxt);
-    }
-
-    mediaContainers.style.setProperty('--n', mediaFiles.length);
+    setupMediaContainers();   
 
     // Below is only required to run once
     if (setupDone == false) {
@@ -649,7 +573,7 @@ function openMediaViewer(index = 0) {
     }
 
     mediaIndex = index;
-    mediaContainers.style.setProperty('--i', mediaIndex);
+    setMediaContainersTo(mediaIndex);
     updateURL(mediaIndex);
     mediaViewer.style.display = "block";
     document.onkeydown = function(e) {
@@ -721,21 +645,19 @@ function loadMediaThumb(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return; // Invalid index
     }
-    var mediaContainer = mediaContainers.children[index];
-    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
-    var mediaFile = mediaFiles[index];
 
     // Don't load thumb if the media object is already loaded
     if (isMediaLoadComplete(index)) {
         return; // No need for thumb
     }
 
-    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+    var thumb = getMediaThumb(index);
 
     // Don't load thumb if the thumb is already loaded
     if (thumb.getAttribute('src') != "")
         return; // Thumb already loaded
 
+    var mediaFile = mediaFiles[index];
     thumb.setAttribute('src',"thumb/" + mediaFile.Path);
     thumb.style.display = "block";
 }
@@ -745,8 +667,7 @@ function isMediaLoadComplete(index) {
     if (index < 0 || index >= mediaFiles.length) {
         return false; // Invalid index
     }
-    var mediaContainer = mediaContainers.children[index];
-    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaObject = getMediaObject(index);
     var mediaFile = mediaFiles[index];
     if (mediaObject.getAttribute('src') != "") {
         if ((mediaFile.Type == "video" && mediaObject.readyState == 4) || 
@@ -763,12 +684,11 @@ function loadMedia(index) {
 
     //console.log("load media: " + index);
 
-    var mediaContainer = mediaContainers.children[index];
-    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaObject = getMediaObject(index);
     if (mediaObject.getAttribute('src') != "") 
         return; // Media object already loaded
 
-    var thumb = mediaContainer.getElementsByClassName("media-thumb")[0];
+    var thumb = getMediaThumb(index);
     var mediaFile = mediaFiles[index];
     mediaObject.setAttribute('src',"media/" + mediaFile.Path);
 
@@ -864,6 +784,148 @@ function mediaViewLoaderCheck() {
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Media Viewer - Media Containers <-> Media file mapping
+//
+// The code within this section should be the only code "aware" of the 
+// mapping between invisible (shaddow) containers and real containers (in
+// DOM).
+///////////////////////////////////////////////////////////////////////////////
+
+var shadowMediaContainers = []; // Includes all media containers
+var nbrOfMediaContainers = 0; // Number of visible media files / containers
+var containerOffset = 0; // Offset in shadow containers
+
+// A low value means that swipe left/right feels snappy. Less memory is 
+// required. However, not so many images can be preloaded.
+// -> Low end device (mobile): Low value
+// -> High end device over local network: High value
+const MAX_MEDIA_CONTAINERS = 10;
+
+function setupMediaContainers() {
+    // Remove all old files
+    shadowMediaContainers.length = 0;
+
+    // Add new files
+    for (i=0 ; i < mediaFiles.length ; i++) {
+        var file = mediaFiles[i];
+
+        var mediaThumb = document.createElement("img");
+        mediaThumb.setAttribute("class","media-thumb");
+        mediaThumb.setAttribute("src", ""); // Filled in later
+
+        var mediaObject = null;
+        if (file.Type == "video") {
+            mediaObject = document.createElement("video");
+            mediaObject.setAttribute("controls", "");
+        } else {
+            mediaObject = document.createElement("img");
+        }
+        mediaObject.setAttribute("class","media-object");
+        mediaObject.setAttribute("src", ""); // Filled in later
+
+        var mediaObjectContainer = document.createElement("div");
+        mediaObjectContainer.setAttribute("class","media-object-container");
+        mediaObjectContainer.appendChild(mediaThumb);
+        mediaObjectContainer.appendChild(mediaObject);
+
+        var mediaCaption = document.createElement("div");
+        mediaCaption.setAttribute("class","media-caption");
+        mediaCaption.appendChild(document.createTextNode(file.Name));
+
+        var mediaLink = document.createElement("a");
+        mediaLink.setAttribute("href", "media/" + file.Path + "?original-image=true");
+        mediaLink.appendChild(mediaCaption);
+
+        mediaContainer = document.createElement("div");
+        mediaContainer.setAttribute("class", "media-container");
+        mediaContainer.appendChild(mediaObjectContainer);
+        mediaContainer.appendChild(mediaLink);
+
+        shadowMediaContainers.push(mediaContainer);
+    }   
+
+
+    nbrOfMediaContainers = Math.min(mediaFiles.length,MAX_MEDIA_CONTAINERS);
+    mediaContainers.style.setProperty('--n', nbrOfMediaContainers);
+    updateMediaContainers(0, true);
+}
+
+// Center the media-containers on container with media file with index.
+// If index is not a whole number, and offset from center will be 
+// introduced.
+//
+// If required the media-containers will be updated.
+function setMediaContainersTo(index) {
+    if (Number.isInteger(index)) {
+        //console.log("Index: " + index);
+        // Check if the visible containers should move.
+        var lastVisibleIndex = containerOffset + nbrOfMediaContainers - 1; 
+        var slack = 2 //Math.floor(MAX_MEDIA_CONTAINERS / 4); 
+        if ((lastVisibleIndex - index) < 2) {
+            // Move media-containers forward if possible
+            updateMediaContainers(index - slack, false);
+        } else if ((index - containerOffset) < 2) {
+            // Move media-containers backward if possible
+            updateMediaContainers(index + slack - nbrOfMediaContainers + 1, false);
+        } 
+
+    }
+    mediaContainers.style.setProperty('--i', index - containerOffset);
+}
+
+// Moves the visible media-containers over the shaddow containers
+// so that file with index startIndex is the first image
+// in media-contaners as illustrated below.
+//
+//               < media-containers>
+// < shallow containers (all files)                  >
+//               ^
+//               | 
+//            startIndex
+//
+// Internally sets the containerOffset which might not be the same
+// as startIndex due to bounds checking. 
+//
+// If forceUpdate is set the mediaContainers will be updated even
+// if there is no change in containerOffset. 
+function updateMediaContainers(startIndex, forceUpdate) {
+    // To secure that no overflow occurs
+    startIndex = Math.max(0, startIndex);
+    startIndex = Math.min(startIndex, mediaFiles.length - nbrOfMediaContainers);
+
+    if (containerOffset == startIndex && !forceUpdate) {
+        // No change compared to be fore
+        return
+    }
+    containerOffset = startIndex;
+    //console.log("Moving container offset to: " + containerOffset + " - " + (containerOffset + nbrOfMediaContainers - 1));
+
+    // Remove all old files
+    while (mediaContainers.firstChild) {
+        mediaContainers.removeChild(mediaContainers.firstChild);
+    }
+
+    // Add new files
+    for (i=containerOffset ; i < (containerOffset + nbrOfMediaContainers) ; i++) {
+        mediaContainers.appendChild(shadowMediaContainers[i]);
+    }   
+}
+
+// Get the media-container for media file with index 
+function getMediaContainer(index) {
+    return shadowMediaContainers[index];
+}
+
+// Get the media-object (img or video) for media file with index
+function getMediaObject(index) {
+    return getMediaContainer(index).getElementsByClassName("media-object")[0];
+}
+
+// Get the media-thumb (img) for media file with index
+function getMediaThumb(index) {
+    return getMediaContainer(index).getElementsByClassName("media-thumb")[0];
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -900,7 +962,7 @@ function mouseOrTouchMove(e) {
         let dx = unify(e).clientX - x0;
         w = window.innerWidth;
         let f = Math.sign(dx)*Math.abs((dx/w).toFixed(2));
-        mediaContainers.style.setProperty('--i', mediaIndex - f);
+        setMediaContainersTo(mediaIndex - f);
     } else if (isZoomEnabled()) {
         zoomMouseOrTouchMove(e);
     }
@@ -952,7 +1014,7 @@ function animateSlide(iFrom, iTo, startTime = null) {
 
     if (iFrom == iTo) {
         // No animation required
-        mediaContainers.style.setProperty('--i', iTo);
+        setMediaContainersTo(iTo);
         return;
     }
 
@@ -972,7 +1034,7 @@ function animateSlide(iFrom, iTo, startTime = null) {
         iNext = Math.max(iTo, iFrom - iDelta);
     } 
 
-    mediaContainers.style.setProperty('--i', iNext);
+    setMediaContainersTo(iNext);
 
     if (iNext == iTo) {
         // We are done
@@ -1016,8 +1078,7 @@ function showZoom() {
     mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
 
     // Get the image in the swipe window (used later)
-    var mediaContainer = mediaContainers.children[mediaIndex];
-    var mediaObject = mediaContainer.getElementsByClassName("media-object")[0];
+    var mediaObject = getMediaObject(mediaIndex);
 
     // Set the initial scale so it match in zoom and swipe Window
     z0 = mediaObject.width / mediaObject.naturalWidth;
