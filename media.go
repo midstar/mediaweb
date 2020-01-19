@@ -47,7 +47,7 @@ func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbC
 	genThumbsOnStartup, genThumbsOnAdd, autoRotate, enablePreview bool,
 	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
-	if enableThumbCache || enablePreview{
+	if enableThumbCache || enablePreview {
 		directory := filepath.Dir(cachepath)
 		err := os.MkdirAll(directory, os.ModePerm)
 		if err != nil {
@@ -77,7 +77,7 @@ func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbC
 	}
 	if enableThumbCache && genThumbsOnAdd || enablePreview && genPreviewOnAdd {
 		media.watcher = createWatcher(media, enableThumbCache && genThumbsOnAdd, enablePreview && genPreviewOnAdd)
-		go media.watcher.startWatcher() 
+		go media.watcher.startWatcher()
 	}
 	return media
 }
@@ -374,10 +374,9 @@ func (m *Media) errorIndicationPath(anyPath string) string {
 	return filepath.Join(path, file)
 }
 
-
 // generateErrorIndication creates a text file including the error reason.
 func (m *Media) generateErrorIndicationFile(errorIndicationFile string, err error) {
-	llog.Warn("%s",err)
+	llog.Warn("%s", err)
 	errorFile, err2 := os.Create(errorIndicationFile)
 	if err2 == nil {
 		defer errorFile.Close()
@@ -433,11 +432,11 @@ func (m *Media) generateThumbnail(relativeFilePath string) (string, error) {
 	if err == nil {
 		// File has failed to be generated before, don't bother
 		// trying to re-generate it.
-		msg := fmt.Sprintf("Skipping generate thumbnail for %s since it has failed before.", 
+		msg := fmt.Sprintf("Skipping generate thumbnail for %s since it has failed before.",
 			relativeFilePath)
 		llog.Trace(msg)
 		return "", fmt.Errorf(msg)
-	}	
+	}
 
 	// No thumb exist. Create it
 	llog.Info("Creating new thumbnail for %s", relativeFilePath)
@@ -600,7 +599,7 @@ func (m *Media) extractVideoScreenshot(inFilePath, outFilePath string) error {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err = cmd.Run()
-	_, outFileErr := os.Stat(outFilePath) 
+	_, outFileErr := os.Stat(outFilePath)
 	if err != nil || outFileErr != nil {
 		return fmt.Errorf("%s %s\nStdout: %s\nStderr: %s",
 			ffmpegCmd, strings.Join(ffmpegArgs, " "), stdout.String(), stderr.String())
@@ -682,11 +681,11 @@ func (m *Media) generatePreview(relativeFilePath string) (string, bool, error) {
 	if err == nil {
 		// File has failed to be generated before, don't bother
 		// trying to re-generate it.
-		msg := fmt.Sprintf("Skipping generate preview for %s since it has failed before.", 
+		msg := fmt.Sprintf("Skipping generate preview for %s since it has failed before.",
 			relativeFilePath)
 		llog.Trace(msg)
 		return "", false, fmt.Errorf(msg)
-	}	
+	}
 
 	fullMediaPath, err := m.getFullMediaPath(relativeFilePath)
 	if err != nil {
@@ -755,7 +754,6 @@ func (m *Media) writePreview(w io.Writer, relativeFilePath string) error {
 	return nil
 }
 
-
 // PreCacheStatistics statistics results from generateCache
 type PreCacheStatistics struct {
 	NbrOfFolders            int
@@ -766,8 +764,8 @@ type PreCacheStatistics struct {
 	NbrOfVideoThumb         int
 	NbrOfImagePreview       int
 	NbrOfFailedFolders      int // I.e. unable to list contents of folder
-	NbrOfFailedImageThumb  int
-	NbrOfFailedVideoThumb  int
+	NbrOfFailedImageThumb   int
+	NbrOfFailedVideoThumb   int
 	NbrOfFailedImagePreview int
 	NbrOfSmallImages        int // Don't require any preview
 }
@@ -805,8 +803,8 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 				stat.NbrOfFailedFolders += newStat.NbrOfFailedFolders
 				stat.NbrOfFailedImageThumb += newStat.NbrOfFailedImageThumb
 				stat.NbrOfFailedVideoThumb += newStat.NbrOfFailedVideoThumb
-				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview 
-				stat.NbrOfSmallImages += newStat.NbrOfSmallImages 
+				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview
+				stat.NbrOfSmallImages += newStat.NbrOfSmallImages
 			}
 		} else {
 			if file.Type == "image" {
@@ -824,8 +822,8 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 					stat.NbrOfExif++
 					hasExifThumb = true
 				}
-			} 
-			if (thumbnails && !hasExifThumb) {
+			}
+			if thumbnails && !hasExifThumb {
 				// Generate new thumbnail
 				_, err = m.generateThumbnail(file.Path)
 				if err != nil {
@@ -842,7 +840,7 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 					}
 				}
 			}
-			if (preview && file.Type == "image") {
+			if preview && file.Type == "image" {
 				// Generate new preview
 				_, tooSmall, err := m.generatePreview(file.Path)
 				if err != nil {
@@ -854,12 +852,11 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 				} else {
 					stat.NbrOfImagePreview++
 				}
-			} 
+			}
 		}
 	}
 	return &stat
 }
-
 
 // generateAllCache goes through all files in the media path
 // and generates thumbnails/preview for these
@@ -883,7 +880,7 @@ func (m *Media) generateAllCache(thumbnails, preview bool) {
   Number of failed video thumbnails: %d
   Number of failed image previews: %d
   Number of small images not require preview: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
-		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfImageThumb, stat.NbrOfVideoThumb, stat.NbrOfImagePreview, 
-		stat.NbrOfFailedFolders, stat.NbrOfFailedImageThumb, stat.NbrOfFailedVideoThumb, 
+		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfImageThumb, stat.NbrOfVideoThumb, stat.NbrOfImagePreview,
+		stat.NbrOfFailedFolders, stat.NbrOfFailedImageThumb, stat.NbrOfFailedVideoThumb,
 		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages)
 }

@@ -122,7 +122,6 @@ logfile = /tmp/log/mediaweb.log
 
 }
 
-
 func TestSettingsBackwardsCompatibility(t *testing.T) {
 	contents :=
 		`

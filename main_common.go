@@ -19,7 +19,7 @@ func mainCommon() *WebAPI {
 	media := createMedia(box, s.mediaPath, s.cachePath,
 		s.enableThumbCache, s.genThumbsOnStartup,
 		s.genThumbsOnAdd, s.autoRotate, s.enablePreview, s.previewMaxSide,
-	    s.genPreviewOnStartup, s.genPreviewOnAdd)
+		s.genPreviewOnStartup, s.genPreviewOnAdd)
 	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)
 	return webAPI
 }
