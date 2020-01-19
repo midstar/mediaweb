@@ -792,8 +792,15 @@ function mediaViewLoaderCheck() {
 // DOM).
 ///////////////////////////////////////////////////////////////////////////////
 
-var nbrOfMediaContainers = 0; // Number of visible media files / containers
 var shadowMediaContainers = []; // Includes all media containers
+var nbrOfMediaContainers = 0; // Number of visible media files / containers
+var containerOffset = 0; // Offset in shadow containers
+
+// A low value means that swipe left/right feels snappy. Less memory is 
+// required. However, not so many images can be preloaded.
+// -> Low end device (mobile): Low value
+// -> High end device over local network: High value
+const MAX_MEDIA_CONTAINERS = 10;
 
 function setupMediaContainers() {
     // Remove all old files
@@ -839,21 +846,60 @@ function setupMediaContainers() {
     }   
 
 
-    nbrOfMediaContainers = Math.min(mediaFiles.length,6)
+    nbrOfMediaContainers = Math.min(mediaFiles.length,MAX_MEDIA_CONTAINERS);
     mediaContainers.style.setProperty('--n', nbrOfMediaContainers);
-    updateMediaContainers(0);
+    updateMediaContainers(0, true);
 }
 
 // Center the media-containers on container with media file with index.
 // If index is not a whole number, and offset from center will be 
 // introduced.
+//
+// If required the media-containers will be updated.
 function setMediaContainersTo(index) {
-    mediaContainers.style.setProperty('--i', index);
+    if (Number.isInteger(index)) {
+        //console.log("Index: " + index);
+        // Check if the visible containers should move.
+        var lastVisibleIndex = containerOffset + nbrOfMediaContainers - 1; 
+        var slack = 2 //Math.floor(MAX_MEDIA_CONTAINERS / 4); 
+        if ((lastVisibleIndex - index) < 2) {
+            // Move media-containers forward if possible
+            updateMediaContainers(index - slack, false);
+        } else if ((index - containerOffset) < 2) {
+            // Move media-containers backward if possible
+            updateMediaContainers(index + slack - nbrOfMediaContainers + 1, false);
+        } 
+
+    }
+    mediaContainers.style.setProperty('--i', index - containerOffset);
 }
 
-// Moves the visible media-containers over the shaddow containers so
-// that the selected index is in the middle.
-function updateMediaContainers(middleIndex) {
+// Moves the visible media-containers over the shaddow containers
+// so that file with index startIndex is the first image
+// in media-contaners as illustrated below.
+//
+//               < media-containers>
+// < shallow containers (all files)                  >
+//               ^
+//               | 
+//            startIndex
+//
+// Internally sets the containerOffset which might not be the same
+// as startIndex due to bounds checking. 
+//
+// If forceUpdate is set the mediaContainers will be updated even
+// if there is no change in containerOffset. 
+function updateMediaContainers(startIndex, forceUpdate) {
+    // To secure that no overflow occurs
+    startIndex = Math.max(0, startIndex);
+    startIndex = Math.min(startIndex, mediaFiles.length - nbrOfMediaContainers);
+
+    if (containerOffset == startIndex && !forceUpdate) {
+        // No change compared to be fore
+        return
+    }
+    containerOffset = startIndex;
+    //console.log("Moving container offset to: " + containerOffset + " - " + (containerOffset + nbrOfMediaContainers - 1));
 
     // Remove all old files
     while (mediaContainers.firstChild) {
@@ -861,7 +907,7 @@ function updateMediaContainers(middleIndex) {
     }
 
     // Add new files
-    for (i=0 ; i < nbrOfMediaContainers ; i++) {
+    for (i=containerOffset ; i < (containerOffset + nbrOfMediaContainers) ; i++) {
         mediaContainers.appendChild(shadowMediaContainers[i]);
     }   
 }
@@ -1032,7 +1078,7 @@ function showZoom() {
     mediaZoomObject.setAttribute('src',"media/" + mediaFile.Path);
 
     // Get the image in the swipe window (used later)
-    var mediaObject = getMediaObject(index);
+    var mediaObject = getMediaObject(mediaIndex);
 
     // Set the initial scale so it match in zoom and swipe Window
     z0 = mediaObject.width / mediaObject.naturalWidth;
