@@ -1057,8 +1057,6 @@ var z = null; // Current zoom level
 var xOffset = 0; // Last set xOffset
 var yOffset = 0; // Last set yOffset
 var minZ = 0;
-var maxXOffset = 0; 
-var maxYOffset = 0; 
 var panX = 0; // Last X position during pan
 var panY = 0; // Last Y position during pan
 var pan = false; // Pan (when using single finger or mouse)
@@ -1088,9 +1086,7 @@ function showZoom() {
 
     // Set the x and y position so it match in zoom and swipe Window
     var rect = mediaObject.getBoundingClientRect();
-    maxXOffset = rect.left;
-    maxYOffset = rect.top;
-    setZoomOffset(maxXOffset, maxYOffset); 
+    setZoomOffset(rect.left, rect.top); 
 
     // Show the zoom window
     mediaZoomContainer.style.display = "block";  
@@ -1178,7 +1174,7 @@ function fingerCenter(finger1, finger2) {
     return point;
 }
 
-// Zoom will be limited by maxXOffset, maxYOffset and minZ.
+// Zoom will be limited by minZ.
 function zoomImage(centerX, centerY, scale) {
     // Don't allow zoom out more than minZ
     scale = Math.max(scale, minZ);
@@ -1218,10 +1214,36 @@ function zoomImage(centerX, centerY, scale) {
     setZoomOffset(centerX - xZNew, centerY - yZNew);
 }
 
-// Zoom offset will be limited by maxXOffset and maxYOffset.
+// Zoom offet (x and y position while dragging). Will reduce/increase
+// x/y when necessary to avoid dragging object out of screen
 function setZoomOffset(x, y) {
-    xOffset = Math.min(x, maxXOffset);
-    yOffset = Math.min(y, maxYOffset);    
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var rect = mediaZoomObject.getBoundingClientRect();
+
+    xOffset = x;
+    yOffset = y;
+
+    // Secure that image is not outside screen in X direction
+    var width = rect.right - rect.left;
+    if (x > 0 && rect.right > w) {
+        xOffset = Math.min(xOffset, w - width)
+        xOffset = Math.max(0, xOffset);
+    } else if (x < 0 && rect.right < w) {
+        xOffset = Math.max(xOffset, w - width)
+        xOffset = Math.min(0, xOffset);
+    }
+
+    // Secure that image is not outside screen in Y direction
+    var height = rect.bottom - rect.top;
+    if (y > 0 && rect.bottom > h) {
+        yOffset = Math.min(yOffset, h - height)
+        yOffset = Math.max(0, yOffset);
+    } else if (y < 0 && rect.bottom < h) {
+        yOffset = Math.max(yOffset, h - height)
+        yOffset = Math.min(0, yOffset);
+    }
+
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");
 }
