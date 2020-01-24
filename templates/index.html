@@ -1228,31 +1228,27 @@ function zoomImage(centerX, centerY, scale) {
 // Zoom offet (x and y position while dragging). Will reduce/increase
 // x/y when necessary to avoid dragging object out of screen
 function setZoomOffset(x, y) {
-    var w = window.innerWidth;
-    var h = window.innerHeight;
+    var windowWidth = window.innerWidth;
+    var windowHeight = window.innerHeight;
     var rect = mediaZoomObject.getBoundingClientRect();
+    var imageWidth = Math.round(rect.right - rect.left);
+    var imageHeight = Math.round(rect.bottom - rect.top);
 
-    xOffset = x;
-    yOffset = y;
+    xOffset = Math.round(x);
+    yOffset = Math.round(y);
 
     // Secure that image is not outside screen in X direction
-    var width = rect.right - rect.left;
-    if (x > 0 && rect.right > w) {
-        xOffset = Math.min(xOffset, w - width)
-        xOffset = Math.max(0, xOffset);
-    } else if (x < 0 && rect.right < w) {
-        xOffset = Math.max(xOffset, w - width)
-        xOffset = Math.min(0, xOffset);
+    if (xOffset > 0 && (xOffset + imageWidth) > windowWidth) {
+        xOffset = Math.max(0, windowWidth - imageWidth);
+    } else if (xOffset < 0 && (xOffset + imageWidth) < windowWidth) {
+        xOffset = Math.min(0, windowWidth - imageWidth);
     }
 
     // Secure that image is not outside screen in Y direction
-    var height = rect.bottom - rect.top;
-    if (y > 0 && rect.bottom > h) {
-        yOffset = Math.min(yOffset, h - height)
-        yOffset = Math.max(0, yOffset);
-    } else if (y < 0 && rect.bottom < h) {
-        yOffset = Math.max(yOffset, h - height)
-        yOffset = Math.min(0, yOffset);
+    if (yOffset > 0 && (yOffset + imageHeight) > windowHeight) {
+        yOffset = Math.max(0, windowHeight - imageHeight)
+    } else if (yOffset < 0 && (yOffset + imageHeight) < windowHeight) {
+        yOffset = Math.min(0, windowHeight - imageHeight)
     }
 
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
