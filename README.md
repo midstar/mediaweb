@@ -129,6 +129,7 @@ To build from source on any platform you need to:
 
 * Install Golang 
 * Set the GOPATH environment variable
+* Add the bin folder within your GOPATH to your PATH environment variable ($GOPATH/bin)
 
 On Windows execute (from cmd.exe):
 
