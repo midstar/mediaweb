@@ -6,6 +6,25 @@
 <style>
 
 /******************************************************************************
+* General
+******************************************************************************/
+
+/* Global variables - will be overridden by Javascript depending on the
+   screen size. WARNING! Needs to be put first in the <style> section!!
+*/
+:root {
+    --global-item-width: 160px; /* Width of each element in file browser */
+    --global-item-margin: 5px;  /* Distance between each element */
+    --global-item-font: 15px;   /* File name font size */
+}
+
+body {
+    margin: 0px;
+    padding: 0px;
+}
+
+
+/******************************************************************************
 * Navigator styles below
 ******************************************************************************/
 
@@ -17,6 +36,7 @@
     top: 0; /* Position the navbar at the top of the page */
     padding-top: 5px;
     padding-bottom: 5px;
+    padding-left: 8px;
     width: 100%; /* Full width */
     /*min-height: 30px;*/
     font-size: 15px;
@@ -43,28 +63,24 @@
 }
 
 .item {
-    width: 160px;
-    height: 190px;
-    margin-top: 0px;
-    margin-left: 5px;
-    margin-right: 5px;
-    margin-bottom: 5px;
+    width: var(--global-item-width);
+    height: calc(var(--global-item-width) * 1.2);
+    margin-left: var(--global-item-margin);
+    margin-bottom: var(--global-item-margin);
     display:inline-block;
     overflow: hidden;
     /*border-style: solid;*/
 }
 .thumb {
     padding-top: 5px;
-    padding-left: 5px;
-    padding-right: 5px;
     padding-bottom: 5px;   
 }
 .thumb img {
     margin-left: auto;
     margin-right: auto;
     display: block;
-    width:128px; 
-    height:128px;   
+    width: calc(var(--global-item-width) * 0.8); 
+    height: calc(var(--global-item-width) * 0.8);    
     border-radius: 10%;
 }
 .thumb:hover img {
@@ -72,27 +88,9 @@
     cursor: pointer;
 }
 .name {
-    font-size: 15px;
+    font-size: var(--global-item-font);
     text-align: center;
     overflow-wrap: break-word;
-}
-
-/* Smaller devices */
-@media only screen and (max-width: 1000px) {
-    .item {
-        width: 100px;
-        height: 130px;
-        margin-left: 2px;
-        margin-right: 2px;
-        margin-bottom: 2px;
-    }
-    .thumb img {
-        width:90px; 
-        height:90px; 
-    }
-    .name {
-        font-size: 8px;
-    }
 }
 
 /******************************************************************************
@@ -313,6 +311,9 @@
 <script>
 
 window.onload = function() {
+    // Setup CSS based on screen size
+    onWindowSizeChange();
+    window.addEventListener("resize", onWindowSizeChange);
 
     // Check for URL path parameter
     var path = ""
@@ -328,6 +329,30 @@ window.onload = function() {
 
     loadJSON("folder/" + path, onNewFiles, onError);
 
+}
+
+/* Setup CSS global variables based on screen size */
+function onWindowSizeChange() {
+    var windowWidth = document.documentElement.clientWidth;
+    const root = document.styleSheets[0].rules[0].style;
+    var minItemWidth = 160;
+    var itemMargin = 5;
+    var itemFont = 15;
+    if (windowWidth < 1000) {
+        minItemWidth = 100;
+        itemMargin = 2;
+        itemFont = 8;
+    }
+    // Adjust the item width so that the items are evently distributed
+    // over the screen
+    var itemsPerRow = Math.floor((windowWidth - itemMargin) / (itemMargin + minItemWidth));
+    var extraWidthTotal = (windowWidth - itemMargin) - (itemsPerRow * (itemMargin + minItemWidth));
+    var extraWidthPerItem = Math.floor(extraWidthTotal / itemsPerRow);
+    var itemWidth = minItemWidth + extraWidthPerItem;
+
+    root.setProperty("--global-item-width", itemWidth + "px");
+    root.setProperty("--global-item-margin", itemMargin + "px");
+    root.setProperty("--global-item-font", itemFont + "px");
 }
 
 function warningClick() {
@@ -1261,8 +1286,7 @@ function setZoomOffset(x, y) {
 <body>
 
 <!-- Directory navigator -->
-<div id="navigator">
-</div>
+<div id="navigator"></div>
 
 <div class="items" id="items">
 <!-- File items goes here -->
