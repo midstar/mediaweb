@@ -222,7 +222,7 @@
     height: 256px;
     top: 20px;
     left: 20px;
-    border-radius: 25px;
+    border-radius: 10%;
     position: absolute; /* Stay in place in container */
     z-index: 3; /* Sit on top */
     display: none; /* Hide by default */
@@ -295,6 +295,17 @@
     transform:translate(var(--x), var(--y)) scale(var(--z));
     top: 0px;
     left: 0px; 
+}
+
+/* Smaller devices */
+@media only screen and (max-width: 1000px) {
+    .media-thumb {
+        width: 180px;
+        height: 180px;
+        top: 14px;
+        left: 14px;
+    }
+
 }
 
 </style>
@@ -1057,8 +1068,6 @@ var z = null; // Current zoom level
 var xOffset = 0; // Last set xOffset
 var yOffset = 0; // Last set yOffset
 var minZ = 0;
-var maxXOffset = 0; 
-var maxYOffset = 0; 
 var panX = 0; // Last X position during pan
 var panY = 0; // Last Y position during pan
 var pan = false; // Pan (when using single finger or mouse)
@@ -1088,9 +1097,7 @@ function showZoom() {
 
     // Set the x and y position so it match in zoom and swipe Window
     var rect = mediaObject.getBoundingClientRect();
-    maxXOffset = rect.left;
-    maxYOffset = rect.top;
-    setZoomOffset(maxXOffset, maxYOffset); 
+    setZoomOffset(rect.left, rect.top); 
 
     // Show the zoom window
     mediaZoomContainer.style.display = "block";  
@@ -1178,7 +1185,7 @@ function fingerCenter(finger1, finger2) {
     return point;
 }
 
-// Zoom will be limited by maxXOffset, maxYOffset and minZ.
+// Zoom will be limited by minZ.
 function zoomImage(centerX, centerY, scale) {
     // Don't allow zoom out more than minZ
     scale = Math.max(scale, minZ);
@@ -1218,10 +1225,32 @@ function zoomImage(centerX, centerY, scale) {
     setZoomOffset(centerX - xZNew, centerY - yZNew);
 }
 
-// Zoom offset will be limited by maxXOffset and maxYOffset.
+// Zoom offet (x and y position while dragging). Will reduce/increase
+// x/y when necessary to avoid dragging object out of screen
 function setZoomOffset(x, y) {
-    xOffset = Math.min(x, maxXOffset);
-    yOffset = Math.min(y, maxYOffset);    
+    var windowWidth = window.innerWidth;
+    var windowHeight = window.innerHeight;
+    var rect = mediaZoomObject.getBoundingClientRect();
+    var imageWidth = Math.round(rect.right - rect.left);
+    var imageHeight = Math.round(rect.bottom - rect.top);
+
+    xOffset = Math.round(x);
+    yOffset = Math.round(y);
+
+    // Secure that image is not outside screen in X direction
+    if (xOffset > 0 && (xOffset + imageWidth) > windowWidth) {
+        xOffset = Math.max(0, windowWidth - imageWidth);
+    } else if (xOffset < 0 && (xOffset + imageWidth) < windowWidth) {
+        xOffset = Math.min(0, windowWidth - imageWidth);
+    }
+
+    // Secure that image is not outside screen in Y direction
+    if (yOffset > 0 && (yOffset + imageHeight) > windowHeight) {
+        yOffset = Math.max(0, windowHeight - imageHeight)
+    } else if (yOffset < 0 && (yOffset + imageHeight) < windowHeight) {
+        yOffset = Math.min(0, windowHeight - imageHeight)
+    }
+
     mediaZoomObject.style.setProperty('--x',xOffset + "px");
     mediaZoomObject.style.setProperty('--y',yOffset + "px");
 }

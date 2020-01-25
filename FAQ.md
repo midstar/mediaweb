@@ -6,6 +6,7 @@
 - [Why are the Video thumbnails not generated?](#why-are-the-video-thumbnails-not-generated)
 - [Why does it take so long time to load images the first time?](#why-does-it-take-so-long-time-to-load-images-the-first-time)
 - [Why is swiping or zooming images lagging?](#why-is-swiping-or-zooming-images-lagging)
+- [How to fetch the original image when preview is enabled?](#how-to-fetch-the-original-image-when-preview-is-enabled)
 
 
 ## Why use MediaWEB and not any other similar software?
@@ -74,3 +75,7 @@ The size of the preview images is set with the previewmaxside configuration para
 The aspect ratio of the image will be kept.
 
 Your can also configure MediaWEB to generate the previews during startup and when files are added to the media folder as described in the [configuration guide](README.md).
+
+## How to fetch the original image when preview is enabled?
+
+You can always download the original image (unresized) by clicking on the image name/title while viewing the image.

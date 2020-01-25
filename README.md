@@ -51,6 +51,12 @@ Multi-touch pitch to zoom images:
 
 ![viewer](testmedia/screenshot_viewer_zoom.jpg)
 
+Interface suited for mobile devices:
+
+![viewer](testmedia/screenshot_mobile.jpg)
+
+
+
 ## Features
 
 * Simple WEB GUI for viewing your images and videos both on your PC and on your mobile phone
@@ -123,6 +129,7 @@ To build from source on any platform you need to:
 
 * Install Golang 
 * Set the GOPATH environment variable
+* Add the bin folder within your GOPATH to your PATH environment variable ($GOPATH/bin)
 
 On Windows execute (from cmd.exe):
 
