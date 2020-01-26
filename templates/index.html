@@ -21,6 +21,7 @@
 body {
     margin: 0px;
     padding: 0px;
+    touch-action: pan-y; /* Disable browser pitch-zoom */
 }
 
 
@@ -43,7 +44,7 @@ body {
     z-index: 1; /* Sit on top */
 }
 
-#navigator a {
+#navigator div {
     display:inline-block;
     color: white; 
     font-weight: bold;
@@ -51,6 +52,11 @@ body {
     background-color: #8391a8;
     padding: 5px 5px 5px 5px;
     border-radius: 3px;
+}
+
+#navigator:hover div {
+    transform: scale(1.1);
+    cursor: pointer;
 }
 
 
@@ -312,8 +318,8 @@ body {
 
 window.onload = function() {
     // Setup CSS based on screen size
-    onWindowSizeChange();
-    window.addEventListener("resize", onWindowSizeChange);
+    onScreenSizeChange();
+    window.addEventListener("resize", onScreenSizeChange);
 
     // Check for URL path parameter
     var path = ""
@@ -329,20 +335,39 @@ window.onload = function() {
 
     loadJSON("folder/" + path, onNewFiles, onError);
 
+    document.addEventListener('touchstart', touchDown, false);
+    document.addEventListener('touchmove', touchMove, false);
 }
 
-/* Setup CSS global variables based on screen size */
-function onWindowSizeChange() {
+function onScreenSizeChange() {
+    setupFileItemSizes(getCurrentScale());
+}
+
+// Setup CSS global variables based on screen size and scale
+function setupFileItemSizes(scale = 1) {
     var windowWidth = document.documentElement.clientWidth;
     const root = document.styleSheets[0].rules[0].style;
-    var minItemWidth = 160;
+    var unScaledMinItemWidth = 160;
     var itemMargin = 5;
     var itemFont = 15;
     if (windowWidth < 1000) {
-        minItemWidth = 100;
+        unScaledMinItemWidth = 100;
         itemMargin = 2;
-        itemFont = 8;
     }
+
+    // Adjust to the scale
+    var minItemWidth = Math.max(40, unScaledMinItemWidth * scale);
+    minItemWidth = Math.min(minItemWidth, windowWidth - itemMargin * 2);
+
+    // Decrease font size if necessary:
+    if (minItemWidth <= 80) {
+        itemFont = 5;
+    } else if (minItemWidth <= 100) {
+        itemFont = 8;
+    } else if (minItemWidth <= 140) {
+        itemFont = 11;
+    }
+
     // Adjust the item width so that the items are evently distributed
     // over the screen
     var itemsPerRow = Math.floor((windowWidth - itemMargin) / (itemMargin + minItemWidth));
@@ -353,6 +378,8 @@ function onWindowSizeChange() {
     root.setProperty("--global-item-width", itemWidth + "px");
     root.setProperty("--global-item-margin", itemMargin + "px");
     root.setProperty("--global-item-font", itemFont + "px");
+
+    updateURLScale(minItemWidth / unScaledMinItemWidth);
 }
 
 function warningClick() {
@@ -386,8 +413,8 @@ function updateNavigator(path) {
 
     // No navigator on top level 
     if (parts.length > 0) {
-        var navigator = document.getElementById("navigator")
-        var links = "<a href='?path='>&#8962;</a>"
+        var navigator = document.getElementById("navigator");
+        var links = "<div onclick='setLocation(\"\")'>&#8962;</div>";
         var url = "";
         for (var i = 0 ; i < parts.length ; i++) {
             part = parts[i];
@@ -396,7 +423,7 @@ function updateNavigator(path) {
                 // Last element is no link
                 links += " / " + part
             } else {
-                links += " / <a href='?path=" + url + "'>" + part + "</a>"
+                links += " / <div setLocation(\"" + url + "\")" + part + "</div>";
             }
         }
         navigator.insertAdjacentHTML("beforeend", links);
@@ -551,6 +578,61 @@ function loadJSON(filePath, success, error)
     xhr.send();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Media File Browser Zooming Javascript Below
+///////////////////////////////////////////////////////////////////////////////
+
+var generalTouchDist0;  // Initial touch distance
+var generalTouchScale0; // Initial touch scale
+
+// Called on touch down independently on the view
+function touchDown(e) { 
+    if(!isMediaViewerOpen() && e.touches.length == 2) {
+        // Two finger touch in browser window
+        generalTouchDist0 = fingerDistance(e.touches[0],e.touches[1]);
+        const params = new URLSearchParams(window.location.search);
+        generalTouchScale0 = getCurrentScale();
+    }
+}
+
+// Called on touch drag independently on the view
+function touchMove(e) { 
+    if(!isMediaViewerOpen() && e.touches.length == 2) {
+        // Two finger move in browser window
+        var dist = fingerDistance(e.touches[0],e.touches[1]);
+        var newScale = (dist/generalTouchDist0) * generalTouchScale0;
+        setupFileItemSizes(newScale);
+    }
+}
+
+function getCurrentScale() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("scale")) {
+        return params.get("scale");
+    }
+    return 1;
+}
+
+// Will updated URL with the query parameter scale set to the
+// scale in the browser
+function updateURLScale(scale) {
+    scale = Math.round(scale * 100) / 100;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("scale")) {
+        if (scale == 1) {
+            params.delete("scale");
+            history.pushState({},"","?" + params.toString());
+        } else if (params.get("scale") != scale) {
+            // Replace current history
+            params.set("scale", scale);
+            history.replaceState({},scale,"?" + params.toString());
+        }
+    } else if (scale != 1) {
+        // Create new history
+        params.set("scale", scale);
+        history.pushState({},scale,"?" + params.toString());
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Media Viewer Javascript Below
@@ -577,16 +659,16 @@ function setupMediaViewer(files) {
 
     // Below is only required to run once
     if (setupDone == false) {
-        mediaContainers.addEventListener('mousemove', mouseOrTouchMove, false);
-        mediaContainers.addEventListener('touchmove', mouseOrTouchMove, false);
+        mediaContainers.addEventListener('mousemove', viewMouseOrTouchMove, false);
+        mediaContainers.addEventListener('touchmove', viewMouseOrTouchMove, false);
 
-        mediaContainers.addEventListener('mousedown', mouseOrTouchDown, false);
-        mediaContainers.addEventListener('touchstart', mouseOrTouchDown, false);
+        mediaContainers.addEventListener('mousedown', viewMouseOrTouchDown, false);
+        mediaContainers.addEventListener('touchstart', viewMouseOrTouchDown, false);
 
-        mediaContainers.addEventListener('mouseup', mouseOrTouchUp, false);
-        mediaContainers.addEventListener('touchend', mouseOrTouchUp, false);
+        mediaContainers.addEventListener('mouseup', viewMouseOrTouchUp, false);
+        mediaContainers.addEventListener('touchend', viewMouseOrTouchUp, false);
 
-        mediaContainers.addEventListener('dblclick', mouseOrTouchDblClick, false);
+        mediaContainers.addEventListener('dblclick', viewMouseOrTouchDblClick, false);
 
         mediaZoomContainer.addEventListener('mousemove', zoomMouseOrTouchMove, false);
         mediaZoomContainer.addEventListener('touchmove', zoomMouseOrTouchMove, false);
@@ -658,6 +740,11 @@ function closeMediaViewer() {
     params.delete("file");
     history.pushState({},"","?" + params.toString());
 }
+
+function isMediaViewerOpen() {
+    return mediaViewer != null && mediaViewer.style.display == "block";
+}
+
 
 
 // Will updated URL with the query parameter file set to the
@@ -750,9 +837,7 @@ function loadMedia(index) {
 function mediaLoadedCompleteCallback(index, thumbObject) {
     thumbObject.style.display = "none"; // Hide the thumb
 
-    //console.log("complete: " + index);
-
-    if (mediaViewer.style.display == "none") {
+    if (!isMediaViewerOpen()) {
         // Don't prefetch if Media Viewer is closed
         return;
     }
@@ -809,7 +894,7 @@ function nextMedia(iPrev = mediaIndex) {
 // current media object has not been loaded.
 function mediaViewLoaderCheck() {
     var mediaLoader = document.getElementById("mediaLoader");
-    if (mediaViewer.style.display == "none") {
+    if (!isMediaViewerOpen()) {
         mediaLoader.style.display = "none";
         return;
     }
@@ -977,7 +1062,7 @@ var x0 = null; // Last mouse/touch x position
 var dragging = false; // Mouse or one finger is down
 
 // Called on mouse/touch down 
-function mouseOrTouchDown(e) { 
+function viewMouseOrTouchDown(e) { 
     if (e instanceof TouchEvent) {
         if (e.targetTouches.length == 2) {
             // Multi finger touch, start zoom instead of drag
@@ -993,7 +1078,7 @@ function mouseOrTouchDown(e) {
 }
 
 // Called on mouse/touch drag
-function mouseOrTouchMove(e) { 
+function viewMouseOrTouchMove(e) { 
     if (e.cancelable) {
         e.preventDefault();
     }
@@ -1009,7 +1094,7 @@ function mouseOrTouchMove(e) {
 }
 
 // Called on mouse/touch up 
-function mouseOrTouchUp(e) {
+function viewMouseOrTouchUp(e) {
   if(dragging) {
     let dx = unify(e).clientX - x0;
     w = window.innerWidth;
@@ -1037,7 +1122,7 @@ function mouseOrTouchUp(e) {
 
 // Called on mouse/touch double click in viewer
 // Will start zooming
-function mouseOrTouchDblClick(e) {
+function viewMouseOrTouchDblClick(e) {
     showZoom();
     zoomImage(unify(e).clientX, unify(e).clientY, z0 * 2);
 }

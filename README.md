@@ -35,7 +35,7 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 
 ## Screenshots
 
-Browse your media:
+Browse your media, multi-touch pitch to increase/decrease size of thumbnails:
 
 ![browser](testmedia/screenshot_browser.jpg)
 
