@@ -586,6 +586,8 @@ function setupMediaViewer(files) {
         mediaContainers.addEventListener('mouseup', mouseOrTouchUp, false);
         mediaContainers.addEventListener('touchend', mouseOrTouchUp, false);
 
+        mediaContainers.addEventListener('dblclick', mouseOrTouchDblClick, false);
+
         mediaZoomContainer.addEventListener('mousemove', zoomMouseOrTouchMove, false);
         mediaZoomContainer.addEventListener('touchmove', zoomMouseOrTouchMove, false);
 
@@ -593,7 +595,9 @@ function setupMediaViewer(files) {
         mediaZoomContainer.addEventListener('touchstart', zoomMouseOrTouchDown, false);
 
         mediaZoomContainer.addEventListener('mouseup', zoomMouseOrTouchUp, false);
-        mediaZoomContainer.addEventListener('touchend', zoomMouseOrTouchUp, false);       
+        mediaZoomContainer.addEventListener('touchend', zoomMouseOrTouchUp, false); 
+
+        mediaZoomContainer.addEventListener('dblclick', zoomMouseOrTouchDblClick, false);      
 
         document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
 
@@ -1031,6 +1035,13 @@ function mouseOrTouchUp(e) {
     }
 }
 
+// Called on mouse/touch double click in viewer
+// Will start zooming
+function mouseOrTouchDblClick(e) {
+    showZoom();
+    zoomImage(unify(e).clientX, unify(e).clientY, z0 * 2);
+}
+
 // Common for one finger touch and mouse
 function unify(e) { 
     return e.changedTouches ? e.changedTouches[0] : e 
@@ -1192,6 +1203,12 @@ function zoomMouseOrTouchUp(e) {
         // When zoomed to original size, close the zoom view.
         hideZoom();
     }
+}
+
+// Called on mouse/touch double click om zoom image
+// Will exit zooming
+function zoomMouseOrTouchDblClick(e) {
+    hideZoom();
 }
 
 
