@@ -35,7 +35,7 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 
 ## Screenshots
 
-Browse your media:
+Browse your media, multi-touch pitch to increase/decrease size of thumbnails:
 
 ![browser](testmedia/screenshot_browser.jpg)
 
@@ -47,7 +47,7 @@ Swipe (mouse or mobile touch) to switch between images/videos. It is also possib
 
 ![viewer](testmedia/screenshot_viewer_swipe.jpg)
 
-Multi-touch pitch to zoom images:
+Multi-touch pitch to zoom images, or double click/tap on image to zoom x2:
 
 ![viewer](testmedia/screenshot_viewer_zoom.jpg)
 
