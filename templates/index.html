@@ -44,7 +44,7 @@ body {
     z-index: 1; /* Sit on top */
 }
 
-#navigator div {
+.navigation-button {
     display:inline-block;
     color: white; 
     font-weight: bold;
@@ -54,8 +54,8 @@ body {
     border-radius: 3px;
 }
 
-#navigator:hover div {
-    transform: scale(1.1);
+.navigation-button:hover {
+    transform: scale(1.05);
     cursor: pointer;
 }
 
@@ -414,7 +414,7 @@ function updateNavigator(path) {
     // No navigator on top level 
     if (parts.length > 0) {
         var navigator = document.getElementById("navigator");
-        var links = "<div onclick='setLocation(\"\")'>&#8962;</div>";
+        var links = "<div class='navigation-button' onclick='setLocation(\"\")'>&#8962;</div>";
         var url = "";
         for (var i = 0 ; i < parts.length ; i++) {
             part = parts[i];
@@ -423,7 +423,7 @@ function updateNavigator(path) {
                 // Last element is no link
                 links += " / " + part
             } else {
-                links += " / <div setLocation(\"" + url + "\")" + part + "</div>";
+                links += " / <div class='navigation-button' onclick='setLocation(\"" + url + "\")''>" + part + "</div>";
             }
         }
         navigator.insertAdjacentHTML("beforeend", links);
