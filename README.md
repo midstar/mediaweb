@@ -35,23 +35,35 @@ MediaWEB is well suited to run on small platforms such as Raspberry Pi, Banana P
 
 ## Screenshots
 
-Browse your media, multi-touch pitch to increase/decrease size of thumbnails:
+Browse your media.
+
+To increase/decrease size of thumbnails do one of following:
+
+* Touch: Use two fingers and pitch
+* Keboard: <kbd>+</kbd> (increase) or <kbd>-</kbd> (decrease) 
 
 ![browser](testmedia/screenshot_browser.jpg)
 
-View your images and play your videos:
+View your images and play your videos
 
 ![viewer](testmedia/screenshot_viewer.jpg)
 
-Swipe (mouse or mobile touch) to switch between images/videos. It is also possible to use keyboard; left arrow key (previous image), right (next image), page up (first image) and page down (last image):
+To navigate between the images do one of following:
+
+* Touch: Swipe right (previous) or left (next)
+* Mouse: Drag right (previous) or left (next)
+* Keyboard: <kbd><</KBD> (previous), <kbd>></KBD> (next), <kbd>Page Up</KBD> (first) or <kbd>Page Down</KBD> (last)
 
 ![viewer](testmedia/screenshot_viewer_swipe.jpg)
 
-Multi-touch pitch to zoom images, or double click/tap on image to zoom x2:
+To zoom image:
+
+* Touch: Use two fingers and pitch alternatively double tap to zoom x2
+* Mouse: Scroll up (zoom in), down (zoom out) alternatively double click to zoom x2
 
 ![viewer](testmedia/screenshot_viewer_zoom.jpg)
 
-Interface suited for mobile devices:
+Interface suited for mobile devices
 
 ![viewer](testmedia/screenshot_mobile.jpg)
 
