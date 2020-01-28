@@ -1,4 +1,5 @@
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta charset="utf-8"/>
 <html>
 <head>
 <title>MediaWEB</title>
@@ -320,6 +321,7 @@ window.onload = function() {
     // Setup CSS based on screen size
     onScreenSizeChange();
     window.addEventListener("resize", onScreenSizeChange);
+    document.onkeydown = browserOnKeyDown;
 
     // Check for URL path parameter
     var path = ""
@@ -359,21 +361,21 @@ function setupFileItemSizes(scale = 1) {
     var minItemWidth = Math.max(40, unScaledMinItemWidth * scale);
     minItemWidth = Math.min(minItemWidth, windowWidth - itemMargin * 2);
 
-    // Decrease font size if necessary:
-    if (minItemWidth <= 80) {
-        itemFont = 5;
-    } else if (minItemWidth <= 100) {
-        itemFont = 8;
-    } else if (minItemWidth <= 140) {
-        itemFont = 11;
-    }
-
     // Adjust the item width so that the items are evently distributed
     // over the screen
     var itemsPerRow = Math.floor((windowWidth - itemMargin) / (itemMargin + minItemWidth));
     var extraWidthTotal = (windowWidth - itemMargin) - (itemsPerRow * (itemMargin + minItemWidth));
     var extraWidthPerItem = Math.floor(extraWidthTotal / itemsPerRow);
     var itemWidth = minItemWidth + extraWidthPerItem;
+
+    // Decrease font size if necessary:
+    if (itemWidth <= 80) {
+        itemFont = 5;
+    } else if (itemWidth <= 100) {
+        itemFont = 8;
+    } else if (itemWidth <= 140) {
+        itemFont = 11;
+    }
 
     root.setProperty("--global-item-width", itemWidth + "px");
     root.setProperty("--global-item-margin", itemMargin + "px");
@@ -547,7 +549,7 @@ function checkIfAllThumbsLoaded() {
             showItemsLoader();
 
             // Check again after 0.5 seconds
-            setTimeout(checkIfAllThumbsLoaded, 500)
+            setTimeout(checkIfAllThumbsLoaded, 500);
             return
         }
     }
@@ -585,6 +587,20 @@ function loadJSON(filePath, success, error)
 var generalTouchDist0;  // Initial touch distance
 var generalTouchScale0; // Initial touch scale
 
+// Called if key is pressed
+// Will be disabled when media viewer is opened
+function browserOnKeyDown(e) {
+    e = e || window.event;
+    if (e.key == '+') {
+        // + = zoom in
+        setupFileItemSizes(getCurrentScale() + 0.2);
+    }
+    else if (e.key == '-') {
+        // - = zoom out
+        setupFileItemSizes(getCurrentScale() - 0.2);
+    } 
+}
+
 // Called on touch down independently on the view
 function touchDown(e) { 
     if(!isMediaViewerOpen() && e.touches.length == 2) {
@@ -608,7 +624,7 @@ function touchMove(e) {
 function getCurrentScale() {
     const params = new URLSearchParams(window.location.search);
     if (params.has("scale")) {
-        return params.get("scale");
+        return parseFloat(params.get("scale"));
     }
     return 1;
 }
@@ -669,6 +685,7 @@ function setupMediaViewer(files) {
         mediaContainers.addEventListener('touchend', viewMouseOrTouchUp, false);
 
         mediaContainers.addEventListener('dblclick', viewMouseOrTouchDblClick, false);
+        mediaContainers.addEventListener('wheel', viewMouseWheel, false);
 
         mediaZoomContainer.addEventListener('mousemove', zoomMouseOrTouchMove, false);
         mediaZoomContainer.addEventListener('touchmove', zoomMouseOrTouchMove, false);
@@ -679,7 +696,8 @@ function setupMediaViewer(files) {
         mediaZoomContainer.addEventListener('mouseup', zoomMouseOrTouchUp, false);
         mediaZoomContainer.addEventListener('touchend', zoomMouseOrTouchUp, false); 
 
-        mediaZoomContainer.addEventListener('dblclick', zoomMouseOrTouchDblClick, false);      
+        mediaZoomContainer.addEventListener('dblclick', zoomMouseOrTouchDblClick, false);     
+        mediaZoomContainer.addEventListener('wheel', zoomViewMouseWheel, false); 
 
         document.getElementById("mediaViewerClose").onclick = closeMediaViewer;
 
@@ -698,6 +716,7 @@ function openMediaViewer(index = 0) {
     setMediaContainersTo(mediaIndex);
     updateURL(mediaIndex);
     mediaViewer.style.display = "block";
+    // Replace browser keydown with viewer keydown
     document.onkeydown = function(e) {
         e = e || window.event;
         if (e.keyCode == '27') {
@@ -733,7 +752,7 @@ function openMediaViewer(index = 0) {
 function closeMediaViewer() {
     hideZoom();
     mediaViewer.style.display = "none";
-    document.onkeydown = null; // Disable arrow keys
+    document.onkeydown = browserOnKeyDown; // Put back browser key down
 
     // Remove file for URL
     const params = new URLSearchParams(window.location.search);
@@ -1127,6 +1146,16 @@ function viewMouseOrTouchDblClick(e) {
     zoomImage(unify(e).clientX, unify(e).clientY, z0 * 2);
 }
 
+// Called on mouse wheel in viewer
+function viewMouseWheel(e) {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+        // Mouse wheel scrolled uppwards - start zoom
+        showZoom();
+        zoomImage(unify(e).clientX, unify(e).clientY, z0 * 1.4);
+    }
+}
+
 // Common for one finger touch and mouse
 function unify(e) { 
     return e.changedTouches ? e.changedTouches[0] : e 
@@ -1290,10 +1319,29 @@ function zoomMouseOrTouchUp(e) {
     }
 }
 
-// Called on mouse/touch double click om zoom image
+// Called on mouse/touch double click on zoom image
 // Will exit zooming
 function zoomMouseOrTouchDblClick(e) {
     hideZoom();
+}
+
+// Called on mouse wheel in viewer on zoom image
+// Will zoom in/out
+function zoomViewMouseWheel(e) {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+        // Mouse wheel scrolled uppwards - zoom in
+        zoomImage(unify(e).clientX, unify(e).clientY, z + 0.2);
+    } else if (e.deltaY > 0) {
+        // Mouse wheel scrolled downwards - zoom out
+        var newZ = z - 0.2;
+        if (newZ <= minZ) {
+            // When zoomed to original size, close the zoom view.
+            hideZoom();
+        } else {
+            zoomImage(unify(e).clientX, unify(e).clientY, z - 0.2);
+        }
+    }
 }
 
 
@@ -1416,5 +1464,5 @@ function setZoomOffset(x, y) {
     </div>
 </div>
 
-  </body>
+</body>
 </html>
