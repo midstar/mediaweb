@@ -1,4 +1,7 @@
-﻿The MIT License (MIT)
+﻿Files: *
+Copyright: Joel Midstjärna
+License: MIT
+The MIT License (MIT)
 
 Copyright (c) Joel Midstjärna
 
