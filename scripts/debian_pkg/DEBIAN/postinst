@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ "$1" = configure ]; then
+    systemctl enable mediaweb || {
+        echo "ERROR! Unable to enable MediaWEB service"
+        echo
+        exit 1
+    }
+
+     systemctl start mediaweb || {
+        echo "ERROR! Unable to start MediaWEB service"
+        echo
+        exit 1
+    }
+
+    exit 0
+fi

@@ -1,0 +1,44 @@
+#!/bin/sh
+
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    echo "Checking MediaWEB dependencies"
+
+    if ! [ -x "$(command -v systemctl)" ]; then
+        echo "ERROR! systemctl is not installed."
+        echo
+        echo "To install MediaWEB the system needs to support systemd services."
+        echo
+        exit 1
+    else
+        echo "systemctl: ok"
+    fi
+
+    if ! [ -x "$(command -v ffmpeg)" ]; then
+        echo "Warning! ffmpeg is not installed."
+        echo
+        echo "To generate video thumbnails ffmpeg needs to be installed."
+        echo
+    else
+        echo "ffmpeg:    ok"
+    fi
+
+    systemctl is-active --quiet mediaweb && {
+        echo "Stopping MediaWEB service"
+        systemctl stop mediaweb || {
+            echo "ERROR! Unable to stop MediaWEB service"
+            echo
+            exit 1
+        }
+    }
+
+    systemctl is-enabled --quiet mediaweb 2> /dev/null && {  
+        echo "Disabling MediaWEB service"   
+        systemctl disable mediaweb || {
+            echo "ERROR! Unable to disable MediaWEB service"
+            echo
+            exit 1
+        }
+    }
+
+    exit 0
+fi

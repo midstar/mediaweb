@@ -61,7 +61,7 @@ chmod -R 755 $PKG_SRC_PATH/DEBIAN
 mkdir -p $PKG_APP_PATH/usr/sbin
 cp $MEDIAWEB_EXE $PKG_APP_PATH/usr/sbin/
 
-mkdir -p $PKG_APP_PATH/etc
+cp -r $PKG_TEMPLATE_PATH/etc $PKG_APP_PATH
 cp $MEDIAWEB_CFG $PKG_APP_PATH/etc/
 
 # Figure out size of application
