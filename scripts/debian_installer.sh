@@ -80,7 +80,7 @@ sed -i -e 's/__VERSION__/'${VERSION}'/g' $PKG_SRC_PATH/DEBIAN/control
 sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_SRC_PATH/DEBIAN/control
 
 # Create the installer 
-fakeroot dpkg-deb --build $PKG_SRC_PATH
+dpkg-deb --build $PKG_SRC_PATH
 
 # Move the resulting installer to MediaWEB root folder
 mv $PKG_PATH/${NAME}.deb $PACKAGE_DESTINATION/
