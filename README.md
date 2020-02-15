@@ -80,11 +80,17 @@ Interface suited for mobile devices
 
 ## Download and install Linux
 
+### Debian based distros (Debian, Raspbian, Armbian etc.)
+
+Download and install the latest amd64 (PC x64) or arm64 (Raspberry Pi, Banana Pi, ROCK64 etc.) .deb file [here on GitHub](https://github.com/midstar/mediaweb/releases).
+
+### Other distros (RedHat, CentOS etc.)
+
 For PC x64 based Linux write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux on for example Raspberry Pi, Banana Pi, ROCK64 etc:
+For ARM based Linux:
 
     export MW_ARCH=arm
 
@@ -103,6 +109,12 @@ Then run following for all Linux platforms:
 
 Follow the instructions in the service.sh script.
 
+The service.sh script can also be used for uninstallation by running:
+
+    sudo sh service.sh uninstall
+
+### Configuration in Linux (any distro)
+
 For video thumbnail support, install ffmpeg:
 
     sudo apt-get install ffmpeg
@@ -113,12 +125,7 @@ To perform additional configuration, edit:
 
 And then restart the MediaWEB service with:
 
-    sudo systemctl restart mediaweb
-
-To uninstall MediaWEB run:
-
-    cd ~/mediaweb
-    sudo sh service.sh uninstall
+    sudo service mediaweb restart
 
 Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 
