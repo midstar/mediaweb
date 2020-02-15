@@ -119,4 +119,8 @@ for:
       name: mediaweb_linux_x64.tar.gz
     - path: mediaweb_linux_arm.tar.gz
       name: mediaweb_linux_arm.tar.gz
+    - path: mediaweb_$(APPVEYOR_BUILD_VERSION)_amd64.deb
+      name: mediaweb_$(APPVEYOR_BUILD_VERSION)_amd64.deb
+    - path: mediaweb_$(APPVEYOR_BUILD_VERSION)_arm64.deb
+      name: mediaweb_$(APPVEYOR_BUILD_VERSION)_arm64.deb
 
