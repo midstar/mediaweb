@@ -1,13 +1,16 @@
+#!/bin/sh
+set -e
+
 # MediaWEB Linux Debian package creator shell script
 #
 # See print_usage below for instructions
 export SCRIPT_PATH=`dirname "$0"`
 export PKG_TEMPLATE_PATH=$SCRIPT_PATH/debian_pkg
 export PKG_PATH=$SCRIPT_PATH/tmp_debian_pkg
-export PKG_SRC_PATH=$PKG_PATH/pkg_src
 export PKG_APP_PATH=$PKG_PATH/app_tmp
 export MEDIAWEB_EXE=$SCRIPT_PATH/../mediaweb
 export MEDIAWEB_CFG=$SCRIPT_PATH/../configs/mediaweb.conf
+export PACKAGE_DESTINATION=$SCRIPT_PATH/..
 
 
 print_usage() {
@@ -78,3 +81,8 @@ sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_SRC_PATH/DEBIAN/control
 
 # Create the installer 
 fakeroot dpkg-deb --build $PKG_SRC_PATH
+
+# Move the resulting installer to MediaWEB root folder
+mv $PKG_PATH/${NAME}.deb $PACKAGE_DESTINATION/
+echo Generated:
+realpath $PACKAGE_DESTINATION/${NAME}.deb
