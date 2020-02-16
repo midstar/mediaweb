@@ -1,5 +1,13 @@
+#!/bin/sh
+set -ex
+
 # Test of service.sh - both installation and uninstallation
-cd $GOPATH/src/github.com/midstar/mediaweb/
+
+export REL_PATH=`dirname "$0"`
+export SCRIPT_PATH=`realpath $REL_PATH`
+export MEDIAWEB_PATH=`realpath $REL_PATH/..`
+
+cd $MEDIAWEB_PATH
 
 # Move files to a temporary folder to secure that
 # embedded resources works as expected
@@ -8,9 +16,7 @@ mkdir -p tmpout/servicetest
 cp mediaweb tmpout/servicetest/mediaweb
 cd tmpout/servicetest 
 
-export SCRIPTPATH=$GOPATH/src/github.com/midstar/mediaweb/scripts
-
-sh $SCRIPTPATH/service.sh install $GOPATH/src/github.com/midstar/mediaweb/testmedia
+sh $SCRIPT_PATH/service.sh install mediaweb $MEDIAWEB_PATH/configs/mediaweb.conf
 echo "Waiting 2 seconds"
 sleep 2
 echo "Testing connection"
@@ -26,5 +32,5 @@ if ! [ -f "/var/log/mediaweb.log" ]; then
 	echo
 	exit 1
 fi
-sh $SCRIPTPATH/service.sh uninstall
+sh $SCRIPT_PATH/service.sh uninstall purge
 echo "Test passed :-)"
