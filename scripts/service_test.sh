@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -e
 
 # Test of service.sh - both installation and uninstallation
 
@@ -13,10 +13,18 @@ cd $MEDIAWEB_PATH
 # embedded resources works as expected
 mkdir -p tmpout
 mkdir -p tmpout/servicetest
-cp mediaweb tmpout/servicetest/mediaweb
+cp mediaweb tmpout/servicetest/
+cp configs/mediaweb.conf tmpout/servicetest/
 cd tmpout/servicetest 
 
-sh $SCRIPT_PATH/service.sh install mediaweb $MEDIAWEB_PATH/configs/mediaweb.conf
+# Edit configuratino
+sh $SCRIPT_PATH/conf_edit.sh mediaweb.conf mediapath $MEDIAWEB_PATH/testmedia
+sh $SCRIPT_PATH/conf_edit.sh mediaweb.conf logfile /var/log/mediaweb.log
+
+# Install mediaweb
+sh $SCRIPT_PATH/service.sh install
+
+# Thest that it works
 echo "Waiting 2 seconds"
 sleep 2
 echo "Testing connection"
@@ -28,7 +36,7 @@ if ! [ "$HTTP_STATUS" = "200" ]; then
 	exit 1
 fi
 if ! [ -f "/var/log/mediaweb.log" ]; then
-	echo "Test Failed! No log file was created in /var/mediaweb.log"
+	echo "Test Failed! No log file was created in /var/log/mediaweb.log"
 	echo
 	exit 1
 fi

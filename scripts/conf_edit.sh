@@ -1,5 +1,5 @@
 #!/bin/sh
-set -ex
+set -e
 
 print_usage() {
   echo "Usage:"
@@ -28,12 +28,12 @@ if ! [ -f "$CONFFILE" ]; then
 	print_usage
 fi
 
-export MATCH=".*$KEY\s=.*"
+export MATCH="^ *$KEY *=.*"
 export KEY_VALUE="${KEY} = $VALUE"
 
-if grep -q $MATCH "$CONFFILE"; then
+if grep -q "$MATCH" "$CONFFILE"; then
   # Key exist - replace
-  sed -i -e "s/$MATCH/$KEY_VALUE/" $CONFFILE
+  sed -i -e "s|$MATCH|$KEY_VALUE|" $CONFFILE
 else
   # Key don't exist - append
   echo "$KEY_VALUE" >> $CONFFILE
