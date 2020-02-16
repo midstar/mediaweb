@@ -82,7 +82,7 @@ Interface suited for mobile devices
 
 ### Debian based distros (Debian, Raspbian, Armbian etc.)
 
-Download and install the latest amd64 (PC x64) or arm64 (Raspberry Pi, Banana Pi, ROCK64 etc.) .deb file [here on GitHub](https://github.com/midstar/mediaweb/releases).
+Download and install the latest x64 (PC) or arm (Raspberry Pi, Banana Pi, ROCK64 etc.) .deb file [here on GitHub](https://github.com/midstar/mediaweb/releases).
 
 ### Other distros (RedHat, CentOS etc.)
 

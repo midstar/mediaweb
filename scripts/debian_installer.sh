@@ -18,11 +18,12 @@ print_usage() {
     echo
     echo "For MediaWEB Debian Package Creator:"
     echo
-    echo "  sudo sh $0 <architecture> <version>"
+    echo "  sudo sh $0 <architecture> <version> <name>"
     echo
     echo "    <architecture>: Run 'dpkg-architecture -L' for"
     echo "                    supported architectures"
     echo "    <version>:      Should be in the format 1.1.1.1"
+    echo "    <name>:         Name of resulting package (excluding .deb)"
     echo
     echo "MediaWEB exectuable for the correct architecture needs"
     echo "to be built and but directly in the mediaweb path."
@@ -37,13 +38,14 @@ if [ ! -f $MEDIAWEB_EXE ]; then
     exit 1
 fi
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 3 ]; then
     echo "Error! Missing parameters"
     print_usage
 fi
 
 export ARCHITECTURE=$1
 export VERSION=$2
+export NAME=$3
 
 # Cleanup - remove previous package path if it exist
 if [ -d $PKG_PATH ]; then
@@ -51,8 +53,7 @@ if [ -d $PKG_PATH ]; then
 fi
 
 
-# Set the name of the package and create directory
-export NAME=mediaweb_${VERSION}_${ARCHITECTURE}
+# Create package source create directory
 export PKG_SRC_PATH=$PKG_PATH/$NAME
 
 # Copy template files
