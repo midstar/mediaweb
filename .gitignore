@@ -9,3 +9,4 @@ mediaweb.exe
 mediaweb.log
 mediaweb_windows_x64_setup.exe
 tmp_debian_pkg
+*.deb
