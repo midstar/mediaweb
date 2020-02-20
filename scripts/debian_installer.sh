@@ -63,7 +63,9 @@ cp -r $PKG_TEMPLATE_PATH/DEBIAN $PKG_SRC_PATH
 # Copy files to install to tmp
 mkdir -p $PKG_APP_PATH/usr/sbin
 cp $MEDIAWEB_EXE $PKG_APP_PATH/usr/sbin/
+strip --strip-unneeded $PKG_APP_PATH/usr/sbin/mediaweb
 
+cp -r $PKG_TEMPLATE_PATH/usr $PKG_APP_PATH
 cp -r $PKG_TEMPLATE_PATH/etc $PKG_APP_PATH
 cp $MEDIAWEB_CFG $PKG_APP_PATH/etc/
 
@@ -80,10 +82,9 @@ sed -i -e 's/__VERSION__/'${VERSION}'/g' $PKG_SRC_PATH/DEBIAN/control
 sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_SRC_PATH/DEBIAN/control
 
 # Create changelog
-export CHANGELOG_PATH=$PKG_SRC_PATH/usr/share/doc/mediaweb/
-mkdir -p $CHANGELOG_PATH
+export CHANGELOG_PATH=$PKG_SRC_PATH/usr/share/doc/mediaweb
 sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $CHANGELOG_PATH/changelog
-gzip $CHANGELOG_PATH/changelog
+gzip --best $CHANGELOG_PATH/changelog
 
 # Create the installer 
 dpkg-deb --build $PKG_SRC_PATH
