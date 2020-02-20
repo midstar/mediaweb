@@ -59,7 +59,6 @@ export PKG_SRC_PATH=$PKG_PATH/$NAME
 # Copy template files
 mkdir -p $PKG_SRC_PATH
 cp -r $PKG_TEMPLATE_PATH/DEBIAN $PKG_SRC_PATH
-chmod -R 755 $PKG_SRC_PATH/DEBIAN
 
 # Copy files to install to tmp
 mkdir -p $PKG_APP_PATH/usr/sbin
@@ -81,7 +80,10 @@ sed -i -e 's/__VERSION__/'${VERSION}'/g' $PKG_SRC_PATH/DEBIAN/control
 sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_SRC_PATH/DEBIAN/control
 
 # Create changelog
-sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $PKG_SRC_PATH/DEBIAN/changelog
+export CHANGELOG_PATH=$PKG_SRC_PATH/usr/share/doc/mediaweb/
+mkdir -p $CHANGELOG_PATH
+sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $CHANGELOG_PATH/changelog
+gzip $CHANGELOG_PATH/changelog
 
 # Create the installer 
 dpkg-deb --build $PKG_SRC_PATH
@@ -90,3 +92,9 @@ dpkg-deb --build $PKG_SRC_PATH
 mv $PKG_PATH/${NAME}.deb $PACKAGE_DESTINATION/
 echo Generated:
 realpath $PACKAGE_DESTINATION/${NAME}.deb
+
+# Check with lintian
+echo Validating package:
+echo
+lintian $PACKAGE_DESTINATION/${NAME}.deb
+
