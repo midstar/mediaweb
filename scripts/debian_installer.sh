@@ -67,6 +67,7 @@ strip --strip-unneeded $PKG_APP_PATH/usr/sbin/mediaweb
 
 cp -r $PKG_TEMPLATE_PATH/usr $PKG_APP_PATH
 cp -r $PKG_TEMPLATE_PATH/etc $PKG_APP_PATH
+cp -r $PKG_TEMPLATE_PATH/lib $PKG_APP_PATH
 cp $MEDIAWEB_CFG $PKG_APP_PATH/etc/
 
 # Figure out size of application
