@@ -30,6 +30,9 @@ install:
   - sh: sudo apt -yq update > /dev/null
   - sh: sudo apt install -yq --no-install-suggests --no-install-recommends ffmpeg > /dev/null
 
+  # Linux install lintian
+  - sh: sudo apt-get install -y lintian
+
 build_script:
   # Common
   - go test -v -cover github.com/midstar/mediaweb -coverprofile=coverage.out
