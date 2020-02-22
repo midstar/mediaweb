@@ -17,7 +17,7 @@ cp mediaweb tmpout/servicetest/
 cp configs/mediaweb.conf tmpout/servicetest/
 cd tmpout/servicetest 
 
-# Edit configuratino
+# Edit configuration
 sh $SCRIPT_PATH/conf_edit.sh mediaweb.conf mediapath $MEDIAWEB_PATH/testmedia
 sh $SCRIPT_PATH/conf_edit.sh mediaweb.conf logfile /var/log/mediaweb.log
 

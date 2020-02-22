@@ -65,7 +65,10 @@ build_script:
   - sh: 'sudo -E sh scripts/service_test.sh'
 
   # Linux Debian create package (installer) - for PC (x64)
-  - sh: 'sh scripts/debian_installer.sh amd64 $APPVEYOR_BUILD_VERSION mediaweb_linux_x64' 
+  - sh: 'sudo sh scripts/debian_installer.sh amd64 $APPVEYOR_BUILD_VERSION mediaweb_linux_x64' 
+
+  # Linux Test Debian installer
+  - sh: 'sudo sh scripts/debian_installer_test.sh'
 
   # Linux ARM (cross compile from linux x64)
   - sh: rm mediaweb
@@ -73,7 +76,7 @@ build_script:
   - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb mediaweb.conf service.sh
 
   # Linux Debian create package (installer) - for ARM64
-  - sh: 'sh scripts/debian_installer.sh arm64 $APPVEYOR_BUILD_VERSION mediaweb_linux_arm' 
+  - sh: 'sudo sh scripts/debian_installer.sh arm64 $APPVEYOR_BUILD_VERSION mediaweb_linux_arm' 
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
