@@ -87,6 +87,9 @@ export CHANGELOG_PATH=$PKG_SRC_PATH/usr/share/doc/mediaweb
 sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $CHANGELOG_PATH/changelog
 gzip -n --best $CHANGELOG_PATH/changelog
 
+# Compress the man page
+gzip -n --best $PKG_SRC_PATH/usr/share/man/man1/mediaweb.1
+
 # Create the installer 
 dpkg-deb --build $PKG_SRC_PATH
 
