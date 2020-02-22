@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -ex
 
 # MediaWEB Linux Debian package creator shell script
 #
