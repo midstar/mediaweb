@@ -10,5 +10,6 @@ Installed-Size: __SIZE__
 Depends: systemd, libc6 (>= 2.3.2)
 Recommends: ffmpeg
 Description: Media WEB server
- MediaWEB is a small self-contained web server software to enable you to access your photos and videos over the Internet in your WEB browser.
+ MediaWEB is a small self-contained web server software to enable you to 
+ access your photos and videos over the Internet in your WEB browser.
  

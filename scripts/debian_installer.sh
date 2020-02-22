@@ -85,7 +85,7 @@ sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_SRC_PATH/DEBIAN/control
 # Create changelog
 export CHANGELOG_PATH=$PKG_SRC_PATH/usr/share/doc/mediaweb
 sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $CHANGELOG_PATH/changelog
-gzip --best $CHANGELOG_PATH/changelog
+gzip -n --best $CHANGELOG_PATH/changelog
 
 # Create the installer 
 dpkg-deb --build $PKG_SRC_PATH
