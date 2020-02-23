@@ -63,7 +63,8 @@ fi
 
 # ----------------------------------------------
 # COPY IN TO OUT
-cp -r $PKG_IN_PATH $PKG_OUT_PATH 
+mkdir -p $PKG_OUT_PATH
+cp -r $PKG_IN_PATH/* $PKG_OUT_PATH 
 # Set general permissions
 find $PKG_OUT_PATH -type d -exec chmod 755 {} +
 find $PKG_OUT_PATH  -type f -exec chmod 644 {} +
