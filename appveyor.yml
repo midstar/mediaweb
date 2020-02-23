@@ -30,6 +30,9 @@ install:
   - sh: sudo apt -yq update > /dev/null
   - sh: sudo apt install -yq --no-install-suggests --no-install-recommends ffmpeg > /dev/null
 
+  # Linux install lintian
+  - sh: sudo apt-get install -y lintian
+
 build_script:
   # Common
   - go test -v -cover github.com/midstar/mediaweb -coverprofile=coverage.out
@@ -46,7 +49,7 @@ build_script:
   # Windows rename tempates directory to secure that packr is working
   - cmd: 'rename templates old_templates'
 
-  # Windows Test  service installation/uninstallation script
+  # Windows Test service installation/uninstallation script
   - cmd: 'scripts/service_test.bat'
 
   # Windows create windows setup (installer)
@@ -61,10 +64,19 @@ build_script:
   # Linux Test service installation/uninstallation script
   - sh: 'sudo -E sh scripts/service_test.sh'
 
+  # Linux Debian create package (installer) - for PC (x64)
+  - sh: 'sudo sh scripts/debian_installer.sh amd64 $APPVEYOR_BUILD_VERSION mediaweb_linux_x64' 
+
+  # Linux Test Debian installer
+  - sh: 'sudo sh scripts/debian_installer_test.sh'
+
   # Linux ARM (cross compile from linux x64)
   - sh: rm mediaweb
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh $APPVEYOR_BUILD_VERSION'
   - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb mediaweb.conf service.sh
+
+  # Linux Debian create package (installer) - for ARM64
+  - sh: 'sudo sh scripts/debian_installer.sh arm64 $APPVEYOR_BUILD_VERSION mediaweb_linux_arm' 
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
@@ -113,4 +125,8 @@ for:
       name: mediaweb_linux_x64.tar.gz
     - path: mediaweb_linux_arm.tar.gz
       name: mediaweb_linux_arm.tar.gz
+    - path: mediaweb_linux_x64.deb
+      name: mediaweb_linux_x64.deb
+    - path: mediaweb_linux_arm.deb
+      name: mediaweb_linux_arm.deb
 

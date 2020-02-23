@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = configure ]; then
+    systemctl enable mediaweb || {
+        echo "ERROR! Unable to enable MediaWEB service" 1>&2
+        echo "" 1>&2
+        exit 1
+    }
+
+     systemctl start mediaweb || {
+        echo "ERROR! Unable to start MediaWEB service" 1>&2
+        echo "" 1>&2 
+        exit 1
+    }
+    echo "-------------------------------------------"
+    echo "MediaWEB installation done"
+    echo ""
+    echo "Edit settings in /etc/mediaweb.conf and"
+    echo "restart the service by running:"
+    echo "   sudo service mediaweb restart"
+    echo "-------------------------------------------"
+
+    exit 0
+fi

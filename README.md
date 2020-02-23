@@ -80,11 +80,48 @@ Interface suited for mobile devices
 
 ## Download and install Linux
 
+### Debian based distros (Debian, Ubuntu, Raspbian, Armbian etc.)
+
+Debian installer packages are provided for x64 (PC) or arm (Raspberry Pi, Banana Pi, ROCK64 etc.) [here on GitHub](https://github.com/midstar/mediaweb/releases).
+
+To get the latest file from a shell follow the instruction below.
+
 For PC x64 based Linux write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux on for example Raspberry Pi, Banana Pi, ROCK64 etc:
+For ARM based Linux:
+
+    export MW_ARCH=arm
+
+Then run following for all Linux platforms:
+
+    mkdir ~/mediaweb
+    cd ~/mediaweb
+    curl -s https://api.github.com/repos/midstar/mediaweb/releases/latest \
+    | grep browser_download_url \
+    | grep "mediaweb_linux_${MW_ARCH}.deb" \
+    | cut -d : -f 2,3 \
+    | tr -d \" \
+    | wget -qi -
+     sudo dpkg -i mediaweb_linux_${MW_ARCH}.deb
+
+Uninstall by using the normal apt tools. For example:
+
+    sudo apt remove mediaweb
+
+
+### Other distros (RedHat, CentOS etc.)
+
+For non-Debian based Linux distros, a custom installation / uninstallation script is provided in the linux .gz files [here on GitHub](https://github.com/midstar/mediaweb/releases).
+
+To get the latest file from a shell follow the instruction below.
+
+For PC x64 based Linux write following in a shell:
+
+    export MW_ARCH=x64
+
+For ARM based Linux:
 
     export MW_ARCH=arm
 
@@ -101,7 +138,11 @@ Then run following for all Linux platforms:
      tar xvzf mediaweb_linux_${MW_ARCH}.tar.gz
      sudo sh service.sh install
 
-Follow the instructions in the service.sh script.
+The service.sh script can also be used for uninstallation by running:
+
+    sudo sh service.sh uninstall
+
+### Configuration in Linux (any distro)
 
 For video thumbnail support, install ffmpeg:
 
@@ -113,12 +154,7 @@ To perform additional configuration, edit:
 
 And then restart the MediaWEB service with:
 
-    sudo systemctl restart mediaweb
-
-To uninstall MediaWEB run:
-
-    cd ~/mediaweb
-    sudo sh service.sh uninstall
+    sudo service mediaweb restart
 
 Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md).
 

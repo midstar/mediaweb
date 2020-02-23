@@ -1,0 +1,33 @@
+.\" Manpage for mediaweb.
+.TH man 1 "22 Feb 2020" "1.0" "mediaweb man page"
+.SH NAME
+mediaweb \- WEB server to provide images and videos to client (WEB browser)
+.SH SYNOPSIS
+mediaweb
+.SH DESCRIPTION
+mediaweb needs to be configured with a path / directory where your media files (images and videos)
+are located. Connect to mediaweb using a WEB browser to view the images and videos a over network.
+The port is configurable.
+.TP
+mediaweb supports thumbnails extraction/generation, rotation, preview generation etc. 
+.TP
+Normally it should be run as a service daemon, but can also be executed directly. 
+.TP
+For full documentation see: 
+.I https://github.com/midstar/mediaweb 
+.SH OPTIONS
+mediaweb does not take any options. It requires a configuration file that shall be located in the current 
+path (mediaweb.conf), /etc/mediaweb.conf or /etc/mediaweb/mediaweb.conf.
+.TP
+If the configuration is updated the mediaweb service needs to be restarted.
+.SH FILES
+.TP
+.I
+/etc/mediaweb.conf
+.TP
+.I
+/usr/sbin/mediaweb
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Joel Midstjärna (joel.midstjarna@gmail.com)

@@ -1,15 +1,13 @@
+#!/bin/sh
 # MediaWEB systemd service (un)installation shell script
 # 
-# For installation:
-#  sh service.sh install [mediapath] [port]
-# 
-#    mediapath: Path to all videos and pictures. Will be
-#               promted if not provided
-#    port:      Network port number (default 9834)
+# See print_usage below for instructions
 #
 
+set -e
+
 # Global configurations
-export CONFIG=/etc/mediaweb.conf
+export CONFIGDESTINATION=/etc/mediaweb.conf
 export EXEDESTINATION=/usr/sbin/mediaweb
 export SERVICECONFIG=/etc/systemd/system/mediaweb.service
 
@@ -17,22 +15,43 @@ export SERVICECONFIG=/etc/systemd/system/mediaweb.service
 print_usage() {
   echo "Usage:"
   echo
-  echo "For MediaWEB installation:"
+  echo "For MediaWEB installation or upgrade (keep config queried):"
   echo
-  echo "  sudo sh service.sh install [mediapath] [port]"
+  echo "  sudo sh service.sh install [<exefile>] [<conffile>]"
   echo
-  echo "    mediapath: Path to all videos and pictures. Will be"
-  echo "               promted if not provided"
-  echo "    port:      Network port number (default 9834)"
-  echo
+  echo "     exefile:  mediaweb executable path (default ./mediaweb)"
+  echo "     conffile: mediaweb config file path (default ./mediaweb.conf)"
   echo
   echo "For MediaWEB uninstallation:"
   echo
-  echo "  sudo sh service.sh uninstall"
+  echo "  sudo sh service.sh uninstall [purge]"
+  echo
+  echo "     purge: If purge the mediaweb configuration is also removed"
   echo
   exit 1
 }
 
+
+disable_mediaweb_service() {
+  systemctl is-active --quiet mediaweb && {
+    echo "Stopping MediaWEB service"
+    systemctl stop mediaweb || {
+      echo "ERROR! Unable to stop MediaWEB service"
+      echo ""
+      exit 1
+    }
+  }
+
+  systemctl is-enabled --quiet mediaweb 2> /dev/null && {  
+    echo "Disabling MediaWEB service"   
+    systemctl disable mediaweb || {
+      echo "ERROR! Unable to disable MediaWEB service"
+      echo ""
+      exit 1
+    }
+  }
+  return 0
+}
 
 install_service() {
 
@@ -40,6 +59,21 @@ install_service() {
   echo "Installation of MediaWEB service on Linux         "
   echo "--------------------------------------------------"
   echo
+
+  #########################################################
+  # Check optional arguments
+  #########################################################
+  if ! [ -z $1 ]; then
+    export EXE=$1
+  else
+    export EXE=mediaweb
+  fi
+
+  if ! [ -z $2 ]; then
+    export CONFIG=$2
+  else
+    export CONFIG=mediaweb.conf
+  fi
 
   #########################################################
   # Check for prerequisities
@@ -61,42 +95,31 @@ install_service() {
     exit 1
   fi
 
-  if [ ! -f "mediaweb" ]; then
-		echo "ERROR! MediaWEB executable, mediaweb, not found"
+  if [ ! -f "$EXE" ]; then
+		echo "ERROR! MediaWEB executable, $EXE, not found"
 		echo
 		echo "You need to run this script in the path where you have the"
-		echo "MediaWEB executable"
-		exit 1
+		echo "MediaWEB executable or provide as argument"
+		print_usage
   fi
 
-	# Check if service is already installed
-  systemctl is-active --quiet mediaweb && {
-	  echo "MediaWEB service is already installed."
-		echo 
-		echo "Uninstalling previous version..."
+  if [ ! -f "$CONFIG" ]; then
+		echo "ERROR! MediaWEB configuration, $CONFIG, not found"
 		echo
-		
-		systemctl disable mediaweb || {
-			echo "ERROR! Unable to disable MediaWEB service"
-			echo
-			exit 1
-		}
-		
-		systemctl stop mediaweb || {
-			echo "ERROR! Unable to stop MediaWEB service"
-			echo
-			exit 1
-		}
-	}
+		echo "You need to run this script in the path where you have the"
+		echo "MediaWEB configuration or provide as argument"
+		print_usage
+  fi
 
+	disable_mediaweb_service
 
   #########################################################
-  # Create mediaweb.conf
+  # Copy mediaweb configuration to /etc/
   #########################################################
 
   export KEEP=n
-  if [ -f "$CONFIG" ]; then
-    echo "There is already a configuration '$CONFIG'"
+  if [ -f "$CONFIGDESTINATION" ]; then
+    echo "There is already a configuration '$CONFIGDESTINATION'"
     echo
     echo "Do you wan't to keep this file?"
     read -p "Keep? (y/n): " KEEP
@@ -104,110 +127,13 @@ install_service() {
 
   if ! [ "$KEEP" = "y" ]; then
 
-    # Write a new configuration file
-
-    if [ -z $1 ]; then
-      echo "Please enter your media path (where your pictures and videos"
-      echo "are located)"
-      echo
-      read -p "Directory: " MEDIAPATH
-    else
-      echo "Using media path: " $1
-      export MEDIAPATH=$1
-    fi
-
-    if ! [ -d "$MEDIAPATH" ]; then
-      echo "Warning! Directory '$MEDIAPATH' don't exist."
-      echo 
-      read -p "Continue? (y/n): " CONTINUE
-      if ! [ "$CONTINUE" = "y" ]; then
-        exit 0
-      fi
-    fi
-    
-    if ! [ -z $2 ]; then
-      export PORT=$2
-    else
-      export PORT=9834
-    fi
-
-    echo "# MediaWEB configuration file" > $CONFIG || {
-      echo "Unable to create $CONFIG"
+    # Copy configuration file
+    cp $CONFIG $CONFIGDESTINATION || {
+      echo "ERROR! Unable to copy $CONFIG to $CONFIGDESTINATION"
       echo
       exit 1
     }
-    echo >> $CONFIG
-    echo "# Server network port." >> $CONFIG
-    echo "# This parameter is MANDATORY" >> $CONFIG
-    echo "port = $PORT" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Media path, i.e. where is your media located" >> $CONFIG
-    echo "# This parameter is MANADTORY" >> $CONFIG
-    echo "mediapath = $MEDIAPATH" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Cache path is by default your operating systems" >> $CONFIG
-    echo "# temp folder + mediaweb. Cache path is where" >> $CONFIG
-    echo "# thumbnails and preview images are stored." >> $CONFIG
-    echo "cachepath = tmpcache" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Thumbnail cache is on by default" >> $CONFIG
-    echo "#enablethumbcache = off" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Generate thumbs on startup is by default off. Uncomment" >> $CONFIG
-    echo "# below to generate thumbs every time Media WEB startup." >> $CONFIG
-    echo "#genthumbsonstartup = on" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Watch media path for updates is by default on." >> $CONFIG
-    echo "# Uncomment below to don't generate new thumbs for files" >> $CONFIG
-    echo "# that are added in the media path" >> $CONFIG
-    echo "#genthumbsonadd = off" >> $CONFIG
-    echo >> $CONFIG
-    echo "#autorotate = off" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Resize images before providing them to the client. The" >> $CONFIG
-    echo "# resized images are cached in the same location as the" >> $CONFIG
-    echo "# thumbnails." >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# The advantages are:" >> $CONFIG
-    echo "#  1. Lower network bandwith required" >> $CONFIG
-    echo "#  2. Smoother navigation at the client. Particular if" >> $CONFIG
-    echo "#     browsing the images using a mobile client." >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# Disadvantages are:" >> $CONFIG
-    echo "#  1. Slower response time to view the image first time" >> $CONFIG
-    echo "#     since resizing image might take several seconds." >> $CONFIG
-    echo "#  2. Increased cache storage required." >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# Previews are default off." >> $CONFIG
-    echo "#enablepreview = on" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Max size of preview images in pixels. The image will" >> $CONFIG
-    echo "# be resized so that width and hight is not larger than" >> $CONFIG
-    echo "# this value." >> $CONFIG
-    echo "#previewmaxside = 1280" >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# Generate preview images on startup is by default off. Uncomment" >> $CONFIG
-    echo "# below to generate preview every time Media WEB startup." >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# Warning! A lot of cache space might be required" >> $CONFIG
-    echo "#genpreviewonstartup = on" >> $CONFIG
-    echo "#" >> $CONFIG
-    echo "# Watch media path for updates is by default on." >> $CONFIG
-    echo "# Uncomment below to don't generate new image previews for" >> $CONFIG
-    echo "# files that are added in the media path" >> $CONFIG
-    echo "#genpreviewonadd = off" >> $CONFIG
-    echo >> $CONFIG
-    echo "logfile = /var/log/mediaweb.log" >> $CONFIG
-    echo >> $CONFIG
-    echo "# Log level is 'info' by default" >> $CONFIG
-    echo "#loglevel = trace" >> $CONFIG
-    echo >> $CONFIG
-    echo "# User name and password for authentication. Leave commented" >> $CONFIG
-    echo "# for no authentication" >> $CONFIG
-    echo "#username = myusername" >> $CONFIG
-    echo "#password = mypassword" >> $CONFIG
-    
-    echo "Wrote  : $CONFIG"
+    echo "Copied : $CONFIGDESTINATION"
 
   fi
 
@@ -215,8 +141,8 @@ install_service() {
   # Copy the mediaweb executable to /usr/sbin
   #########################################################
 
-  cp mediaweb $EXEDESTINATION || {
-    echo "ERROR! Unable to copy mediaweb to $EXEDESTINATION"
+  cp $EXE $EXEDESTINATION || {
+    echo "ERROR! Unable to copy $EXE to $EXEDESTINATION"
     echo
     exit 1
   }
@@ -264,11 +190,22 @@ install_service() {
     exit 1
 	}
 
+  if ! [ -x "$(command -v ffmpeg)" ]; then
+    echo
+    echo "Warning! ffmpeg is not installed."
+    echo ""
+    echo "To generate video thumbnails ffmpeg needs to be installed."
+    echo ""
+  fi
 
   echo
-  echo "MediaWEB service successfully installed :-)"
-	echo
-
+  echo "-------------------------------------------"
+  echo "MediaWEB installation done"
+  echo ""
+  echo "Edit settings in /etc/mediaweb.conf and"
+  echo "restart the service by running:"
+  echo "   sudo service mediaweb restart"
+  echo "-------------------------------------------"
 }
 
 remove_file() {
@@ -288,29 +225,16 @@ uninstall_service() {
   echo "--------------------------------------------------"
   echo
 	
-	# Check if service is already installed
-  systemctl is-active --quiet mediaweb && {
-	  echo "MediaWEB service is running."
-		echo 
-		echo "Uninstalling MediaWEB service"
-		echo
-		
-		systemctl disable mediaweb || {
-			echo "ERROR! Unable to disable MediaWEB service"
-			echo
-			exit 1
-		}
-		
-		systemctl stop mediaweb || {
-			echo "ERROR! Unable to stop MediaWEB service"
-			echo
-			exit 1
-		}
-	}
-	
+	disable_mediaweb_service
+
 	remove_file $SERVICECONFIG
-	remove_file $CONFIG
 	remove_file $EXEDESTINATION
+
+  if [ "$1" = "purge" ]; then
+    remove_file $CONFIGDESTINATION
+  else
+    echo "Keeping $CONFIGDESTINATION (remove with purge argument)"
+  fi
 
 	echo
 	echo "Uninstallation complete!"
@@ -332,7 +256,7 @@ if [ -z $1 ]; then
 elif [ "$1" = "install" ]; then
   install_service $2 $3
 elif  [ "$1" = "uninstall" ]; then
-  uninstall_service
+  uninstall_service $2
 else
   echo "ERROR! Unknown command '$1'"
   echo

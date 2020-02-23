@@ -14,6 +14,6 @@ cd %GOPATH%\src\github.com\midstar\mediaweb
 set RICECMD=rice embed-go
 echo %RICECMD%
 %RICECMD%
-set INSTALLCMD=go build -ldflags="-X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
+set INSTALLCMD=go build -ldflags="-s -X 'main.applicationBuildTime=%DATE% %TIME%' -X main.applicationVersion=%VERSION% -X main.applicationGitHash=%GITHASH%" github.com/midstar/mediaweb
 echo %INSTALLCMD%
 %INSTALLCMD%

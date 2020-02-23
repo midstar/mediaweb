@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = remove ]; then
+
+    systemctl is-active --quiet mediaweb && {
+        echo "Stopping MediaWEB service"
+        systemctl stop mediaweb || {
+            echo "ERROR! Unable to stop MediaWEB service" 1>&2
+            echo "" 1>&2
+            exit 1
+        }
+    }
+
+    systemctl is-enabled --quiet mediaweb 2> /dev/null && {  
+        echo "Disabling MediaWEB service"   
+        systemctl disable mediaweb || {
+            echo "ERROR! Unable to disable MediaWEB service" 1>&2
+            echo "" 1>&2
+            exit 1
+        }
+    }
+
+    exit 0
+fi
