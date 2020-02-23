@@ -120,8 +120,10 @@ mv ${PKG_OUT_PATH}.deb $PACKAGE_DESTINATION/
 echo Generated:
 realpath $PACKAGE_DESTINATION/${NAME}.deb
 
-# Check with lintian
-echo Validating package:
-echo
-lintian $PACKAGE_DESTINATION/${NAME}.deb
+# Check with lintian - but only on PC platforms
+if [ $ARCHITECTURE = "amd64" ]; then
+    echo "Validating package":
+    echo
+    lintian $PACKAGE_DESTINATION/${NAME}.deb
+fi
 
