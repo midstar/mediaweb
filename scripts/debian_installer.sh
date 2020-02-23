@@ -52,6 +52,9 @@ if [ -d $PKG_PATH ]; then
     rm -Rf $PKG_PATH
 fi
 
+echo "Listing permissions 1"
+ls -Rlh $SCRIPT_PATH
+
 
 # Create package source create directory
 export PKG_SRC_PATH=$PKG_PATH/$NAME
@@ -97,6 +100,11 @@ dpkg-deb --build $PKG_SRC_PATH
 mv $PKG_PATH/${NAME}.deb $PACKAGE_DESTINATION/
 echo Generated:
 realpath $PACKAGE_DESTINATION/${NAME}.deb
+
+
+echo "Listing permissions 1"
+ls -Rlh $SCRIPT_PATH
+
 
 # Check with lintian
 echo Validating package:
