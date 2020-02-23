@@ -75,7 +75,6 @@ find $PKG_OUT_PATH  -type f -exec chmod 644 {} +
 
 # Copy mediaweb executable and modify permissions
 copy_w_permission $MEDIAWEB_EXE $PKG_ROOT_PATH/usr/sbin/mediaweb 755
-strip --strip-unneeded $PKG_ROOT_PATH/usr/sbin/mediaweb
 
 # Copy mediaweb configuration and modify permissions
 copy_w_permission $MEDIAWEB_CFG $PKG_ROOT_PATH/etc/mediaweb.conf 644
