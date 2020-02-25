@@ -84,7 +84,7 @@ gzip -n --best $PKG_ROOT_PATH/usr/share/man/man1/mediaweb.1
 
 # Create changelog
 export CHANGELOG=$PKG_ROOT_PATH/usr/share/doc/mediaweb/changelog
-sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION mediaweb-v $CHANGELOG
+sh $SCRIPT_PATH/generate_changelog.sh mediaweb $VERSION $CHANGELOG
 gzip -n --best $CHANGELOG
 
 # Calculate size of root directory
