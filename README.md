@@ -175,7 +175,7 @@ Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md)
 
 To build from source on any platform you need to:
 
-* Install Golang 
+* Install Golang (version 1.11 or newer)
 * Set the GOPATH environment variable
 * Add the bin folder within your GOPATH to your PATH environment variable ($GOPATH/bin)
 
