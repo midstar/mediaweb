@@ -30,7 +30,7 @@ thumbnail and preview generation was measured.
 
 ## Architectures
 
-| Brand / model         | CPU Model             -| Speed   | Cores | RAM  | OS                           |
+| Brand / model         | CPU Model              | Speed   | Cores | RAM  | OS                           |
 |-----------------------|------------------------|---------|-------|------|------------------------------|
 | Acer Chromebook CB714 | Intel Core i3 8130U    | 2.2 GHz | 2     | 4 GB | Chromium OS 10.0 64-bit      |
 | ROCK64                | ARM Cortex A53 (ARMv8) | 1.5 GHz | 4     | 4 GB | Armbian Linux 4.4.184 64-bit |
@@ -321,7 +321,7 @@ MediaWEB executable for each target
     Number of small images not require preview: 7
 
 
-    ### mediaweb_arm_v6
+### mediaweb_arm_v6
 
     pi@rock64:~/performance_test$ ./mediaweb_arm_v6
     2020/05/30 07:21:27 settings.go:56: INFO - Loading configuration: mediaweb.conf
