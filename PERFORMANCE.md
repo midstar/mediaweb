@@ -42,7 +42,7 @@ The below table illustrates the result using the "best"
 MediaWEB executable for each target
 
 | Measure                      | Acer (x86 64-bit) | ROCK65 (ARMv8) | BananaPi (ARMv7) |
-|------------------------------|-------------------|----------------|------------------|'
+|------------------------------|-------------------|----------------|------------------|
 | Total time                   | 27 sec            | 2 min 31 sec   | 5 min 26 sec     |
 | Preview generation average   | 390 ms            | 2 110 ms       | 5 259 ms         |
 | Thumbnail generation average | 226 ms            | 844 ms         | 1 854 ms         |   
