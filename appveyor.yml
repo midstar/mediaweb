@@ -70,13 +70,21 @@ build_script:
   # Linux Test Debian installer
   - sh: 'sudo sh scripts/debian_installer_test.sh'
 
-  # Linux ARM (cross compile from linux x64)
+  # Linux ARM (32-bit) - cross compile from linux x64
   - sh: rm mediaweb
-  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh $APPVEYOR_BUILD_VERSION'
+  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh arm $APPVEYOR_BUILD_VERSION'
   - sh: tar -zcvf mediaweb_linux_arm.tar.gz mediaweb mediaweb.conf service.sh
 
+  # Linux Debian create package (installer) - for ARM (32-bit)
+  - sh: 'sudo sh scripts/debian_installer.sh armhf $APPVEYOR_BUILD_VERSION mediaweb_linux_arm' 
+
+  # Linux ARM64 - cross compile from linux x64
+  - sh: rm mediaweb
+  - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh arm64 $APPVEYOR_BUILD_VERSION'
+  - sh: tar -zcvf mediaweb_linux_arm64.tar.gz mediaweb mediaweb.conf service.sh
+
   # Linux Debian create package (installer) - for ARM64
-  - sh: 'sudo sh scripts/debian_installer.sh arm64 $APPVEYOR_BUILD_VERSION mediaweb_linux_arm' 
+  - sh: 'sudo sh scripts/debian_installer.sh arm64 $APPVEYOR_BUILD_VERSION mediaweb_linux_arm64' 
 
 # Deploy to GitHub (only on master AND on tags)
 deploy:
@@ -125,8 +133,12 @@ for:
       name: mediaweb_linux_x64.tar.gz
     - path: mediaweb_linux_arm.tar.gz
       name: mediaweb_linux_arm.tar.gz
+    - path: mediaweb_linux_arm64.tar.gz
+      name: mediaweb_linux_arm64.tar.gz
     - path: mediaweb_linux_x64.deb
       name: mediaweb_linux_x64.deb
     - path: mediaweb_linux_arm.deb
       name: mediaweb_linux_arm.deb
+    - path: mediaweb_linux_arm64.deb
+      name: mediaweb_linux_arm64.deb
 

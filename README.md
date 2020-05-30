@@ -86,13 +86,17 @@ Debian installer packages are provided for x64 (PC) or arm (Raspberry Pi, Banana
 
 To get the latest file from a shell follow the instruction below.
 
-For PC x64 based Linux write following in a shell:
+For PC x64 based architectures write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux:
+For ARM 32-bit based architectures (for example Raspberry Pi 1, 2):
 
     export MW_ARCH=arm
+
+For ARM 64-bit based archtectures (for example Raspberry Pi 3, 4 or ROCK64):
+
+    export MW_ARCH=arm64
 
 Then run following for all Linux platforms:
 
@@ -121,9 +125,13 @@ For PC x64 based Linux write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux:
+For ARM 32-bit based architectures (for example Raspberry Pi 1, 2):
 
     export MW_ARCH=arm
+
+For ARM 64-bit based archtectures (for example Raspberry Pi 3, 4 or ROCK64):
+
+    export MW_ARCH=arm64
 
 Then run following for all Linux platforms:
 
