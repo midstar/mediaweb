@@ -46,7 +46,7 @@ build_script:
   - cmd: 'copy configs\mediaweb.conf .'
   - cmd: 7z a mediaweb_windows_x64.zip mediaweb.exe mediaweb.conf service.bat
 
-  # Windows rename tempates directory to secure that packr is working
+  # Windows rename tempates directory to secure that go rice is working
   - cmd: 'rename templates old_templates'
 
   # Windows Test service installation/uninstallation script
@@ -60,6 +60,9 @@ build_script:
   - sh: 'cp scripts/service.sh .'
   - sh: 'cp configs/mediaweb.conf .'
   - sh: tar -zcvf mediaweb_linux_x64.tar.gz  mediaweb mediaweb.conf service.sh
+
+  # Linux rename tempates directory to secure that go rice is working
+  - sh: 'mv templates old_templates'
 
   # Linux Test service installation/uninstallation script
   - sh: 'sudo -E sh scripts/service_test.sh'
