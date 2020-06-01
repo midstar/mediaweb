@@ -6,3 +6,5 @@ go get github.com/GeertJohan/go.rice
 go get github.com/GeertJohan/go.rice/rice
 go get github.com/fsnotify/fsnotify
 go get github.com/kardianos/service
+
+go install github.com/GeertJohan/go.rice/rice
