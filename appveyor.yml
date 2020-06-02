@@ -73,6 +73,9 @@ build_script:
   # Linux Test Debian installer
   - sh: 'sudo sh scripts/debian_installer_test.sh'
 
+  # Linux revert to old name to enable build again
+  - sh: 'mv old_templates templates'
+
   # Linux ARM (32-bit) - cross compile from linux x64
   - sh: rm mediaweb
   - sh: 'sh $GOPATH/src/github.com/midstar/mediaweb/scripts/build_cross_arm.sh arm $APPVEYOR_BUILD_VERSION'
