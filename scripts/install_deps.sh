@@ -1,3 +1,5 @@
+set -ex
+
 go get github.com/midstar/llog
 go get github.com/midstar/gocfg
 go get github.com/disintegration/imaging
