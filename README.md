@@ -3,7 +3,7 @@
 # MediaWEB - Access your photos and videos over Internet
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/midstar/mediaweb)](https://goreportcard.com/report/github.com/midstar/mediaweb)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb?svg=true)](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb?svg=true)](https://ci.appveyor.com/api/projects/status/github/midstar/mediaweb/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/midstar/mediaweb/badge.svg?branch=master)](https://coveralls.io/github/midstar/mediaweb?branch=master)
 
 MediaWeb is a small self-contained web server software to enable you to access your photos and videos over the Internet in your WEB browser.
@@ -86,13 +86,17 @@ Debian installer packages are provided for x64 (PC) or arm (Raspberry Pi, Banana
 
 To get the latest file from a shell follow the instruction below.
 
-For PC x64 based Linux write following in a shell:
+For PC x64 based architectures write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux:
+For ARM 32-bit based architectures (for example Raspberry Pi 1, 2):
 
     export MW_ARCH=arm
+
+For ARM 64-bit based archtectures (for example Raspberry Pi 3, 4 or ROCK64):
+
+    export MW_ARCH=arm64
 
 Then run following for all Linux platforms:
 
@@ -121,9 +125,13 @@ For PC x64 based Linux write following in a shell:
 
     export MW_ARCH=x64
 
-For ARM based Linux:
+For ARM 32-bit based architectures (for example Raspberry Pi 1, 2):
 
     export MW_ARCH=arm
+
+For ARM 64-bit based archtectures (for example Raspberry Pi 3, 4 or ROCK64):
+
+    export MW_ARCH=arm64
 
 Then run following for all Linux platforms:
 
@@ -175,7 +183,7 @@ Also, checkout the [Configuration guide](#configuration-guide) and [FAQ](FAQ.md)
 
 To build from source on any platform you need to:
 
-* Install Golang 
+* Install Golang (version 1.13 or newer)
 * Set the GOPATH environment variable
 * Add the bin folder within your GOPATH to your PATH environment variable ($GOPATH/bin)
 

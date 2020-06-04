@@ -46,6 +46,14 @@ export ARCHITECTURE=$1
 export VERSION=$2
 export NAME=$3
 
+if [ "$ARCHITECTURE" = "amd64" ]; then
+  # Will be dynamically linked
+  export EXTRA_DEPS=", libc6 (>= 2.3.2)"
+else
+  # Will be statically linked
+  export EXTRA_DEPS=""
+fi
+
 # Create package source create directory
 export SCRIPT_PATH=`dirname "$0"`
 export PKG_IN_PATH=$SCRIPT_PATH/debian_pkg
@@ -98,6 +106,8 @@ SIZE=$(du -s ./$PKG_ROOT_PATH | awk '{print $1}')
 sed -i -e 's/__ARCHITECTURE__/'${ARCHITECTURE}'/g' $PKG_OUT_PATH/DEBIAN/control
 sed -i -e 's/__VERSION__/'${VERSION}'/g' $PKG_OUT_PATH/DEBIAN/control
 sed -i -e 's/__SIZE__/'${SIZE}'/g' $PKG_OUT_PATH/DEBIAN/control
+#sed -i -e 's/__EXTRA_DEPS_/'${EXTRA_DEPS}'/g' $PKG_OUT_PATH/DEBIAN/control
+sed -i -e "s/__EXTRA_DEPS__/$EXTRA_DEPS/g" $PKG_OUT_PATH/DEBIAN/control
 
 # Set premissions on scripts
 chmod 755 $PKG_OUT_PATH/DEBIAN/post* $PKG_OUT_PATH/DEBIAN/pre*

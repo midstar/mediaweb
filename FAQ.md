@@ -58,6 +58,8 @@ Also, MediaWEB can generate thumbnails as soon as files are added to the media d
 
 This will improve performance a lot the first time each folder is browsed. 
 
+See [performance report](PERFORMANCE.md) for details about MediaWEB performance on different architectures.
+
 ## Why is swiping or zooming images lagging?
 
 By default the original images are opened in the viewer. If the images are large (typical 2 - 10 MB) low end platforms (such as mobile browsers) will have a hard time to make a smooth navigation / zooming. Also, it make take some time to download the images if the network bandwidth is limited.
@@ -79,3 +81,4 @@ Your can also configure MediaWEB to generate the previews during startup and whe
 ## How to fetch the original image when preview is enabled?
 
 You can always download the original image (unresized) by clicking on the image name/title while viewing the image.
+ 
