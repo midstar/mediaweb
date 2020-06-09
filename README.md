@@ -75,8 +75,9 @@ Interface suited for mobile devices
 * Thumbnail support for images and videos, primary by reading of EXIF thumbnail if it exist, otherwise thumbnails will be created and stored in a thumbnail cache. Video thumbnails requires [ffmpeg](https://www.ffmpeg.org/) to be installed
 * Automatic rotation JPEG images when needed (based on EXIF information)
 * Generate thumbnails on the fly, on start-up and/or when new files are added to the media directory
-* **NEW!** Automatically resize images to reduce network bandwidth and get a smoother navigation at client
+* Automatically resize images to reduce network bandwidth and get a smoother navigation at client
 * Optional authentication with username and password
+* **NEW!** Support for both HTTP and encryption using HTTPS (TLS)
 
 ## Download and install Linux
 
@@ -250,10 +251,27 @@ out with the *cachepath* has enough disk space.
 Also, if you have many images and are running on an SBC it might take very, very long
 time the first time the images are resized. Count with several days.
 
+### Enable encryption with TLS (HTTPS) and password protection
 
-## Future improvements
+By default MediaWEB will use the standard open HTTP protocol without
+any authentication. If you decide to add authentication you should
+always enable encryption using TLS (HTTPS). If you don't do this
+it would be possible to sniff the network and get your user name 
+and password.
 
-* Add support for TLS/SSL
+    username = myusername
+    password = mypassword
+    tlscertfile = public.crt
+    tlskeyfile = private.key
+
+OpenSSL can be used to generate the public and private key:
+
+    openssl genrsa -out private.key 2048
+    openssl req -new -x509 -sha256 -key private.key -out public.crt -days 3650
+
+The above key is self signed, which basically means that your browser
+won't trust it by default, but you can always ignore the warnings
+in your browser. The link will still be secure.
 
 
 ## Author and license

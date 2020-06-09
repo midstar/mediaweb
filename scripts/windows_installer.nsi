@@ -175,6 +175,11 @@ Section "${APPLICATION_NAME}" SectionMain
   FileWrite $4 "# This parameter is MANDATORY$\r$\n"
   FileWrite $4 "port = 9834$\r$\n"
   FileWrite $4 "$\r$\n"
+  FileWrite $4 "# Network inteface to listen to.$\r$\n"
+  FileWrite $4 "# If parameter is not set, the server will listen to$\r$\n"
+  FileWrite $4 "# all interfaces.$\r$\n"
+  FileWrite $4 "#ip = 127.0.0.1$\r$\n"
+  FileWrite $4 "$\r$\n"
   FileWrite $4 "# Media path, i.e. where is your media located$\r$\n"
   FileWrite $4 "# This parameter is MANADTORY$\r$\n"
   FileWrite $4 "mediapath = $0$\r$\n"
@@ -242,6 +247,13 @@ Section "${APPLICATION_NAME}" SectionMain
   FileWrite $4 "# for no authentication$\r$\n"
   FileWrite $4 "#username = myusername$\r$\n"
   FileWrite $4 "#password = mypassword$\r$\n"
+  FileWrite $4 "$\r$\n"
+  FileWrite $4 "# TLS (HTTPS) certification file and key file. Leave commented\r$\n"
+  FileWrite $4 "# for no encryption (HTTP). If both parameters are set TlS\r$\n"
+  FileWrite $4 "# will be enabled.\r$\n"
+  FileWrite $4 "#tlscertfile = public.crt\r$\n"
+  FileWrite $4 "#tlskeyfile = private.key\r$\n"
+  FileWrite $4 "$\r$\n"
 
   FileClose $4
 

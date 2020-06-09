@@ -35,6 +35,9 @@ mediapath = Y:\pictures`
 	assertEqualsStr(t, "logFile", "", s.logFile)
 	assertEqualsStr(t, "userName", "", s.userName)
 	assertEqualsStr(t, "password", "", s.password)
+	assertEqualsStr(t, "ip", "", s.ip)
+	assertEqualsStr(t, "tlsCertFile", "", s.tlsCertFile)
+	assertEqualsStr(t, "tlsKeyFile", "", s.tlsKeyFile)
 
 }
 
@@ -42,6 +45,7 @@ func TestSettings(t *testing.T) {
 	contents :=
 		`
 port = 80
+ip = 192.168.1.2
 mediapath = /media/usb/pictures
 cachepath = /tmp/thumb
 enablethumbcache = off
@@ -56,6 +60,8 @@ loglevel = debug
 logfile = /tmp/log/mediaweb.log
 username = an_email@password.com
 password = A!#_q7*+
+tlscertfile = /file/my_cert_file.crt
+tlskeyfile = /file/my_cert_file.key
 `
 	fullPath := createConfigFile(t, "TestSettings.conf", contents)
 	s := loadSettings(fullPath)
@@ -78,6 +84,9 @@ password = A!#_q7*+
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
 	assertEqualsStr(t, "userName", "an_email@password.com", s.userName)
 	assertEqualsStr(t, "password", "A!#_q7*+", s.password)
+	assertEqualsStr(t, "ip", "192.168.1.2", s.ip)
+	assertEqualsStr(t, "tlsCertFile", "/file/my_cert_file.crt", s.tlsCertFile)
+	assertEqualsStr(t, "tlsKeyFile", "/file/my_cert_file.key", s.tlsKeyFile)
 
 }
 

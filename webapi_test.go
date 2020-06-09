@@ -10,11 +10,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+    "crypto/tls"
 
 	rice "github.com/GeertJohan/go.rice"
 )
 
 var baseURL = "http://localhost:9834"
+var baseHttpsURL = "https://localhost:9835"
 
 func respToString(response io.ReadCloser) string {
 	defer response.Close()
@@ -107,7 +109,7 @@ func waitserver(t *testing.T) {
 
 // shutdown shuts down server and clears the serveMux
 func shutdown(t *testing.T) {
-	// No answer expecetd on POST shutdown (short timeout)
+	// No answer expected on POST shutdown (short timeout)
 	client := http.Client{Timeout: 1 * time.Second}
 	client.Post(fmt.Sprintf("%s/shutdown", baseURL), "", nil)
 
@@ -222,7 +224,7 @@ func TestGetThumbnail(t *testing.T) {
 func TestGetThumbnailNoCache(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
-	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI := CreateWebAPI(9834, "", "templates", media, box, "", "", "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
@@ -254,7 +256,7 @@ func TestGetThumbnailNoCache(t *testing.T) {
 func TestGetPreview(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "tmpcache/TestGetPreview", true, false, false, true, true, 1280, false, false)
-	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI := CreateWebAPI(9834, "", "templates", media, box, "", "", "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
@@ -281,7 +283,7 @@ func TestInvalidPath(t *testing.T) {
 func TestAuthentication(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "", true, false, false, true, false, 0, false, false)
-	webAPI := CreateWebAPI(9834, "templates", media, box, "myuser", "mypass")
+	webAPI := CreateWebAPI(9834, "", "templates", media, box, "myuser", "mypass", "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
@@ -314,7 +316,7 @@ func TestAuthentication(t *testing.T) {
 func TestIsPreCacheInProgress(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "", false, false, false, true, false, 0, false, false)
-	webAPI := CreateWebAPI(9834, "templates", media, box, "", "")
+	webAPI := CreateWebAPI(9834, "", "templates", media, box, "", "", "", "")
 	webAPI.Start()
 	waitserver(t)
 	defer shutdown(t)
@@ -326,5 +328,47 @@ func TestIsPreCacheInProgress(t *testing.T) {
 	media.preCacheInProgress = true
 	getObject(t, "isPreCacheInProgress", &isPreCacheInProgress)
 	assertTrue(t, "", isPreCacheInProgress)
+
+}
+
+func TestTLS(t *testing.T) {
+	box := rice.MustFindBox("templates")
+	media := createMedia(box, "testmedia", "tmpcache/TestTLS", true, false, false, true, true, 1280, false, false)
+	webAPI := CreateWebAPI(9835, "", "templates", media, box, "", "", 
+		"configs/example.crt", "configs/example.key")
+	webAPI.Start()
+
+	// Create the client
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+	httpsClient := &http.Client{Transport: tr, Timeout: 100 * time.Millisecond}
+
+	// Wait until server goes up
+	maxTries := 50
+	i := 0
+	for i = 0; i < maxTries; i++ {
+		_, err := httpsClient.Get(baseHttpsURL)
+		if err == nil {
+			// Up and running :-)
+			break
+		}
+	}
+	assertTrue(t, "Server never started using TLS", i < maxTries)
+
+	// Access the main page
+	resp, err := httpsClient.Get(baseHttpsURL)
+	assertExpectNoErr(t, "Unable to connect over TLS", err)
+	defer resp.Body.Close()
+	assertEqualsInt(t, "", int(http.StatusOK), int(resp.StatusCode))
+	assertEqualsStr(t, "", "text/html", resp.Header.Get("content-type"))
+
+	// Shutdown the server
+	// No answer expected on POST shutdown (short timeout)
+	httpsClient = &http.Client{Timeout: 1 * time.Second, Transport: tr}
+	httpsClient.Post(fmt.Sprintf("%s/shutdown", baseHttpsURL), "", nil)
+
+	// Reset the serveMux
+	http.DefaultServeMux = new(http.ServeMux)
 
 }
