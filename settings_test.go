@@ -244,3 +244,27 @@ func TestFindConfFileMissing(t *testing.T) {
 	findConfFile() // Shall panic
 	t.Fatalf("Should have paniced here")
 }
+
+
+func TestPathEquals(t *testing.T) {
+	assertTrue(t, "", pathEquals("adir", "adir"))
+	assertTrue(t, "", pathEquals("adir/anotherdir", "adir/anotherdir"))
+	assertTrue(t, "", pathEquals("adir/anotherdir", "adir/anotherdir/third/.."))
+
+	assertFalse(t, "", pathEquals("adir", "bdir"))
+	assertFalse(t, "", pathEquals("sameroot/leaf1", "sameroot/leaf2"))
+	assertFalse(t, "", pathEquals("root1/leaf1", "root2/leaf1"))
+	assertFalse(t, "", pathEquals("/unix/u", "C:\\windows\\w"))
+}
+
+func TestSettingsSameMediaAndCachePath(t *testing.T) {
+	contents :=
+		`
+port = 80
+mediapath = Y:\pictures
+cachepath = Y:\pictures`
+	fullPath := createConfigFile(t, "TestSettingsSameMediaAndCachePath.conf", contents)
+	defer expectPanic(t)
+	loadSettings(fullPath)
+	t.Fatal("Panic expected")
+}

@@ -101,6 +101,11 @@ func loadSettings(fileName string) settings {
 		}
 	}
 
+	// Check that mediapath and cachepath are not the same
+	if pathEquals(result.mediaPath, result.cachePath) {
+		llog.Panic("cachepath and mediapath have the same value '%s'", result.mediaPath)
+	}
+
 	// Load enableThumbCache (OPTIONAL)
 	// Default: true
 	enableThumbCache, err := config.GetBool("enablethumbcache", true)
@@ -219,4 +224,12 @@ func toLogLvl(level string) llog.Level {
 	}
 
 	return logLevel
+}
+
+func pathEquals(path1, path2 string) bool {
+	diffPath, err := filepath.Rel(path1, path2)
+	if err == nil && (diffPath == "" || diffPath == ".") {
+		return true
+	}
+	return false
 }
