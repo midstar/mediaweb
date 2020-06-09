@@ -20,6 +20,7 @@ func mainCommon() *WebAPI {
 		s.enableThumbCache, s.genThumbsOnStartup,
 		s.genThumbsOnAdd, s.autoRotate, s.enablePreview, s.previewMaxSide,
 		s.genPreviewOnStartup, s.genPreviewOnAdd)
-	webAPI := CreateWebAPI(s.port, "templates", media, box, s.userName, s.password)
+	webAPI := CreateWebAPI(s.port, s.ip, "templates", media, box, 
+		s.userName, s.password, s.tlsCertFile, s.tlsKeyFile)
 	return webAPI
 }

@@ -20,7 +20,10 @@ Yes, MediaWEB only allows read access of media files whithin your media folder. 
 * Access non-media files within your media folder
 * Access any file outside of your media folder
 
-If you protect your content using a username and password (enable in mediaweb.conf) you should enable TLS/HTTPS (separate server as proxy is currently needed), otherwise it would be possible to sniff the network for your username and password.
+If you protect your content using a username and password (enable in mediaweb.conf) you should enable TLS/HTTPS,
+otherwise it would be possible to sniff the network for your username and password. 
+
+See [README](README.md) for how to enable authentication and TLS/HTTPS.
 
 ## How do I view my media?
 

@@ -11,6 +11,7 @@ import (
 
 type settings struct {
 	port                int        // Network port
+	ip                  string     // Network IP ("" means any)
 	mediaPath           string     // Top level path for media files
 	cachePath           string     // Top level path for cache (thumbs and preview)
 	enableThumbCache    bool       // Generate thumbnails
@@ -25,6 +26,8 @@ type settings struct {
 	logFile             string     // Log file ("" means stderr)
 	userName            string     // User name ("" means no authentication)
 	password            string     // Password
+	tlsCertFile         string     // TLS certification file
+	tlsKeyFile          string     // TLS key file
 }
 
 // defaultConfPath holds configuration file paths in priority order
@@ -69,6 +72,11 @@ func loadSettings(fileName string) settings {
 	}
 	result.port = port
 
+	// Load IP (OPTIONAL)
+	// Default: ""
+	ip := config.GetString("ip", "")
+	result.ip = ip
+
 	// Load mediaPath (MANDATORY)
 	if !config.HasKey("mediapath") {
 		llog.Panic("Mandatory property 'mediapath' is not defined in %s", fileName)
@@ -91,6 +99,11 @@ func loadSettings(fileName string) settings {
 			tempDir := os.TempDir()
 			result.cachePath = filepath.Join(tempDir, "mediaweb")
 		}
+	}
+
+	// Check that mediapath and cachepath are not the same
+	if pathEquals(result.mediaPath, result.cachePath) {
+		llog.Panic("cachepath and mediapath have the same value '%s'", result.mediaPath)
 	}
 
 	// Load enableThumbCache (OPTIONAL)
@@ -177,6 +190,16 @@ func loadSettings(fileName string) settings {
 	password := config.GetString("password", "")
 	result.password = password
 
+	// Load tlsCertFile (OPTIONAL)
+	// Default: ""
+	tlsCertFile := config.GetString("tlscertfile", "")
+	result.tlsCertFile = tlsCertFile
+
+	// Load tlsKeyFile (OPTIONAL)
+	// Default: ""
+	tlsKeyFile := config.GetString("tlskeyfile", "")
+	result.tlsKeyFile = tlsKeyFile
+
 	return result
 }
 
@@ -201,4 +224,12 @@ func toLogLvl(level string) llog.Level {
 	}
 
 	return logLevel
+}
+
+func pathEquals(path1, path2 string) bool {
+	diffPath, err := filepath.Rel(path1, path2)
+	if err == nil && (diffPath == "" || diffPath == ".") {
+		return true
+	}
+	return false
 }

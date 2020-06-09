@@ -21,11 +21,14 @@ type WebAPI struct {
 	box          *rice.Box
 	userName     string // User name ("" means no authentication)
 	password     string // Password
+	tlsCertFile  string // TLS certification file ("" means no TLS)
+	tlsKeyFile   string // TLS key file ("" means no TLS)
 }
 
 // CreateWebAPI creates a new Web API instance
-func CreateWebAPI(port int, templatePath string, media *Media, box *rice.Box, userName, password string) *WebAPI {
-	portStr := fmt.Sprintf(":%d", port)
+func CreateWebAPI(port int, ip, templatePath string, media *Media, box *rice.Box, userName, password, 
+	tlsCertFile, tlsKeyFile string) *WebAPI {
+	portStr := fmt.Sprintf("%s:%d", ip, port)
 	server := &http.Server{Addr: portStr}
 	webAPI := &WebAPI{
 		server:       server,
@@ -33,7 +36,9 @@ func CreateWebAPI(port int, templatePath string, media *Media, box *rice.Box, us
 		media:        media,
 		box:          box,
 		userName:     userName,
-		password:     password}
+		password:     password,
+		tlsCertFile:  tlsCertFile,
+		tlsKeyFile:   tlsKeyFile}
 	http.Handle("/", webAPI)
 	return webAPI
 }
@@ -45,9 +50,17 @@ func (wa *WebAPI) Start() chan bool {
 
 	go func() {
 		llog.Info("Starting Web API on port %s\n", wa.server.Addr)
-		if err := wa.server.ListenAndServe(); err != nil {
-			// cannot panic, because this probably is an intentional close
-			llog.Info("WebAPI: ListenAndServe() shutdown reason: %s", err)
+		if wa.tlsCertFile != "" && wa.tlsKeyFile != ""	{
+			llog.Info("Using TLS (HTTPS)")
+			if err := wa.server.ListenAndServeTLS(wa.tlsCertFile, wa.tlsKeyFile); err != nil {
+				// cannot panic, because this probably is an intentional close
+				llog.Info("WebAPI: ListenAndServeTLS() shutdown reason: %s", err)
+			}	
+		} else {
+			if err := wa.server.ListenAndServe(); err != nil {
+				// cannot panic, because this probably is an intentional close
+				llog.Info("WebAPI: ListenAndServeTLS() shutdown reason: %s", err)
+			}	
 		}
 		// TODO fix this wa.media.stopWatcher() // Stop the folder watcher (if it is running)
 		done <- true // Signal that http server has stopped
