@@ -155,7 +155,7 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 
 	for _, fileInfo := range fileInfos {
 		fileType := ""
-		if fileInfo.IsDir() {
+		if fileInfo.IsDir() || fileInfo.Mode() & os.ModeSymlink != 0  {
 			fileType = "folder"
 		} else {
 			fileType = m.getFileType(fileInfo.Name())
