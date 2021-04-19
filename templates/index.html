@@ -750,6 +750,7 @@ function openMediaViewer(index = 0) {
 }
 
 function closeMediaViewer() {
+    pauseVideo(mediaIndex);
     hideZoom();
     mediaViewer.style.display = "none";
     document.onkeydown = browserOnKeyDown; // Put back browser key down
@@ -764,7 +765,18 @@ function isMediaViewerOpen() {
     return mediaViewer != null && mediaViewer.style.display == "block";
 }
 
+// Pause video playback of index (in case index
+// media is video)
+function pauseVideo(index) {
+    if (index < 0 || index >= mediaFiles.length) {
+        return; // Invalid index
+    }
+    var mediaObject = getMediaObject(index);
+    if (mediaObject.tagName.toLowerCase() == "video") {
+        mediaObject.pause();
+    }
 
+}
 
 // Will updated URL with the query parameter file set to the
 // name of current selected file
@@ -891,6 +903,7 @@ function prevMedia(iPrev = mediaIndex) {
     if (mediaIndex > 0) {
         mediaIndex--;  
     }
+    pauseVideo(iPrev);
     animateSlide(iPrev, mediaIndex); 
     loadMediaThumb(mediaIndex);
     loadMedia(mediaIndex);
@@ -903,6 +916,7 @@ function nextMedia(iPrev = mediaIndex) {
     if (mediaIndex < (mediaFiles.length - 1)) {
         mediaIndex++;
     }
+    pauseVideo(iPrev);
     animateSlide(iPrev, mediaIndex); 
     loadMediaThumb(mediaIndex);
     loadMedia(mediaIndex);
