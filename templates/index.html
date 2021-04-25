@@ -901,9 +901,9 @@ function mediaLoadedCompleteCallback(index, thumbObject) {
 // iPrev is optional (default is previous i)
 function prevMedia(iPrev = mediaIndex) {
     if (mediaIndex > 0) {
+        pauseVideo(mediaIndex);
         mediaIndex--;  
     }
-    pauseVideo(iPrev);
     animateSlide(iPrev, mediaIndex); 
     loadMediaThumb(mediaIndex);
     loadMedia(mediaIndex);
@@ -914,9 +914,9 @@ function prevMedia(iPrev = mediaIndex) {
 // iPrev is optional (default is previous i)
 function nextMedia(iPrev = mediaIndex) {
     if (mediaIndex < (mediaFiles.length - 1)) {
+        pauseVideo(mediaIndex);
         mediaIndex++;
     }
-    pauseVideo(iPrev);
     animateSlide(iPrev, mediaIndex); 
     loadMediaThumb(mediaIndex);
     loadMedia(mediaIndex);
