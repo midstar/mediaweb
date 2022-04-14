@@ -22,6 +22,7 @@ type settings struct {
 	previewMaxSide      int        // Max height/width of preview file
 	genPreviewOnStartup bool       // Generate all preview on startup
 	genPreviewOnAdd     bool       // Generate preview when file added (start watcher)
+	enableCacheCleanup  bool       // Clear cache from unnecessary files
 	logLevel            llog.Level // Logging level
 	logFile             string     // Log file ("" means stderr)
 	userName            string     // User name ("" means no authentication)
@@ -169,6 +170,14 @@ func loadSettings(fileName string) settings {
 		llog.Warn("%s", err)
 	}
 	result.genPreviewOnAdd = genPreviewOnAdd
+
+	// Load enableCacheCleanup (OPTIONAL)
+	// Default: false
+	enableCacheCleanup, err := config.GetBool("enablecachecleanup", false)
+	if err != nil {
+		llog.Warn("%s", err)
+	}
+	result.enableCacheCleanup = enableCacheCleanup
 
 	// Load logFile (OPTIONAL)
 	// Default: "" (log to stderr)

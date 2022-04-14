@@ -31,6 +31,7 @@ mediapath = Y:\pictures`
 	assertEqualsInt(t, "previewmaxside", 1280, s.previewMaxSide)
 	assertEqualsBool(t, "genpreviewonstartup", false, s.genPreviewOnStartup)
 	assertEqualsBool(t, "genpreviewonadd", true, s.genPreviewOnAdd)
+	assertEqualsBool(t, "enablecachecleanup", false, s.enableCacheCleanup)
 	assertEqualsInt(t, "logLevel", int(llog.LvlInfo), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "", s.logFile)
 	assertEqualsStr(t, "userName", "", s.userName)
@@ -56,6 +57,7 @@ enablepreview = true
 previewmaxside = 1920
 genpreviewonstartup = on
 genpreviewonadd = off
+enablecachecleanup = on
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 username = an_email@password.com
@@ -80,6 +82,7 @@ tlskeyfile = /file/my_cert_file.key
 	assertEqualsInt(t, "previewmaxside", 1920, s.previewMaxSide)
 	assertEqualsBool(t, "genpreviewonstartup", true, s.genPreviewOnStartup)
 	assertEqualsBool(t, "genpreviewonadd", false, s.genPreviewOnAdd)
+	assertEqualsBool(t, "enablecachecleanup", true, s.enableCacheCleanup)
 	assertEqualsInt(t, "logLevel", int(llog.LvlDebug), int(s.logLevel))
 	assertEqualsStr(t, "logFile", "/tmp/log/mediaweb.log", s.logFile)
 	assertEqualsStr(t, "userName", "an_email@password.com", s.userName)
@@ -104,6 +107,7 @@ enablepreview = 27
 previewmaxside = invalid
 enablethumbcache = -6
 genthumbsonstartup = 67
+enablecachecleanup = 4.5
 loglevel = debug
 logfile = /tmp/log/mediaweb.log
 `
@@ -128,6 +132,7 @@ logfile = /tmp/log/mediaweb.log
 	assertEqualsBool(t, "enablepreview", false, s.enablePreview)
 	assertEqualsBool(t, "genpreviewonstartup", false, s.genPreviewOnStartup)
 	assertEqualsBool(t, "genpreviewonadd", true, s.genPreviewOnAdd)
+	assertEqualsBool(t, "enablecachecleanup", false, s.enableCacheCleanup)
 
 }
 

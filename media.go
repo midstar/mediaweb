@@ -29,6 +29,7 @@ type Media struct {
 	autoRotate         bool      // Rotate JPEG files when needed
 	enablePreview      bool      // Resize images before provide to client
 	previewMaxSide     int       // Maximum width or hight of preview image
+	enableCacheCleanup bool      // Enable cleanup of cache area
 	box                *rice.Box // For icons
 	preCacheInProgress bool      // True if thumbnail/preview generation in progress
 	watcher            *Watcher  // The media watcher
@@ -45,7 +46,7 @@ type File struct {
 // created when needed.
 func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbCache,
 	genThumbsOnStartup, genThumbsOnAdd, autoRotate, enablePreview bool,
-	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd bool) *Media {
+	previewMaxSide int, genPreviewOnStartup, genPreviewOnAdd, enabledCacheCleanup bool) *Media {
 	llog.Info("Media path: %s", mediaPath)
 	if enableThumbCache || enablePreview {
 		directory := filepath.Dir(cachepath)
@@ -69,6 +70,7 @@ func createMedia(box *rice.Box, mediaPath string, cachepath string, enableThumbC
 		autoRotate:         autoRotate,
 		enablePreview:      enablePreview,
 		previewMaxSide:     previewMaxSide,
+		enableCacheCleanup: enabledCacheCleanup,
 		box:                box,
 		preCacheInProgress: false}
 	llog.Info("Video thumbnails supported (ffmpeg installed): %v", media.videoThumbnailSupport())
@@ -104,16 +106,9 @@ func (m *Media) getFullMediaPath(relativePath string) (string, error) {
 	return m.getFullPath(m.mediaPath, relativePath)
 }
 
-// getFullThumbPath returns the full path of the provided path, i.e:
+// getFullCachePath returns the full path of the provided path, i.e:
 // thumb path + relative path.
-func (m *Media) getFullThumbPath(relativePath string) (string, error) {
-	return m.getFullPath(m.cachepath, relativePath)
-}
-
-// getFullPreviewPath returns the full path of the provided path, i.e:
-// preview path + relative path.
-// The preview files shares the same path (cache location) as thumbnails.
-func (m *Media) getFullPreviewPath(relativePath string) (string, error) {
+func (m *Media) getFullCachePath(relativePath string) (string, error) {
 	return m.getFullPath(m.cachepath, relativePath)
 }
 
@@ -362,7 +357,7 @@ func (m *Media) thumbnailPath(relativeMediaPath string) (string, error) {
 	}
 	file = "_" + file
 	relativeThumbnailPath := filepath.Join(path, file)
-	return m.getFullThumbPath(relativeThumbnailPath)
+	return m.getFullCachePath(relativeThumbnailPath)
 }
 
 // errorIndicationPath returns the file path with the extension
@@ -633,7 +628,7 @@ func (m *Media) previewPath(relativeMediaPath string) (string, error) {
 	}
 	file = "view_" + file
 	relativePreviewPath := filepath.Join(path, file)
-	return m.getFullPreviewPath(relativePreviewPath)
+	return m.getFullCachePath(relativePreviewPath)
 }
 
 // generateImagePreview generates a preview from any of the supported
@@ -768,6 +763,7 @@ type PreCacheStatistics struct {
 	NbrOfFailedVideoThumb   int
 	NbrOfFailedImagePreview int
 	NbrOfSmallImages        int // Don't require any preview
+	NbrRemovedCacheFiles    int 
 }
 
 func (m *Media) isPreCacheInProgress() bool {
@@ -805,6 +801,7 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 				stat.NbrOfFailedVideoThumb += newStat.NbrOfFailedVideoThumb
 				stat.NbrOfFailedImagePreview += newStat.NbrOfFailedImagePreview
 				stat.NbrOfSmallImages += newStat.NbrOfSmallImages
+				stat.NbrRemovedCacheFiles += newStat.NbrRemovedCacheFiles
 			}
 		} else {
 			if file.Type == "image" {
@@ -855,6 +852,9 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 			}
 		}
 	}
+	if m.enableCacheCleanup {
+		stat.NbrRemovedCacheFiles += m.cleanupCache(relativePath, files)
+	}	
 	return &stat
 }
 
@@ -879,8 +879,70 @@ func (m *Media) generateAllCache(thumbnails, preview bool) {
   Number of failed image thumbnails: %d
   Number of failed video thumbnails: %d
   Number of failed image previews: %d
-  Number of small images not require preview: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
+  Number of small images not require preview: %d
+  Number of removed cache files: %d`, minutes, seconds, stat.NbrOfFolders, stat.NbrOfImages,
 		stat.NbrOfVideos, stat.NbrOfExif, stat.NbrOfImageThumb, stat.NbrOfVideoThumb, stat.NbrOfImagePreview,
 		stat.NbrOfFailedFolders, stat.NbrOfFailedImageThumb, stat.NbrOfFailedVideoThumb,
-		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages)
+		stat.NbrOfFailedImagePreview, stat.NbrOfSmallImages, stat.NbrRemovedCacheFiles)
+}
+
+// cleanupCache removes all files and directories in the cache directory
+// which don't have any corresponding media file.
+// relativePath relative path where to clean up cache files.
+// expectedMediaFiles are all files, including directories that are allowed
+// as thumbs, preview or error files in the cache.
+// Returns number of removed files and directories
+func (m *Media) cleanupCache(relativePath string, expectedMediaFiles []File) int {
+	fullCachePath, _ := m.getFullCachePath(relativePath) 
+	llog.Debug("Cleaning up directory: %s", fullCachePath)
+
+	// Figure possible directories, thumb, preview and error file names
+	cacheFileNames := make([]string, 0, len(expectedMediaFiles) * 5)
+	for _, file := range expectedMediaFiles {
+		_, fileName := filepath.Split(file.Name)
+		if file.Type == "folder" {	
+			cacheFileNames = append(cacheFileNames, fileName)
+		} else {
+			thumbName, err := m.thumbnailPath(fileName)
+			if err == nil {
+				_, thumbName = filepath.Split(thumbName)
+				cacheFileNames = append(cacheFileNames, thumbName)
+				errorIndicationName := m.errorIndicationPath(thumbName)
+				_, errorIndicationName = filepath.Split(errorIndicationName)
+				cacheFileNames = append(cacheFileNames, errorIndicationName)
+			}
+			previewName, err := m.previewPath(fileName)
+			if err == nil {
+				_, previewName = filepath.Split(previewName)
+				cacheFileNames = append(cacheFileNames, previewName)
+				errorIndicationName := m.errorIndicationPath(previewName)
+				_, errorIndicationName = filepath.Split(errorIndicationName)
+				cacheFileNames = append(cacheFileNames, errorIndicationName)
+			}
+		}	
+	}
+
+	// Compare the files in cache path with expected files
+	fileInfos, _ := ioutil.ReadDir(fullCachePath)
+	nbrRemovedFiles := 0
+	for _, fileInfo := range fileInfos {
+		if contains(cacheFileNames, fileInfo.Name()) == false {
+			filePath := filepath.Join(fullCachePath, fileInfo.Name())
+			llog.Debug("Removing %s", filePath)
+			os.RemoveAll(filePath)
+			nbrRemovedFiles++
+		}
+	}
+	return nbrRemovedFiles
+}
+
+// contains is a helper function to find a string within
+// a slice of multiple strings
+func contains(s []string, e string) bool {
+    for _, a := range s {
+        if a == e {
+            return true
+		}
+	}
+    return false
 }
