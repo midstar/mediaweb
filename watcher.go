@@ -111,6 +111,12 @@ func (w *Watcher) mediaWatcher(watcher *fsnotify.Watcher) {
 						// Mark the directory as changed so that updater eventually
 						// will create the thumbnails
 						w.updater.markDirectoryAsUpdated(relativeMediaPath)
+					} else if (event.Op&fsnotify.Remove == fsnotify.Remove) || 
+					          (event.Op&fsnotify.Rename == fsnotify.Rename) {
+						// Files has been removed, renamed or moved 
+						// Mark the directory as changed so that updater eventually
+						// will create the thumbnails
+						w.updater.markDirectoryAsUpdated(relativeMediaPath)
 					} else if event.Op&fsnotify.Write == fsnotify.Write {
 						// Tell updater that there is operations performed in the
 						// directory (i.e. wait for a while before generating the
