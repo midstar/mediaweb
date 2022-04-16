@@ -191,11 +191,11 @@ func TestWatcherSubfolder(t *testing.T) {
 	assertFileCreated(t, "", cache+"/subdir/submore/_no_exif.jpg")
 
 	// Remove directory
-	os.RemoveAll(mediaPath+"/subdir/submore")
+	os.RemoveAll(mediaPath + "/subdir/submore")
 
 	// Verify that directory was removed
 	assertFileRemoved(t, "", cache+"/subdir/submore")
-	
+
 	// But secure that other files are kept
 	assertFileCreated(t, "", cache+"/subdir/_icon_image.jpg")
 }

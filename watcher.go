@@ -79,7 +79,7 @@ func (w *Watcher) watchFolder(watcher *fsnotify.Watcher, path string) error {
 	}
 
 	for _, fileInfo := range fileInfos {
-		if fileInfo.IsDir() || fileInfo.Mode() & os.ModeSymlink != 0 {
+		if fileInfo.IsDir() || fileInfo.Mode()&os.ModeSymlink != 0 {
 			w.watchFolder(watcher, filepath.Join(path, fileInfo.Name()))
 		}
 	}
@@ -111,9 +111,9 @@ func (w *Watcher) mediaWatcher(watcher *fsnotify.Watcher) {
 						// Mark the directory as changed so that updater eventually
 						// will create the thumbnails
 						w.updater.markDirectoryAsUpdated(relativeMediaPath)
-					} else if (event.Op&fsnotify.Remove == fsnotify.Remove) || 
-					          (event.Op&fsnotify.Rename == fsnotify.Rename) {
-						// Files has been removed, renamed or moved 
+					} else if (event.Op&fsnotify.Remove == fsnotify.Remove) ||
+						(event.Op&fsnotify.Rename == fsnotify.Rename) {
+						// Files has been removed, renamed or moved
 						// Mark the directory as changed so that updater eventually
 						// will create the thumbnails
 						w.updater.markDirectoryAsUpdated(relativeMediaPath)

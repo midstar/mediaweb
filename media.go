@@ -150,7 +150,7 @@ func (m *Media) getFiles(relativePath string) ([]File, error) {
 
 	for _, fileInfo := range fileInfos {
 		fileType := ""
-		if fileInfo.IsDir() || fileInfo.Mode() & os.ModeSymlink != 0  {
+		if fileInfo.IsDir() || fileInfo.Mode()&os.ModeSymlink != 0 {
 			fileType = "folder"
 		} else {
 			fileType = m.getFileType(fileInfo.Name())
@@ -763,7 +763,7 @@ type PreCacheStatistics struct {
 	NbrOfFailedVideoThumb   int
 	NbrOfFailedImagePreview int
 	NbrOfSmallImages        int // Don't require any preview
-	NbrRemovedCacheFiles    int 
+	NbrRemovedCacheFiles    int
 }
 
 func (m *Media) isPreCacheInProgress() bool {
@@ -854,7 +854,7 @@ func (m *Media) generateCache(relativePath string, recursive, thumbnails, previe
 	}
 	if m.enableCacheCleanup {
 		stat.NbrRemovedCacheFiles += m.cleanupCache(relativePath, files)
-	}	
+	}
 	return &stat
 }
 
@@ -893,14 +893,14 @@ func (m *Media) generateAllCache(thumbnails, preview bool) {
 // as thumbs, preview or error files in the cache.
 // Returns number of removed files and directories
 func (m *Media) cleanupCache(relativePath string, expectedMediaFiles []File) int {
-	fullCachePath, _ := m.getFullCachePath(relativePath) 
+	fullCachePath, _ := m.getFullCachePath(relativePath)
 	llog.Debug("Cleaning up directory: %s", fullCachePath)
 
 	// Figure possible directories, thumb, preview and error file names
-	cacheFileNames := make([]string, 0, len(expectedMediaFiles) * 5)
+	cacheFileNames := make([]string, 0, len(expectedMediaFiles)*5)
 	for _, file := range expectedMediaFiles {
 		_, fileName := filepath.Split(file.Name)
-		if file.Type == "folder" {	
+		if file.Type == "folder" {
 			cacheFileNames = append(cacheFileNames, fileName)
 		} else {
 			thumbName, err := m.thumbnailPath(fileName)
@@ -919,7 +919,7 @@ func (m *Media) cleanupCache(relativePath string, expectedMediaFiles []File) int
 				_, errorIndicationName = filepath.Split(errorIndicationName)
 				cacheFileNames = append(cacheFileNames, errorIndicationName)
 			}
-		}	
+		}
 	}
 
 	// Compare the files in cache path with expected files
@@ -939,10 +939,10 @@ func (m *Media) cleanupCache(relativePath string, expectedMediaFiles []File) int
 // contains is a helper function to find a string within
 // a slice of multiple strings
 func contains(s []string, e string) bool {
-    for _, a := range s {
-        if a == e {
-            return true
+	for _, a := range s {
+		if a == e {
+			return true
 		}
 	}
-    return false
+	return false
 }

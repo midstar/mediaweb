@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-    "crypto/tls"
 
 	rice "github.com/GeertJohan/go.rice"
 )
@@ -334,14 +334,14 @@ func TestIsPreCacheInProgress(t *testing.T) {
 func TestTLS(t *testing.T) {
 	box := rice.MustFindBox("templates")
 	media := createMedia(box, "testmedia", "tmpcache/TestTLS", true, false, false, true, true, 1280, false, false, false)
-	webAPI := CreateWebAPI(9835, "", "templates", media, box, "", "", 
+	webAPI := CreateWebAPI(9835, "", "templates", media, box, "", "",
 		"configs/example.crt", "configs/example.key")
 	webAPI.Start()
 
 	// Create the client
-    tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
 	httpsClient := &http.Client{Transport: tr, Timeout: 100 * time.Millisecond}
 
 	// Wait until server goes up

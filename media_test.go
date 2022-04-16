@@ -476,9 +476,9 @@ func TestGeneratePreviews(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	// Create some unnecessary files that should be removed since enableCacheCleanup is true.
-	unnecessaryFile := filepath.Join(cache,"unnecessary_cache_file.jpg")
+	unnecessaryFile := filepath.Join(cache, "unnecessary_cache_file.jpg")
 	os.Create(unnecessaryFile)
-	unnecessaryDirectory := filepath.Join(cache,"unnecessary_directory")
+	unnecessaryDirectory := filepath.Join(cache, "unnecessary_directory")
 	os.MkdirAll(unnecessaryDirectory, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
@@ -519,9 +519,9 @@ func TestGenerateThumbnailsAndPreviews(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	// Create some unnecessary files that should be kept since enableCacheCleanup is false.
-	unnecessaryFile := filepath.Join(cache,"unnecessary_cache_file.jpg")
+	unnecessaryFile := filepath.Join(cache, "unnecessary_cache_file.jpg")
 	os.Create(unnecessaryFile)
-	unnecessaryDirectory := filepath.Join(cache,"unnecessary_directory")
+	unnecessaryDirectory := filepath.Join(cache, "unnecessary_directory")
 	os.MkdirAll(unnecessaryDirectory, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
@@ -553,7 +553,6 @@ func TestGenerateThumbnailsAndPreviews(t *testing.T) {
 	// Check that unnecessary files are kept
 	assertFileExist(t, "", unnecessaryFile)
 	assertFileExist(t, "", unnecessaryDirectory)
-
 
 	//
 

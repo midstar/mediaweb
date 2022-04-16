@@ -250,7 +250,6 @@ func TestFindConfFileMissing(t *testing.T) {
 	t.Fatalf("Should have paniced here")
 }
 
-
 func TestPathEquals(t *testing.T) {
 	assertTrue(t, "", pathEquals("adir", "adir"))
 	assertTrue(t, "", pathEquals("adir/anotherdir", "adir/anotherdir"))
