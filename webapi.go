@@ -26,7 +26,7 @@ type WebAPI struct {
 }
 
 // CreateWebAPI creates a new Web API instance
-func CreateWebAPI(port int, ip, templatePath string, media *Media, box *rice.Box, userName, password, 
+func CreateWebAPI(port int, ip, templatePath string, media *Media, box *rice.Box, userName, password,
 	tlsCertFile, tlsKeyFile string) *WebAPI {
 	portStr := fmt.Sprintf("%s:%d", ip, port)
 	server := &http.Server{Addr: portStr}
@@ -50,17 +50,17 @@ func (wa *WebAPI) Start() chan bool {
 
 	go func() {
 		llog.Info("Starting Web API on port %s\n", wa.server.Addr)
-		if wa.tlsCertFile != "" && wa.tlsKeyFile != ""	{
+		if wa.tlsCertFile != "" && wa.tlsKeyFile != "" {
 			llog.Info("Using TLS (HTTPS)")
 			if err := wa.server.ListenAndServeTLS(wa.tlsCertFile, wa.tlsKeyFile); err != nil {
 				// cannot panic, because this probably is an intentional close
 				llog.Info("WebAPI: ListenAndServeTLS() shutdown reason: %s", err)
-			}	
+			}
 		} else {
 			if err := wa.server.ListenAndServe(); err != nil {
 				// cannot panic, because this probably is an intentional close
 				llog.Info("WebAPI: ListenAndServeTLS() shutdown reason: %s", err)
-			}	
+			}
 		}
 		// TODO fix this wa.media.stopWatcher() // Stop the folder watcher (if it is running)
 		done <- true // Signal that http server has stopped

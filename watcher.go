@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
@@ -64,6 +65,7 @@ func (w *Watcher) startWatcher() {
 // sub folders (i.e. recursively).
 // The error return value is just for test purposes.
 func (w *Watcher) watchFolder(watcher *fsnotify.Watcher, path string) error {
+	llog.Debug("Watching folder: %s", path)
 	err := watcher.Add(path)
 	if err != nil {
 		llog.Error("Watch folder %s error: %s", path, err)
@@ -77,7 +79,7 @@ func (w *Watcher) watchFolder(watcher *fsnotify.Watcher, path string) error {
 	}
 
 	for _, fileInfo := range fileInfos {
-		if fileInfo.IsDir() {
+		if fileInfo.IsDir() || fileInfo.Mode()&os.ModeSymlink != 0 {
 			w.watchFolder(watcher, filepath.Join(path, fileInfo.Name()))
 		}
 	}
@@ -106,6 +108,12 @@ func (w *Watcher) mediaWatcher(watcher *fsnotify.Watcher) {
 							// Watch it
 							w.watchFolder(watcher, path)
 						}
+						// Mark the directory as changed so that updater eventually
+						// will create the thumbnails
+						w.updater.markDirectoryAsUpdated(relativeMediaPath)
+					} else if (event.Op&fsnotify.Remove == fsnotify.Remove) ||
+						(event.Op&fsnotify.Rename == fsnotify.Rename) {
+						// Files has been removed, renamed or moved
 						// Mark the directory as changed so that updater eventually
 						// will create the thumbnails
 						w.updater.markDirectoryAsUpdated(relativeMediaPath)
