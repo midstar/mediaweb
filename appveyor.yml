@@ -37,6 +37,9 @@ build_script:
   # Common
   - go test -v -cover github.com/midstar/mediaweb -coverprofile=coverage.out
 
+  # Check that gofmt has been executed on all go files
+  - sh: 'test -z $(gofmt -l *.go)'
+
   # Publish result on coveralls.io (pick the Linux result since we have ffmpeg there)
   - sh: '$GOPATH/bin/goveralls -coverprofile=coverage.out -service=appveyor-ci -repotoken=$COVERALLS_TOKEN'
 
