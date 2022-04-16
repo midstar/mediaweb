@@ -86,7 +86,7 @@ func TestWatcherImages(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, mediaPath, cache, true, false, true, true, false, 0, false, false, false)
+	media := createMedia(box, mediaPath, cache, true, false, true, true, false, 0, false, false, true)
 	defer media.watcher.stopWatcherAndWait()
 
 	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
@@ -98,19 +98,19 @@ func TestWatcherImages(t *testing.T) {
 	assertFileCreated(t, "", cache+"/_icon_image.jpg")
 
 	// Remove file
-	//os.Remove(mediaPath + "/icon_image.png")
+	os.Remove(mediaPath + "/icon_image.png")
 
 	// Verify that thumbnail was removed
-	//assertFileRemoved(t, "", cache+"/_icon_image.jpg")
+	assertFileRemoved(t, "", cache+"/_icon_image.jpg")
 
 	// Add many files
-	//copyFile(t, "templates/icon_image.png", mediaPath+"/icon_image.png")
+	copyFile(t, "templates/icon_image.png", mediaPath+"/icon_image.png")
 	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/no_exif.jpg")
 	copyFile(t, "testmedia/gif.gif", mediaPath+"/gif.gif")
 	copyFile(t, "testmedia/tiff.tiff", mediaPath+"/tiff.tiff")
 
 	// Verify that thumbnails where created
-	//assertFileCreated(t, "", cache+"/_icon_image.jpg")
+	assertFileCreated(t, "", cache+"/_icon_image.jpg")
 	assertFileCreated(t, "", cache+"/_no_exif.jpg")
 	assertFileCreated(t, "", cache+"/_gif.jpg")
 	assertFileCreated(t, "", cache+"/_tiff.jpg")
@@ -165,7 +165,7 @@ func TestWatcherSubfolder(t *testing.T) {
 	os.MkdirAll(cache, os.ModePerm)
 
 	box := rice.MustFindBox("templates")
-	media := createMedia(box, mediaPath, cache, true, false, true, true, false, 0, false, false, false)
+	media := createMedia(box, mediaPath, cache, true, false, true, true, false, 0, false, false, true)
 	defer media.watcher.stopWatcherAndWait()
 
 	time.Sleep(100 * time.Millisecond) // Wait for watcher to start
@@ -189,6 +189,15 @@ func TestWatcherSubfolder(t *testing.T) {
 	time.Sleep(500 * time.Millisecond) // Wait for subfolder to be watched
 	copyFile(t, "testmedia/exif_rotate/no_exif.jpg", mediaPath+"/subdir/submore/no_exif.jpg")
 	assertFileCreated(t, "", cache+"/subdir/submore/_no_exif.jpg")
+
+	// Remove directory
+	os.RemoveAll(mediaPath+"/subdir/submore")
+
+	// Verify that directory was removed
+	assertFileRemoved(t, "", cache+"/subdir/submore")
+	
+	// But secure that other files are kept
+	assertFileCreated(t, "", cache+"/subdir/_icon_image.jpg")
 }
 
 func TestWatcherVideo(t *testing.T) {
